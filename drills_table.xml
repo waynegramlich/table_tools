@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<Table name="DrillBit">
+  <TableComments>
+    <TableComment language="EN">
+      A drill is ...
+    </TableComment>
+  </TableComments>
+  <Parameters>
+    <Parameter name="units" type="enumeration">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Units">
+          The units are either `imperial` or `metric` depending upon what are the
+          "natural" units for the drill.  Metric drills are in `metric`.  Fractional,
+          wire gage and letter drills are in inches.
+        </ParameterComment>
+      </ParameterComments>
+      <Enumerations>
+        <Enumeration name="Imperial">
+          <EnumerationComment language="EN">
+            Imperial units (inches) are used.
+          </EnumerationComment>
+        </Enumeration>
+        <Enumeration name="Metric">
+          <EnumerationComment language="EN">
+            Metric units (millimeters) are used.
+          </EnumerationComment>
+        </Enumeration>
+      </Enumerations>
+    </Parameter>
+    <Parameter name="diameter" type="float">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Diameter" shortHeading="Diam.">
+          The nominal diameter of the drill bit and the hole it drills.
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="overallLength" type="float">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Overall Length" shortHeading="OAL">
+          The overall length of the drill bit.
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="maximumDrillDepth" type="float">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Maximum Drill Length" shortHeading="Drl. Depth">
+          The maximum depth the drill can go into the material.
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="shankDiameter" type="float">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Shank Diameter" shortHeading="Shnk. Diam.">
+          The diameter of the the upper portion of the drill.
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="flutes" type="integer">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Flutes">
+          The number drill bit flutes (i.e. channels for bringing chips up
+          out of the hole.)
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="fractionalSize" type="string" optional="true">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Fractional Size" shortHeading="Fract.">
+          For a inch based fractional drill sizes the drill bit name is based
+          on its diameter represented in fractions of an inch.  More specifically,
+          the drill size is represented in the form W-N/D (or just N/D) where W
+          (whole number), N (numerator), and D (denominator) are positive integers.
+          The denominator is a power of 2 (i.e. 2, 4, 6, 8, 16, 32, 64.)  The N is
+          an integer where 0 &lt; N &lt; D.  Some examples are `3/64`, `1/2`,
+          and `1-1/8`.
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+  </Parameters>
+</Table>
