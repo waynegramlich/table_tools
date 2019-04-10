@@ -264,6 +264,58 @@ class Parameter:
 
         return all_equal
 
+    def ui_lines_append(self, ui_lines, row):
+        # Verify argument_types:
+        assert isinstance(ui_lines, list)
+        assert isinstance(row, int) and row >= 2
+
+        parameter = self
+        name = parameter.name
+        comments = parameter.comments
+        assert len(comments) >= 1
+        comment = comments[0]
+        long_heading = comment.long_heading
+
+        # Output the *long_heading* radio button:
+        ui_lines.append('     <item row="{0}" column="0">'.format(row))
+        ui_lines.append('      <widget class="QRadioButton" name="{0}_radio_button">'.format(name))
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>{0}</string>'.format(long_heading))
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+
+        # Output the use check box:
+        ui_lines.append('     <item row="{0}" column="1">'.format(row))
+        ui_lines.append('      <widget class="QCheckBox" name="{0}_check_box">'.format(name))
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string/>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+
+        # Output the criteria widget (which can be either a line edit or combo box widget:
+        ui_lines.append('     <item row="{0}" column="2">'.format(row))
+        if parameter.type == "enumeration":
+            ui_lines.append('      <widget class="QComboBox" name="{0}_combo_box">'.format(name))
+            enumerations = parameter.enumerations
+            for enumeration in enumerations:
+                comments = enumeration.comments
+                assert len(comments) >= 1
+                comment = comments[0]
+                assert isinstance(comment, EnumerationComment)
+                #FIXME Enumeration Comment needs a translated name:
+                name = enumeration.name
+                ui_lines.append('       <item>')
+                ui_lines.append('        <property name="text">')
+                ui_lines.append('         <string>{0}</string>'.format(name))
+                ui_lines.append('        </property>')
+                ui_lines.append('       </item>')
+            ui_lines.append('      </widget>')
+        else:
+            ui_lines.append('      <widget class="QLineEdit" name="{0}_line_edit"/>'.format(name))
+        ui_lines.append('     </item>')
+
     def xml_lines_append(self, xml_lines):
         assert isinstance(xml_lines, list)
         assert isinstance(xml_lines, list)
@@ -459,6 +511,133 @@ class Table:
 
         return all_equal
 
+    def to_ui_string(self):
+        table = self
+        ui_lines = list()
+        table.ui_lines_append(ui_lines)
+        ui_text = '\n'.join(ui_lines)
+        return ui_text
+
+    def ui_lines_append(self, ui_lines):
+        # Verify argument types:
+        assert isinstance(ui_lines, list)
+
+        table = self
+        parameters = table.parameters
+        parameters_size = len(parameters)
+
+        # Output the initial plate:
+        ui_lines.append('<?xml version="1.0" encoding="UTF-8"?>')
+        ui_lines.append('<ui version="4.0">')
+        ui_lines.append(' <class>MainWindow</class>')
+        ui_lines.append(' <widget class="QMainWindow" name="search_window">')
+        ui_lines.append('  <property name="geometry">')
+        ui_lines.append('   <rect>')
+        ui_lines.append('    <x>0</x>')
+        ui_lines.append('    <y>0</y>')
+        ui_lines.append('    <width>800</width>')
+        ui_lines.append('    <height>600</height>')
+        ui_lines.append('   </rect>')
+        ui_lines.append('  </property>')
+        ui_lines.append('  <property name="windowTitle">')
+        ui_lines.append('   <string>Parametric Search</string>')
+        ui_lines.append('  </property>')
+
+        # Output the grid box:
+        ui_lines.append('  <widget class="QWidget" name="centralwidget">')
+        ui_lines.append('   <widget class="QWidget" name="gridLayoutWidget">')
+        ui_lines.append('    <property name="geometry">')
+        ui_lines.append('     <rect>')
+        ui_lines.append('      <x>0</x>')
+        ui_lines.append('      <y>0</y>')
+        ui_lines.append('      <width>781</width>')
+        ui_lines.append('      <height>531</height>')
+        ui_lines.append('     </rect>')
+        ui_lines.append('    </property>')
+
+        # Output the fixed widgets:
+        ui_lines.append('    <layout class="QGridLayout" name="gridLayout">'
+                        ' rowstretch="0,0,{0}1" columnstretch="0,0,1"'.
+                        format("0," * parameters_size) )
+
+        # Output row 0 buttons:
+        ui_lines.append('     <item row="0" column="2">')
+        ui_lines.append('      <widget class="QPushButton" name="dismiss_button">')
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>Dismiss</string>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+        ui_lines.append('     <item row="0" column="1">')
+        ui_lines.append('      <widget class="QPushButton" name="search_button">')
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>Search</string>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+        ui_lines.append('     <item row="0" column="0">')
+        ui_lines.append('      <widget class="QPushButton" name="clear_button">')
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>Clear</string>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+
+        # Output row 1 headers:
+        ui_lines.append('     <item row="1" column="2">')
+        ui_lines.append('      <widget class="QLabel" name="label">')
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>Criteria</string>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+        ui_lines.append('     <item row="1" column="1">')
+        ui_lines.append('      <widget class="QLabel" name="use_label">')
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>Use</string>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+        ui_lines.append('     <item row="1" column="0">')
+        ui_lines.append('      <widget class="QLabel" name="parameter_label">')
+        ui_lines.append('       <property name="text">')
+        ui_lines.append('        <string>Parameter</string>')
+        ui_lines.append('       </property>')
+        ui_lines.append('      </widget>')
+        ui_lines.append('     </item>')
+
+        # Ouput one row per *parameter* in *parameters*:
+        for index, parameter in enumerate(parameters):
+            parameter.ui_lines_append(ui_lines, index + 2)
+
+        # Output the final text edit:
+        ui_lines.append('     <item row="{0}" column="0" colspan="3">'.format(parameters_size + 3))
+        ui_lines.append('      <widget class="QTextEdit" name="comment_text"/>')
+        ui_lines.append('     </item>')
+
+        # Wrap up the grid box
+        ui_lines.append('    </layout>')
+        ui_lines.append('   </widget>')
+        ui_lines.append('  </widget>')
+
+        # Output remaining boiler plate:
+        ui_lines.append('  <widget class="QMenuBar" name="menubar">')
+        ui_lines.append('   <property name="geometry">')
+        ui_lines.append('    <rect>')
+        ui_lines.append('     <x>0</x>')
+        ui_lines.append('     <y>0</y>')
+        ui_lines.append('     <width>800</width>')
+        ui_lines.append('     <height>38</height>')
+        ui_lines.append('    </rect>')
+        ui_lines.append('   </property>')
+        ui_lines.append('  </widget>')
+        ui_lines.append('  <widget class="QStatusBar" name="statusbar"/>')
+        ui_lines.append(' </widget>')
+        ui_lines.append(' <resources/>')
+        ui_lines.append(' <connections/>')
+        ui_lines.append('</ui>')
+        ui_lines.append('')
+
     def to_xml_string(self):
         table = self
         xml_lines = list()
@@ -585,7 +764,11 @@ def main():
             table = Table(file_name=table_file_name, table_tree=table_tree)
             tables.append(table)
 
-             # For debugging only, write *table* out to the `/tmp` directory:
+            ui_text = table.to_ui_string()
+            with open("/tmp/test.ui", "w") as ui_file:
+                ui_file.write(ui_text)
+
+            # For debugging only, write *table* out to the `/tmp` directory:
             debug = False
             debug = True
             if debug:
@@ -654,6 +837,24 @@ class TablesEditor:
         loader = QUiLoader()
         main_window = loader.load(ui_qfile)
 
+        ui_qfile = QFile("/tmp/test.ui")
+        ui_qfile.open(QFile.ReadOnly)
+        search_window = loader.load(ui_qfile)
+
+        for table in tables:
+            parameters = table.parameters
+            for index, parameter in enumerate(parameters):
+                name = parameter.name
+                radio_button = getattr(search_window, name + "_radio_button")
+                print("[{0}]: Radio Button '{1}' {2}".format(index, name, radio_button))
+                check_box = getattr(search_window, name + "_check_box")
+                print("[{0}]: Check Box '{1}' {2}".format(index, name, check_box))
+                if parameter.type == "enumeration":
+                    line_edit = getattr(search_window, name + "_combo_box")
+                else:
+                    line_edit = getattr(search_window, name + "_line_edit")
+                print("[{0}]: Line Edit '{1}' {2}".format(index, name, line_edit))
+
         # Grab the file widgets from *main_window*:
 
         #file_line_edit   = main_window.file_line_edit
@@ -685,6 +886,7 @@ class TablesEditor:
         tables_editor.parameter_short_changed_suppress = False
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.trace_level = trace_level
+        tables_editor.search_window = search_window
 
         attributes = current_table.parameters
         update_function = partial(TablesEditor.parameter_update, tables_editor)
@@ -1220,6 +1422,10 @@ class TablesEditor:
         application = tables_editor.application
 
         main_window.show()
+        
+        search_window = tables_editor.search_window
+        search_window.show()
+
         sys.exit(application.exec_())
 
     def save_button_clicked(self):
@@ -1236,6 +1442,7 @@ class TablesEditor:
         table_radio = main_window.table_radio
         checked = table_radio.isChecked()
         print("checked={0}".format(checked))
+
 
     def update(self):
         # Perform any tracing requested by *tables_editor* (i.e. *self*):
