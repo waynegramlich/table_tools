@@ -126,6 +126,32 @@ class Enumeration:
         comments_equal = (enumeration1.comments == enumeration2.comments)
         return name_equal and comments_equal
 
+    def ui_lines_append(self, ui_lines):
+        # Verify argument types:
+        assert isinstance(ui_lines, list)
+        
+        enumeration = self
+        comments = enumeration.comments
+        assert len(comments) >= 1
+        comment = comments[0]
+        assert isinstance(comment, EnumerationComment)
+        #FIXME Enumeration Comment needs a translated name:
+        name = enumeration.name
+        ui_lines.append(    '       <item>')
+        if True:
+            ui_lines.append('        <property name="text">') 
+            ui_lines.append('         <string>{0}</string>'.format(name))
+            ui_lines.append('        </property>')
+        else:
+            ui_lines.append('        <widget class="QCheckBox" name="{0}_{1}_check_box">'.
+              format("xyz", name))
+            ui_lines.append('         <property name="text">')
+            ui_lines.append('          <string>{0}</string>'.format(name))
+            ui_lines.append('         </property>')
+            ui_lines.append('        </widget>')
+        ui_lines.append(    '       </item>')
+            
+
     def xml_lines_append(self, xml_lines):
         enumeration = self
         xml_lines.append('        <Enumeration name="{0}">'.format(enumeration.name))
@@ -297,20 +323,11 @@ class Parameter:
         # Output the criteria widget (which can be either a line edit or combo box widget:
         ui_lines.append('     <item row="{0}" column="2">'.format(row))
         if parameter.type == "enumeration":
-            ui_lines.append('      <widget class="QComboBox" name="{0}_combo_box">'.format(name))
+            ui_lines.append('      <widget class="QComboBox" name="{0}_combo_box">'.
+              format(name))
             enumerations = parameter.enumerations
             for enumeration in enumerations:
-                comments = enumeration.comments
-                assert len(comments) >= 1
-                comment = comments[0]
-                assert isinstance(comment, EnumerationComment)
-                #FIXME Enumeration Comment needs a translated name:
-                name = enumeration.name
-                ui_lines.append('       <item>')
-                ui_lines.append('        <property name="text">')
-                ui_lines.append('         <string>{0}</string>'.format(name))
-                ui_lines.append('        </property>')
-                ui_lines.append('       </item>')
+                enumeration.ui_lines_append(ui_lines)
             ui_lines.append('      </widget>')
         else:
             ui_lines.append('      <widget class="QLineEdit" name="{0}_line_edit"/>'.format(name))
@@ -839,9 +856,23 @@ class TablesEditor:
 
         ui_qfile = QFile("/tmp/test.ui")
         ui_qfile.open(QFile.ReadOnly)
+        loader.registerCustomWidget(CheckableComboBox)
         search_window = loader.load(ui_qfile)
 
         for table in tables:
+            break
+            for parameter in table.parameters:
+                if parameter.type == "enumeration":
+                    name = parameter.name
+                    checkable_combo_box = getattr(search_window, name + "_combo_box")
+                    enumerations = parameter.enumerations
+                    for enumeration in enumerations:
+                        checkable_combo_box.addItem(enumeration.name)
+                        #checkable_combo_box.setCheckable(True)
+
+        # For debugging
+        for table in tables:
+            break
             parameters = table.parameters
             for index, parameter in enumerate(parameters):
                 name = parameter.name
@@ -2225,7 +2256,21 @@ class XXXSchema:
         text = '\n'.join(xml_lines)
         return text
 
+class CheckableComboBox(QComboBox):
+    # once there is a checkState set, it is rendered
+    # here we assume default Unchecked
+    def addItem(self, item):
+        super(CheckableComboBox, self).addItem(item)
+        item = self.model().item(self.count()-1,0)
+        item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+        item.setCheckState(QtCore.Qt.Unchecked)
+
+    def itemChecked(self, index):
+        item = self.model().item(i,0)
+        return item.checkState() == QtCore.Qt.Checked
+
 if __name__ == "__main__":
     main()
 
 
+# https://stackoverflow.com/questions/5226091/checkboxes-in-a-combobox-using-pyqt?rq=1
