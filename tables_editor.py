@@ -27,7 +27,8 @@ import lxml.etree as etree
 import copy
 from functools import partial
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QApplication, QWidget, QComboBox, QLineEdit, QPushButton
+from PySide2.QtWidgets import (QApplication, QCheckBox, QComboBox, QLabel, QLineEdit,
+                               QPlainTextEdit, QPushButton, QRadioButton, QWidget)
 from PySide2.QtCore import (QFile, QByteArray, QTimer)
 #from PySide2.QtNetwork import (QUdpSocket, QHostAddress)
 
@@ -854,10 +855,10 @@ class TablesEditor:
         loader = QUiLoader()
         main_window = loader.load(ui_qfile)
 
-        ui_qfile = QFile("/tmp/test.ui")
-        ui_qfile.open(QFile.ReadOnly)
-        loader.registerCustomWidget(CheckableComboBox)
-        search_window = loader.load(ui_qfile)
+        #ui_qfile = QFile("/tmp/test.ui")
+        #ui_qfile.open(QFile.ReadOnly)
+        #loader.registerCustomWidget(CheckableComboBox)
+        #search_window = loader.load(ui_qfile)
 
         for table in tables:
             break
@@ -917,13 +918,18 @@ class TablesEditor:
         tables_editor.parameter_short_changed_suppress = False
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.trace_level = trace_level
-        tables_editor.search_window = search_window
+        #tables_editor.search_window = search_window
 
-        attributes = current_table.parameters
+        tables_editor.check_boxes   = dict()
+        tables_editor.combo_boxes   = dict()
+        tables_editor.line_edits    = dict()
+        tables_editor.radio_buttons = dict()
+
+        parameters = current_table.parameters
         update_function = partial(TablesEditor.parameter_update, tables_editor)
         new_item_function = partial(TablesEditor.parameter_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_parameter_set, tables_editor)
-        combo_edit = ComboEdit(attributes,
+        combo_edit = ComboEdit(parameters,
           update_function,
           new_item_function,
           current_item_set_function,
@@ -972,6 +978,57 @@ class TablesEditor:
         table.current_table       = current_table
         table.current_parameter   = current_parameter
         table.current_enumeration = current_enumeration
+
+        search_grid = main_window.search_grid
+        #print("search_grid=", search_grid)
+
+        # Grab the various item tables from *tables_editor*:
+        radio_buttons = tables_editor.radio_buttons
+        check_boxes   = tables_editor.radio_buttons
+        combo_boxes   = tables_editor.combo_boxes
+        line_edits    = tables_editor.line_edits
+
+        # Ugly: The name *gridLayoutWidget2* was assigned by Qt Designer.  There
+        # does not appear to be any way to set this value in Qt Designer:
+        grid_layout_widget_2 = main_window.gridLayoutWidget_2
+        #print("grid_layout_widget_2=", grid_layout_widget_2)
+
+        table = tables[0]
+        parameters = table.parameters
+        parameters_size = len(parameters)
+        for index, parameter in enumerate(parameters):
+            name = parameter.name
+
+            radio_button = QRadioButton(grid_layout_widget_2)
+            radio_button.setObjectName("{0}_radio_button".format(name))
+            radio_button.setText(name)
+            search_grid.addWidget(radio_button, index + 2, 0, 1, 1)
+            radio_buttons[name] = radio_button
+
+            check_box = QCheckBox(grid_layout_widget_2)
+            check_box.setObjectName("{0}_check".format(name))
+            search_grid.addWidget(check_box, index + 2, 1, 1, 1)
+            check_boxes[name] = check_box
+
+            if parameter.type == "enumeration":
+                combo_box = QComboBox(grid_layout_widget_2)
+                combo_box.setObjectName("{0}_combo".format(name))
+                search_grid.addWidget(combo_box, index + 2, 2, 1, 1)
+                combo_boxes[name] = combo_box
+
+                enumerations = parameter.enumerations
+                for enumeration in enumerations:
+                    combo_box.addItem(enumeration.name)
+            else:
+                line_edit = QLineEdit(grid_layout_widget_2)
+                line_edit.setObjectName("{0}_line".format(name))
+                search_grid.addWidget(line_edit, index + 2, 2, 1, 1)
+                line_edits[name] = line_edit
+
+        search_plain_text = QPlainTextEdit(grid_layout_widget_2)
+        main_window.search_plain_text = search_plain_text
+        search_plain_text.setObjectName("search_plain_text")
+        search_grid.addWidget(search_plain_text, parameters_size + 3, 0, 1, 3)
 
         # Update the entire user interface:
         tables_editor.update()
@@ -1454,8 +1511,8 @@ class TablesEditor:
 
         main_window.show()
         
-        search_window = tables_editor.search_window
-        search_window.show()
+        #search_window = tables_editor.search_window
+        #search_window.show()
 
         sys.exit(application.exec_())
 

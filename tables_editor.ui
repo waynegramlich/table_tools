@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="schema_tab">
      <attribute name="title">
@@ -39,7 +39,7 @@
         <height>598</height>
        </rect>
       </property>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="schema_grid">
        <item row="9" column="3">
         <widget class="QLabel" name="parameter_default_label">
          <property name="text">
@@ -303,7 +303,50 @@
         <height>511</height>
        </rect>
       </property>
-      <layout class="QGridLayout" name="search_grid"/>
+      <layout class="QGridLayout" name="search_grid">
+       <item row="1" column="2">
+        <widget class="QLabel" name="search_criteria_label">
+         <property name="text">
+          <string>Criteria</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="search_clear_button">
+         <property name="text">
+          <string>Clear</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="search_parameter_label">
+         <property name="text">
+          <string>Parameter</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="search_use_label">
+         <property name="text">
+          <string>Use</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="search_dismiss_button">
+         <property name="text">
+          <string>Dismiss</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="search_search_button">
+         <property name="text">
+          <string>Search</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </widget>
     <widget class="QWidget" name="table_tab">
