@@ -26,10 +26,13 @@ import xmlschema
 import lxml.etree as etree
 import copy
 from functools import partial
+import PySide2
+from PySide2.QtGui import (QStandardItem, QStandardItemModel)
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import (QApplication, QCheckBox, QComboBox, QLabel, QLineEdit,
-                               QPlainTextEdit, QPushButton, QRadioButton, QWidget)
-from PySide2.QtCore import (QFile, QByteArray, QTimer)
+                               QPlainTextEdit, QPushButton, QRadioButton,
+                               QTableView, QTableWidget, QTableWidgetItem, QWidget)
+from PySide2.QtCore import (Qt, QFile, QByteArray, QTimer)
 #from PySide2.QtNetwork import (QUdpSocket, QHostAddress)
 
 class Comment:
@@ -254,13 +257,14 @@ class Parameter:
         # Load values into *parameter* (i.e. *self*):
         super().__init__()
         parameter = self
-        parameter.name = name
-        parameter.default = default
-        parameter.type = type
-        parameter.optional = optional
-        parameter.comments = comments
+        parameter.comments     = comments
+        parameter.default      = default
         parameter.enumerations = enumerations
-        #print("Paramter('{0}'): optional={1}".format(name, optional))
+        parameter.name         = name
+        parameter.optional     = optional
+        parameter.type         = type
+        parameter.use          = False
+        #print("Parameter('{0}'): optional={1}".format(name, optional))
 
     def __eq__(self, parameter2):
         #print("=>Parameter.__eq__()")
@@ -528,6 +532,23 @@ class Table:
         #print("all_equal={0}".format(all_equal))
 
         return all_equal
+
+    def header_labels_get(self):
+        table = self
+        parameters = table.parameters
+        parameters_size = len(parameters)
+        assert len(parameters) >= 1
+        header_labels = list()
+        for parameter in parameters:
+            parameter_comments = parameter.comments
+            header_label = "?"
+            if len(parameter_comments) >= 1:
+                parameter_comment = parameter_comments[0]
+                short_heading = parameter_comment.short_heading
+                long_heading = parameter_comment.long_heading
+                header_label = short_heading if not short_heading is None else long_heading
+            header_labels.append(header_label)
+        return header_labels
 
     def to_ui_string(self):
         table = self
@@ -946,17 +967,20 @@ class TablesEditor:
 
         # Abbreviate *main_window* as *mw*:
         mw = main_window
+
+        mw.tabs.currentChanged.connect(tables_editor.tab_changed)
+
         mw.comment_plain_text.textChanged.connect(tables_editor.comment_changed)
         mw.common_save_button.clicked.connect(             tables_editor.save_button_clicked)
         mw.common_quit_button.clicked.connect(             tables_editor.quit_button_clicked)
         mw.enumeration_combo.currentTextChanged.connect(   tables_editor.enumeration_changed)
-        mw.enumeration_radio.toggled.connect(              tables_editor.enumeration_radio_toggled)
-        mw.language_radio.toggled.connect(                 tables_editor.language_radio_toggled)
-        mw.table_radio.toggled.connect(                    tables_editor.table_radio_toggled)
+        #mw.enumeration_radio.toggled.connect(              tables_editor.enumeration_radio_toggled)
+        #mw.language_radio.toggled.connect(                 tables_editor.language_radio_toggled)
+        #mw.table_radio.toggled.connect(                    tables_editor.table_radio_toggled)
         mw.parameter_default_line.textChanged.connect(     tables_editor.parameter_default_changed)
         mw.parameter_long_line.textChanged.connect(        tables_editor.parameter_long_changed)
         mw.parameter_optional_check.clicked.connect(       tables_editor.parameter_optional_clicked)
-        mw.parameter_radio.toggled.connect(                tables_editor.parameter_radio_toggled)
+        #mw.parameter_radio.toggled.connect(                tables_editor.parameter_radio_toggled)
         mw.parameter_short_line.textChanged.connect(       tables_editor.parameter_short_changed)
         mw.parameter_type_combo.currentTextChanged.connect(tables_editor.parameter_type_changed)
 
@@ -988,47 +1012,9 @@ class TablesEditor:
         combo_boxes   = tables_editor.combo_boxes
         line_edits    = tables_editor.line_edits
 
-        # Ugly: The name *gridLayoutWidget2* was assigned by Qt Designer.  There
-        # does not appear to be any way to set this value in Qt Designer:
-        grid_layout_widget_2 = main_window.gridLayoutWidget_2
-        #print("grid_layout_widget_2=", grid_layout_widget_2)
 
-        table = tables[0]
-        parameters = table.parameters
-        parameters_size = len(parameters)
-        for index, parameter in enumerate(parameters):
-            name = parameter.name
-
-            radio_button = QRadioButton(grid_layout_widget_2)
-            radio_button.setObjectName("{0}_radio_button".format(name))
-            radio_button.setText(name)
-            search_grid.addWidget(radio_button, index + 2, 0, 1, 1)
-            radio_buttons[name] = radio_button
-
-            check_box = QCheckBox(grid_layout_widget_2)
-            check_box.setObjectName("{0}_check".format(name))
-            search_grid.addWidget(check_box, index + 2, 1, 1, 1)
-            check_boxes[name] = check_box
-
-            if parameter.type == "enumeration":
-                combo_box = QComboBox(grid_layout_widget_2)
-                combo_box.setObjectName("{0}_combo".format(name))
-                search_grid.addWidget(combo_box, index + 2, 2, 1, 1)
-                combo_boxes[name] = combo_box
-
-                enumerations = parameter.enumerations
-                for enumeration in enumerations:
-                    combo_box.addItem(enumeration.name)
-            else:
-                line_edit = QLineEdit(grid_layout_widget_2)
-                line_edit.setObjectName("{0}_line".format(name))
-                search_grid.addWidget(line_edit, index + 2, 2, 1, 1)
-                line_edits[name] = line_edit
-
-        search_plain_text = QPlainTextEdit(grid_layout_widget_2)
-        main_window.search_plain_text = search_plain_text
-        search_plain_text.setObjectName("search_plain_text")
-        search_grid.addWidget(search_plain_text, parameters_size + 3, 0, 1, 3)
+        print("here 1")
+        tables_editor.table_setup()
 
         # Update the entire user interface:
         tables_editor.update()
@@ -1151,20 +1137,6 @@ class TablesEditor:
         if trace_level >= 3:
             print("<=TablesEdit.enumeration_changed(): suppress={0}\n".format(suppress))
 
-    def enumeration_radio_toggled(self):
-        print("=>enumeration_radio_toggeled")
-        tables_editor = self
-        main_window = tables_editor.main_window
-        enumeration_radio = main_window.enumeration_radio
-        checked = enumeration_radio.isChecked()
-        print("checked={0}".format(checked))
-        current_parameter = tables_editor.current_parameter
-        if not current_parameter is None:
-            comments = current_parameter.comments
-            assert len(comments) >= 1
-            comment = comments[0]
-            comment.lines = lines
-
     def enumeration_update(self):
         # Perform any tracing requested by *tables_editor* (i.e. *self*):
         tables_editor = self
@@ -1197,14 +1169,6 @@ class TablesEditor:
         # Wrap-up and requested tracing:
         if trace_level >= 1:
             print("<=TablesEditor.enumerations_update()")
-
-    def language_radio_toggled(self):
-        print("=>language_radio_toggeled")
-        tables_editor = self
-        main_window = tables_editor.main_window
-        language_radio = main_window.language_radio
-        checked = language_radio.isChecked()
-        print("checked={0}".format(checked))
 
     def parameter_default_changed(self, new_default):
         # Verify argument types:
@@ -1325,14 +1289,6 @@ class TablesEditor:
         # Wrap up any requested *tracing*:
         if trace_level >= 1:
             print("=>Tables_Editor.parameter_optional_clicked()\n")
-
-    def parameter_radio_toggled(self):
-        print("=>parameter_radio_toggeled")
-        tables_editor = self
-        main_window = tables_editor.main_window
-        parameter_radio = main_window.parameter_radio
-        checked = parameter_radio.isChecked()
-        print("checked={0}".format(checked))
 
     def parameter_short_changed(self, new_short_heading):
         # Verify argument types:
@@ -1523,14 +1479,140 @@ class TablesEditor:
         for table in current_tables:
             table.save()
 
-    def table_radio_toggled(self):
-        print("=>table_radio_toggeled")
+    def search_update(self):
+        print("=>Tables_Editor.search_update(*)")
+
+        # Grab the *current_table* *Table* object from *tables_editor* (i.e. *self*.)
+        # Grab the *seach_table* widget from *tables_editor* as well:
+        tables_editor = self
+        current_table = tables_editor.current_table
+        main_window = tables_editor.main_window
+        search_table = main_window.search_table
+        assert isinstance(search_table, QTableWidget)
+
+        # Step 1: Empty out *search_table*:
+        search_table.clearContents()
+        search_table.setHorizontalHeaderLabels(["Parameter", "Use", "Criteria"])
+
+        # Dispatch on whether *current_table* exists or not:
+        if current_table is None:
+            # We have no *current_table*, so show an empty search table:
+            search_table.setHorizontalHeaderLabels([])
+            search_table.setColumnCount(0)
+            data_table.setRowCount(0)
+        else:
+            # *current_table* is active, so fill in *search_table*:
+            assert isinstance(current_table, Table)
+            header_labels = current_table.header_labels_get()
+            print("Header_labels={0}".format(header_labels))
+            search_table.setColumnCount(3)
+            search_table.setRowCount(len(header_labels))
+
+            # Now convert eacch *parameter* in *parameters into a row in *search_table*:
+            parameters = current_table.parameters
+            assert len(parameters) == len(header_labels)
+            for parameter_index, parameter in enumerate(parameters):
+                # Create the header label in the first column:
+                header_item = QTableWidgetItem(header_labels[parameter_index])
+                header_item.setData(Qt.UserRole, parameter)
+                search_table.setItem(parameter_index, 0, header_item)
+
+                # Create the use [] check box in the second column:
+                use_item = QTableWidgetItem("")
+                assert isinstance(use_item, QTableWidgetItem)
+                print(type(use_item))
+                print(use_item.__class__.__bases__)
+                flags = use_item.flags()
+                use_item.setFlags(flags | Qt.ItemIsUserCheckable)
+                check_state = Qt.Unchecked
+                if parameter.use:
+                    check_state = Qt.Checked
+                use_item.setCheckState(check_state)
+                #use_item.itemChanged.connect(
+                #  partial(TablesEditor.search_use_clicked, tables_editor, use_item, parameter))
+                parameter.use = False
+                search_table.setItem(parameter_index, 1, use_item)
+                search_table.cellClicked.connect(
+                  partial(TablesEditor.search_use_clicked, tables_editor, use_item, parameter))
+
+                #if parameter.type == "enumeration":
+                #    #combo_box = QComboBox()
+                #    #combo_box = QTableWidgetItem("")
+                #    combo_box = QComboBox()
+                #    assert isinstance(combo_box, QWidget)
+                #    model = QStandardItemModel(1, 1)
+                #    enumerations = parameter.enumerations
+                #    for enumeration_index, enumeration in enumerate(enumerations):
+                #        assert isinstance(enumeration, Enumeration)
+                #        #comments = enumeration.comments
+                #        #comments_size = len(comments)
+                #        #assert comments_size >= 1
+                #        #comment = comments[0]
+                #        #combo_box.addItem(enumeration.name, userData=enumeration)
+                #        item = QStandardItem(enumeration.name)
+                #        combo_box.setItem(enumeration_index, 0, item)
+                #    search_table.setCellWidget(parameter_index, 2, combo_box)
+                #else:
+                criteria_item = QTableWidgetItem("")
+                criteria_item.setData(Qt.UserRole, parameter)
+                search_table.setItem(parameter_index, 2, criteria_item)
+
+        print("<=Tables_Editor.search_update(*)")
+
+    def search_use_clicked(self, use_item, parameter, row, column):
+        # Verify argument types:
+        assert isinstance(use_item, QTableWidgetItem)
+        assert isinstance(parameter, Parameter)
+        assert isinstance(row, int)
+        assert isinstance(column, int)
+
+        print("=>TablesEditor.search_use_clicked(*, '{0}', {1}, {2})".
+          format(parameter.name, row, column))
+        tables_editor = self
+        check_state = use_item.checkState()
+        print("check-state=", check_state)
+        if check_state == Qt.CheckState.Checked:
+            result = "checked"
+            parameter.use = True
+        elif check_state == Qt.CheckState.Unchecked:
+            result = "unchecked"
+            parameter.use = False
+        elif check_state == Qt.CheckState.PartiallyChecked:
+            result = "partially checked"
+        else:
+            result = "unknown"
+        print("parameter check state={0}".format(result))
+        print("<=TablesEditor.search_use_clicked(*, '{0}', {1}, {2})\n".
+          format(parameter.name, row, column))
+
+    def tab_changed(self, new_index):
+        print("=>TablesEditor.tab_changed(*, {0})".format(new_index))
+        print("<=TablesEditor.tab_changed(*, {0})\n".format(new_index))
+
+    def table_setup(self):
+        print("=>TablesEditor.table_setup()")
+        # Grab the *table* widget and *current_table* from *tables_editor* (i.e. *self*):
         tables_editor = self
         main_window = tables_editor.main_window
-        table_radio = main_window.table_radio
-        checked = table_radio.isChecked()
-        print("checked={0}".format(checked))
+        data_table = main_window.data_table
+        assert isinstance(data_table, QTableWidget)
+        current_table = tables_editor.current_table
 
+        # Dispatch on *current_table* depending upon whether it exists or not:
+        if current_table is None:
+            # *current_table* is empty, so we initialize the *table* widget to be empty:
+            data_table.setHorizontalHeaderLabels([])
+            data_table.setColumnCount(0)
+            data_table.setRowCount(0)
+        else:
+            # *current_table* is valid, so we extract the *header_labels* and attach them to the
+            # *table* widget:
+            assert isinstance(current_table, Table)
+            header_labels = current_table.header_labels_get()
+            data_table.setHorizontalHeaderLabels(header_labels)
+            data_table.setColumnCount(len(header_labels))
+            data_table.setRowCount(1)
+        print("<=TablesEditor.table_setup()")
 
     def update(self):
         # Perform any tracing requested by *tables_editor* (i.e. *self*):
@@ -1542,6 +1624,7 @@ class TablesEditor:
         tables_editor.combo_edit.update()
         tables_editor.parameter_update(None)
         tables_editor.common_update()
+        tables_editor.search_update()
 
         # Perform any tracing requested by *tables_editor*:
         if trace_level >= 1:
@@ -2331,3 +2414,21 @@ if __name__ == "__main__":
 
 
 # https://stackoverflow.com/questions/5226091/checkboxes-in-a-combobox-using-pyqt?rq=1
+# https://stackoverflow.com/questions/24961383/how-to-see-the-value-of-pyside-qtcore-qt-itemflag
+# /usr/local/lib/python3.6/dist-packages/PySide2/examples/widgets/itemviews/stardelegate
+# https://stackoverflow.com/questions/8422760/combobox-of-checkboxes
+
+
+# Qt Designer application Notes:
+# * Use grid layouts for everything.  This easier said than done since the designer
+#   user interface is kind of clunky:
+#   1. Just drop one or more widgets into the area.
+#   2. Using the tree view, select the widgets using left mouse button and [Control] key.
+#   3. Using right mouse button, get a drop-down, and set the grid layout.
+#   4. You are not done until all the widgets with layouts are grids with no red circle
+#      that indicate that now layout is active.
+#
+# Notes on using tab widgets:
+# * Tabs are actually named in the parent tab widget (1 level up.)
+# * To add a tab, hover the mouse over an existing tab, right click mouse, and select
+#   Insert page.
