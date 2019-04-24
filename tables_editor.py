@@ -947,28 +947,41 @@ class TablesEditor:
         tables_editor.radio_buttons = dict()
 
         parameters = current_table.parameters
-        update_function = partial(TablesEditor.parameter_update, tables_editor)
+        update_function = partial(TablesEditor.parameters_update, tables_editor)
         new_item_function = partial(TablesEditor.parameter_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_parameter_set, tables_editor)
         combo_edit = ComboEdit(parameters,
           update_function,
           new_item_function,
           current_item_set_function,
-          combo_box       = main_window.parameter_combo,
-          delete_button   = main_window.common_delete_button, 
-          first_button    = main_window.common_first_button,
-          last_button     = main_window.common_last_button,
-          line_edit       = main_window.common_line,
-          next_button     = main_window.common_next_button,
-          new_button      = main_window.common_new_button,
-          previous_button = main_window.common_previous_button,
-          rename_button   = main_window.common_rename_button)
+          combo_box       = main_window.parameters_combo,
+          delete_button   = main_window.parameters_delete, 
+          first_button    = main_window.parameters_first,
+          last_button     = main_window.parameters_last,
+          line_edit       = main_window.parameters_line,
+          next_button     = main_window.parameters_next,
+          new_button      = main_window.parameters_new,
+          previous_button = main_window.parameters_previous,
+          rename_button   = main_window.parameters_rename)
+        #combo_edit = ComboEdit(parameters,
+        #  update_function,
+        #  new_item_function,
+        #  current_item_set_function,
+        #  combo_box       = main_window.parameter_combo,
+        #  delete_button   = main_window.common_delete_button, 
+        #  first_button    = main_window.common_first_button,
+        #  last_button     = main_window.common_last_button,
+        #  line_edit       = main_window.common_line,
+        #  next_button     = main_window.common_next_button,
+        #  new_button      = main_window.common_new_button,
+        #  previous_button = main_window.common_previous_button,
+        #  rename_button   = main_window.common_rename_button)
         tables_editor.combo_edit = combo_edit
 
         # Abbreviate *main_window* as *mw*:
         mw = main_window
 
-        mw.tabs.currentChanged.connect(tables_editor.tab_changed)
+        mw.root_tabs.currentChanged.connect(tables_editor.tab_changed)
 
         mw.comment_plain_text.textChanged.connect(tables_editor.comment_changed)
         mw.common_save_button.clicked.connect(             tables_editor.save_button_clicked)
@@ -1227,7 +1240,7 @@ class TablesEditor:
             print("<=TablesEditor.parameter_long_changed('{0}') suppress:{1}\n".
               format(new_long_heading, suppress))
 
-    def parameter_long_set(self, new_long_heading):
+    def xxx_parameter_long_set(self, new_long_heading):
         # Verify argument types:
         assert isinstance(new_long_heading, str)
 
@@ -1248,6 +1261,32 @@ class TablesEditor:
         parameter_long_line = main_window.parameter_long_line
         tables_editor.parameter_long_changed_suppress = True
         parameter_long_line.setText(new_long_heading)
+        tables_editor.parameter_long_changed_suppress = False
+
+        if trace_level >= 1:
+            print("<=parameter_long_set('{0}')".format(new_long_heading))
+
+    def parameters_long_set(self, new_long_heading):
+        # Verify argument types:
+        assert isinstance(new_long_heading, str)
+
+        # Perform any tracing requested by *tables_editor* (i.e. *self*):
+        tables_editor = self
+        trace_level = tables_editor.trace_level
+        if trace_level >= 1:
+            print("=>parameter_long_set('{0}')".format(new_long_heading))
+
+        # Stuff *new_long_heading* into *current_parameter*:
+        current_parameter = tables_editor.current_parameter
+        assert isinstance(current_parameter, Parameter)
+        current_parameter.long_heading = new_long_heading
+
+        # Now update the user interface to show *new_long_heading* into the *parameter_long_line*
+        # widget:
+        main_window = tables_editor.main_window
+        long_line = main_window.parameters_long_line
+        tables_editor.parameter_long_changed_suppress = True
+        long_line.setText(new_long_heading)
         tables_editor.parameter_long_changed_suppress = False
 
         if trace_level >= 1:
@@ -1327,7 +1366,7 @@ class TablesEditor:
         if trace_level >= 3:
             print("<=TablesEditor.parameter_short_changed('{0}')\n".format(new_short_heading))
 
-    def parameter_short_set(self, new_short_heading):
+    def xxx_parameter_short_set(self, new_short_heading):
         # Verify argument types:
         assert isinstance(new_short_heading, str) or new_short_heading is None
 
@@ -1353,6 +1392,32 @@ class TablesEditor:
         if trace_level >= 1:
             print("<=parameter_short_set('{0}')".format(new_short_heading))
 
+    def parameters_short_set(self, new_short_heading):
+        # Verify argument types:
+        assert isinstance(new_short_heading, str) or new_short_heading is None
+
+        # Perform any tracing requested by *tables_editor* (i.e. *self*):
+        tables_editor = self
+        trace_level = tables_editor.trace_level
+        if trace_level >= 1:
+            print("=>parameter_short_set('{0}')".format(new_short_heading))
+
+        # Stuff *new_short_heading* into *current_parameter*:
+        current_parameter = tables_editor.current_parameter
+        assert isinstance(current_parameter, Parameter)
+        current_parameter.short_heading = new_short_heading
+
+        # Now update the user interface to show *new_short_heading* into the *parameter_short_line*
+        # widget:
+        main_window = tables_editor.main_window
+        short_line = main_window.parameters_short_line
+        tables_editor.parameter_short_changed_suppress = True
+        short_line.setText("" if new_short_heading is None else new_short_heading)
+        tables_editor.parameter_short_changed_suppress = False
+
+        if trace_level >= 1:
+            print("<=parameter_short_set('{0}')".format(new_short_heading))
+
     def parameter_type_changed(self):
         # Perform any requested tracing from *tables_editor* (i.e. *self*):
         tables_editor = self
@@ -1373,7 +1438,7 @@ class TablesEditor:
               format(None if current_parameter is None else current_parameter.name))
 
     # TablesEditor
-    def parameter_update(self, parameter):
+    def xxx_parameter_update(self, parameter):
         # Verify argument types:
         assert isinstance(parameter, Parameter) or parameter is None
 
@@ -1434,8 +1499,8 @@ class TablesEditor:
             assert isinstance(comment, ParameterComment)
 
             # Update the headings:
-            tables_editor.parameter_long_set(comment.long_heading)
-            tables_editor.parameter_short_set(comment.short_heading)
+            tables_editor.parameters_long_set(comment.long_heading)
+            tables_editor.parameters_short_set(comment.short_heading)
 
             # Deal with comment text edit area:
             tables_editor.current_comment = comment
@@ -1451,6 +1516,86 @@ class TablesEditor:
         # Wrap-up any requested tracing:
         if trace_level >= 1:
             print("<=TablesEditor.parameter_update('{0}')".
+              format(None if parameter is None else parameter.name))
+
+    def parameters_update(self, parameter):
+        # Verify argument types:
+        assert isinstance(parameter, Parameter) or parameter is None
+
+        # Perform any requested tracing from *tables_editor* (i.e. *self*):
+        tables_editor = self
+        trace_level = tables_editor.trace_level
+        if trace_level >= 1:
+            print("=>TablesEditor.parameters_update('{0}')".
+              format(None if parameter is None else parameter.name))
+
+        # Grab some widgets from *tables_editor*:
+        main_window    = tables_editor.main_window
+        comment_text   = main_window.parameters_comment_text
+        default_line   = main_window.parameters_default_line
+        optional_check = main_window.parameters_optional_check
+        type_combo     = main_window.parameters_type_combo
+
+        # Now we can update the other fields:
+        if parameter is None:
+            parameter = tables_editor.current_parameter
+        if parameter is None:
+            # *parameter* is empty:
+            is_valid_parameter = False
+            default  = ""
+            optional = False
+            type     = ""
+        else:
+            # Grab some values from *parameter*:
+            is_valid_parameter = True
+            default  = parameter.default
+            optional = parameter.optional
+            type     = parameter.type
+        #print("type='{0}' optional={1}".format(type, optional))
+
+        # Stuff the values in to the *parameter_type_combo* widget:
+        for index in range(type_combo.count()):
+            item_text = type_combo.itemText(index).lower()
+            #print("[{0}] '{1}'".format(index, item_text))
+            if type.lower() == item_text.lower():
+                #print("match")
+                type_combo.setCurrentIndex(index)
+                break
+
+        default_line.setText(default)
+        optional_check.setChecked(optional)
+
+        # Enable/disable the parameter widgets:
+        type_combo.setEnabled(    is_valid_parameter)
+        default_line.setEnabled(  is_valid_parameter)
+        optional_check.setEnabled(is_valid_parameter)
+
+        # Update the *comments* (if they exist):
+        if not parameter is None:
+            comments = parameter.comments
+            #Kludge for now, select the first comment
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, ParameterComment)
+
+            # Update the headings:
+            tables_editor.parameters_long_set(comment.long_heading)
+            tables_editor.parameters_short_set(comment.short_heading)
+
+            # Deal with comment text edit area:
+            tables_editor.current_comment = comment
+            lines = comment.lines
+            text = '\n'.join(lines)
+
+            tables_editor.comment_text_set(text)
+
+        # Changing the *parameter* can change the enumeration combo box, so update it as well:
+        tables_editor.enumeration_update()
+        tables_editor.common_update()
+
+        # Wrap-up any requested tracing:
+        if trace_level >= 1:
+            print("<=TablesEditor.parameters_update('{0}')".
               format(None if parameter is None else parameter.name))
 
     def quit_button_clicked(self):
@@ -1622,7 +1767,7 @@ class TablesEditor:
             print("=>TablesEditor.update()")
 
         tables_editor.combo_edit.update()
-        tables_editor.parameter_update(None)
+        tables_editor.parameters_update(None)
         tables_editor.common_update()
         tables_editor.search_update()
 
