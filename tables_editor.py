@@ -366,14 +366,10 @@ class ComboEdit:
         items        = combo_edit.items
         items_size   = len(items)
         is_a_valid_item = not current_item is None
-        if not tracing is None:
-            print("{0}current_item='{1}'".
-              format(tracing, "None" if current_item is None else current_item.name))
-
         combo_box.setEnabled(         is_a_valid_item)
-        #attribute_type_combo_box.setEnabled(    is_a_valid_item)
-        #attribute_optional_check_box.setEnabled(is_a_valid_item)
-        #attribute_default_line_edit.setEnabled( is_a_valid_item)
+        #if not tracing is None:
+        #    print("{0}current_item='{1}'".
+        #      format(tracing, "None" if current_item is None else current_item.name))
 
 
         # Changing the *combo_box* generates a bunch of spurious callbacks to
@@ -382,19 +378,18 @@ class ComboEdit:
         combo_edit.combo_box_being_updated = True
         #print("combo_edit.combo_box_being_updated={0}".format(combo_edit.combo_box_being_updated))
 
-        # Empty out *combo_box*:
+        # Empty out *combo_box* and then refill it from *items*:
         combo_box.clear()
-
-        # Sweep through *items* updating the *combo_box*:
         current_item_index = -1
         for index, item in enumerate(items):
             combo_box.addItem(item.name)
-            if not tracing is None:
-                print("{0}[{1}]: '{2}".format(tracing, index,  "--" if item is None else item.name))
+            #if not tracing is None:
+            #    print("{0}[{1}]: '{2}".format(tracing, index,
+            #      "--" if item is None else item.name))
             if item is current_item:
                 combo_box.setCurrentIndex(index)
                 current_item_index = index
-                if tracing is None:
+                if not tracing is None:
                     print("{0}match".format(tracing))
         assert not is_a_valid_item or current_item_index >= 0
         #print("current_item_index={0}".format(current_item_index))
@@ -414,16 +409,13 @@ class ComboEdit:
         if previous_text != current_text:
             comment_text.setPlainText(current_text)
 
-        # Set the cursor to be at *position* in the *comment_text* widget:
+        # Set the cursor to be at *position* in the *comment_text* widget.  *cursor* is a
+        # copy of the cursor from *comment_text*.  *position* is loaded into *cursor* which
+        # is then loaded back into *comment_text* to actually move the cursor position:
         cursor = comment_text.textCursor()
-        position_before = cursor.position()
-        if position_before != position:
-            cursor.setPosition(position)
-        position_after = cursor.position()
-        if not tracing is None:
-            print("{0}position_before={1} desired_position={2} position_after={3}".
-              format(tracing, position_before, position, position_after))
-    
+        cursor.setPosition(position)
+        comment_text.setTextCursor(cursor)
+
         # Figure out if *_new_button_is_visible*:
         line_edit_text = line_edit.text()
         #print("line_edit_text='{0}'".format(line_edit_text))
@@ -455,8 +447,7 @@ class ComboEdit:
 
         # Wrap up any requeted *tracing*:
         if not tracing is None:
-            print("{0}<=ComboEdit.gui_update('{1}'): {2}".format(tracing, combo_edit.name, cursor.position()
-))
+            print("{0}<=ComboEdit.gui_update('{1}')".format(tracing, combo_edit.name))
 
     # ComboEdit::
     def items_replace(self, new_items):
@@ -617,7 +608,7 @@ class ComboEdit:
 
             # Wrap up any signal tracing:
             if trace_signals:
-                print("position={0}".format(position))
+                #print("position={0}".format(position))
                 print("<=ComboEdit.position_changed('{0}')\n".format(combo_edit.name))
             tables_editor.in_signal = False
 
@@ -1490,7 +1481,7 @@ def main():
                     table_write_file.write(table_write_text)
 
         # Now create the *tables_editor* graphical user interface (GUI) and run it:
-        tables_editor = TablesEditor(tables, tracing="")
+        tables_editor = TablesEditor(tables) #, tracing="")
         tables_editor.run()
 
     # When we get here, *tables_editor* has stopped running and we can return.
@@ -1611,7 +1602,7 @@ class TablesEditor:
         tables_editor.original_tables = copy.deepcopy(tables)
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.in_signal = True
-        tables_editor.trace_signals = True
+        tables_editor.trace_signals = not tracing is None
         #tables_editor.search_window = search_window
 
         tables_editor.tables        = tables
