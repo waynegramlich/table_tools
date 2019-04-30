@@ -1788,7 +1788,7 @@ class TablesEditor:
         table.current_parameter   = current_parameter
         table.current_enumeration = current_enumeration
 
-        search_grid = main_window.search_grid
+        #search_grid = main_window.search_grid
         #print("search_grid=", search_grid)
 
         # Grab the various item tables from *tables_editor*:
@@ -1797,7 +1797,7 @@ class TablesEditor:
         #combo_boxes   = tables_editor.combo_boxes
         #line_edits    = tables_editor.line_edits
 
-        tables_editor.table_setup(tracing=next_tracing)
+        #tables_editor.table_setup(tracing=next_tracing)
 
         # Update the entire user interface:
         tables_editor.update(tracing=next_tracing)
@@ -2783,9 +2783,10 @@ class TablesEditor:
         # Dispatch on whether *current_table* exists or not:
         if current_table is None:
             # We have no *current_table*, so show an empty search table:
-            search_table.setHorizontalHeaderLabels([])
-            search_table.setColumnCount(0)
-            data_table.setRowCount(0)
+            #search_table.setHorizontalHeaderLabels([])
+            #search_table.setColumnCount(0)
+            #data_table.setRowCount(0)
+            pass
         else:
             # *current_table* is active, so fill in *search_table*:
             assert isinstance(current_table, Table)
@@ -3185,10 +3186,10 @@ class TablesEditor:
             tables_editor.schema_update(tracing=next_tracing)
         elif root_tabs_index == 1:
             tables_editor.find_update(tracing=next_tracing)
-        elif root_tabs_index == 2:
-            tables_editor.search_update(tracing=next_tracing)
-        elif root_tabs_index == 3:
-            tables_editor.data_update(tracing=next_tracing)
+        #elif root_tabs_index == 2:
+        #    tables_editor.search_update(tracing=next_tracing)
+        #elif root_tabs_index == 3:
+        #    tables_editor.data_update(tracing=next_tracing)
         else:
             assert False, "Illegal tab index: {0}".format(root_tabs_index)
         
