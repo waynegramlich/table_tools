@@ -26,8 +26,8 @@
      <verstretch>1</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QGridLayout" name="gridLayout_5">
-    <item row="1" column="0">
+   <layout class="QGridLayout" name="gridLayout_8">
+    <item row="0" column="0">
      <widget class="QTabWidget" name="root_tabs">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -36,7 +36,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="schema_tab">
        <property name="enabled">
@@ -49,7 +49,7 @@
         </sizepolicy>
        </property>
        <attribute name="title">
-        <string>Schema</string>
+        <string>Schemas</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">
@@ -508,6 +508,139 @@
              </layout>
             </item>
            </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="find_tab">
+       <attribute name="title">
+        <string>Find</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="QTabWidget" name="find_tabs">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="searches_tab">
+           <attribute name="title">
+            <string>Searches</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0">
+             <layout class="QGridLayout" name="searches_grid">
+              <item row="1" column="0" colspan="4">
+               <widget class="QLineEdit" name="searches_line"/>
+              </item>
+              <item row="2" column="2">
+               <widget class="QPushButton" name="searches_previous">
+                <property name="text">
+                 <string>Previous</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="searches_name_label">
+                <property name="text">
+                 <string>Search Name:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="3">
+               <widget class="QPushButton" name="searches_last">
+                <property name="text">
+                 <string>Last</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QPushButton" name="searches_new">
+                <property name="text">
+                 <string>New</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QPushButton" name="searches_rename">
+                <property name="text">
+                 <string>Rename</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QPushButton" name="searches_delete">
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QPushButton" name="searches_save">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1" colspan="3">
+               <widget class="QComboBox" name="searches_combo"/>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="searches_table_name">
+                <property name="text">
+                 <string>Table Name:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1" colspan="3">
+               <widget class="QComboBox" name="searches_table_combo"/>
+              </item>
+              <item row="2" column="0">
+               <widget class="QPushButton" name="searches_first">
+                <property name="text">
+                 <string>First</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QPushButton" name="searches_next">
+                <property name="text">
+                 <string>Next</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0" colspan="4">
+               <widget class="QLabel" name="searches_comment_label">
+                <property name="text">
+                 <string>Comment</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0" colspan="4">
+               <widget class="QPlainTextEdit" name="searches_comment_text"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="filters_tab">
+           <attribute name="title">
+            <string>Filters</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="results_tab">
+           <attribute name="title">
+            <string>Results</string>
+           </attribute>
           </widget>
          </widget>
         </item>

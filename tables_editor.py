@@ -294,11 +294,12 @@ class ComboEdit:
             if item == current_item:
                 # Delete the *current_item* from *items*:
                 del items[index]
+                items_size = len(items)
 
                 # Update *current_item* in *combo_edit*:
                 if 0 <= index < items_size:
                     current_item = items[index]
-                elif 0 <= index - 1 < attributes_size:
+                elif 0 <= index - 1 < items_size:
                     current_item = items[index - 1]
                 else:
                     current_item = None
@@ -310,7 +311,7 @@ class ComboEdit:
 
         # Wrap up any requested tracing;
         if trace_signals:
-            print("<=ComboEdit.delete_button_clicked('{0}')\n".combo_edit.name)
+            print("<=ComboEdit.delete_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
     # ComboEdit::
@@ -537,11 +538,12 @@ class ComboEdit:
         items             = combo_edit.items
         line_edit         = combo_edit.line_edit
         new_item_function = combo_edit.new_item_function
+        print("items.id=0x{0:x}".format(id(items)))
 
         # Create a *new_item* and append it to *items*:
         new_item_name = line_edit.text()
         #print("new_item_name='{0}'".format(new_item_name))
-        new_item = new_item_function(new_item_name)
+        new_item = new_item_function(new_item_name, tracing=next_tracing)
         items.append(new_item)
         combo_edit.current_item_set(new_item, tracing=next_tracing)
         
@@ -687,8 +689,8 @@ class ComboEdit:
 class Comment:
     def __init__(self, tag_name, **arguments_table):
         # Verify argument types:
-        assert isinstance(tag_name, str) \
-          and tag_name in ("EnumerationComment", "ParameterComment", "TableComment")
+        assert isinstance(tag_name, str) and tag_name in \
+         ("EnumerationComment", "ParameterComment", "TableComment", "SearchComment")
         is_comment_tree = "comment_tree" in arguments_table
         if is_comment_tree:
             assert len(arguments_table) == 1
@@ -1097,6 +1099,41 @@ class ParameterComment(Comment):
             xml_lines.append('          {0}'.format(line))
         xml_lines.append('        </ParameterComment>')
 
+class Search:
+    def __init__(self, name, comments):
+        # Verify argument types:
+        assert isinstance(name, str)
+        assert isinstance(comments, list)
+        assert len(comments) >= 1
+        for comment in comments:
+            assert isinstance(comment, SearchComment)
+
+        # Load arguments into *search* (i.e. *self*):
+        search = self
+        search.name = name
+        search.comments = comments
+        search.table = None
+
+class SearchComment(Comment):
+    def __init__(self, **arguments_table):
+        # Verify argument types:
+        is_comment_tree = "comment_tree" in arguments_table
+        if is_comment_tree:
+            assert len(arguments_table) == 1
+            assert isinstance(arguments_table["comment_tree"], etree._Element)
+        else:
+            assert len(arguments_table) == 2
+            assert "language" in arguments_table and isinstance(arguments_table["language"], str)
+            assert "lines" in arguments_table
+            lines = arguments_table["lines"]
+            assert isinstance(lines, list)
+            for line in lines:
+                assert isinstance(line, str)
+
+        # There are no extra attributes above a *Comment* object, so we can just use the
+        # intializer for the *Coment* class:
+        super().__init__("SearchComment", **arguments_table)
+
 class Table:
     def __init__(self, **arguments_table):
         # Verify argument types:
@@ -1446,6 +1483,7 @@ def main():
     #assert len(xsd_file_names) > 0, "No '.xsd' file specified"
     #assert len(xml_file_names) > 0, "No '.xml' file specified"
 
+    print("here 1")
     # Deal with command line *arguments*:
     arguments = sys.argv[1:]
     #print("arguments=", arguments)
@@ -1481,7 +1519,7 @@ def main():
                     table_write_file.write(table_write_text)
 
         # Now create the *tables_editor* graphical user interface (GUI) and run it:
-        tables_editor = TablesEditor(tables) #, tracing="")
+        tables_editor = TablesEditor(tables, tracing="")
         tables_editor.run()
 
     # When we get here, *tables_editor* has stopped running and we can return.
@@ -1596,23 +1634,20 @@ class TablesEditor:
         tables_editor.current_comment = None
         tables_editor.current_enumeration = None
         tables_editor.current_parameter = None
+        tables_editor.current_search = None
         tables_editor.current_table = current_table
         tables_editor.current_tables = tables
         tables_editor.main_window = main_window
         tables_editor.original_tables = copy.deepcopy(tables)
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.in_signal = True
+        tables_editor.searches = list()
+        tables_editor.tables = tables
         tables_editor.trace_signals = not tracing is None
-        #tables_editor.search_window = search_window
 
-        tables_editor.tables        = tables
+        # Set up *tables* first, followed by *parameters*, followed by *enumerations*:
 
-        # These dictionaries are probably stale code:
-        #tables_editor.check_boxes   = dict()
-        #tables_editor.combo_boxes   = dict()
-        #tables_editor.line_edits    = dict()
-
-        tables = tables_editor.tables
+        # Set up *tables_combo_edit* and stuff into *tables_editor*:
         new_item_function = partial(TablesEditor.table_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_table_set, tables_editor)
         comment_get_function = partial(TablesEditor.table_comment_get, tables_editor)
@@ -1638,6 +1673,7 @@ class TablesEditor:
           tracing         = next_tracing)
         tables_editor.tables_combo_edit = tables_combo_edit
 
+        # Set up *parameters_combo_edit* and stuff into *tables_editor*:
         parameters = current_table.parameters
         new_item_function = partial(TablesEditor.parameter_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_parameter_set, tables_editor)
@@ -1664,8 +1700,9 @@ class TablesEditor:
           tracing         = next_tracing)
         tables_editor.parameters_combo_edit = parameters_combo_edit
 
+        # Set up *enumerations_combo_edit* and stuff into *tables_editor*:
         enumerations = parameters[0].enumerations
-        new_item_fuction = partial(TablesEditor.enumeration_new, tables_editor)
+        new_item_function = partial(TablesEditor.enumeration_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_enumeration_set, tables_editor)
         comment_get_function = partial(TablesEditor.enumeration_comment_get, tables_editor)
         comment_set_function = partial(TablesEditor.enumeration_comment_set, tables_editor)
@@ -1690,12 +1727,39 @@ class TablesEditor:
           tracing         = next_tracing)
         tables_editor.enumerations_combo_edit = enumerations_combo_edit
 
-        # Abbreviate *main_window* as *mw*:
+        # Now build the *searches_combo_edit* and stuff into *tables_editor*:
+        searches = tables_editor.searches
+        new_item_function = partial(TablesEditor.search_new, tables_editor)
+        current_item_set_function = partial(TablesEditor.current_search_set, tables_editor)
+        comment_get_function = partial(TablesEditor.search_comment_get, tables_editor)
+        comment_set_function = partial(TablesEditor.search_comment_set, tables_editor)
+        searches_combo_edit = ComboEdit(
+          "searches",
+          tables_editor,
+          searches,
+          new_item_function,
+          current_item_set_function,
+          comment_get_function,
+          comment_set_function,
+          combo_box       = main_window.searches_combo,
+          comment_text    = main_window.searches_comment_text,
+          delete_button   = main_window.searches_delete, 
+          first_button    = main_window.searches_first,
+          last_button     = main_window.searches_last,
+          line_edit       = main_window.searches_line,
+          next_button     = main_window.searches_next,
+          new_button      = main_window.searches_new,
+          previous_button = main_window.searches_previous,
+          rename_button   = main_window.searches_rename,
+          tracing         = next_tracing)
+        tables_editor.searches = searches
+        tables_editor.searches_combo_edit = searches_combo_edit
+
+        # Perform some global signal connections to *main_window* (abbreviated as *mw*):
         mw = main_window
-
-        mw.root_tabs.currentChanged.connect(tables_editor.tab_changed)
-        mw.schema_tabs.currentChanged.connect(tables_editor.tab_changed)
-
+        mw.root_tabs.currentChanged.connect(                tables_editor.tab_changed)
+        mw.schema_tabs.currentChanged.connect(              tables_editor.tab_changed)
+        mw.find_tabs.currentChanged.connect(                tables_editor.tab_changed)
         mw.common_save_button.clicked.connect(              tables_editor.save_button_clicked)
         mw.common_quit_button.clicked.connect(              tables_editor.quit_button_clicked)
         mw.parameters_default_line.textChanged.connect(     tables_editor.parameter_default_changed)
@@ -1703,6 +1767,7 @@ class TablesEditor:
         mw.parameters_optional_check.clicked.connect(      tables_editor.parameter_optional_clicked)
         mw.parameters_short_line.textChanged.connect(       tables_editor.parameter_short_changed)
         mw.parameters_type_combo.currentTextChanged.connect(tables_editor.parameters_type_changed)
+        mw.searches_table_combo.currentTextChanged.connect(tables_editor.searches_table_changed)
 
         # Set the *current_table*, *current_parameter*, and *current_enumeration*
         # in *tables_editor*:
@@ -1762,6 +1827,20 @@ class TablesEditor:
         # Wrap up any requested tracing:
         if not tracing is None:
             print("{0}<=TablesEditor.comment_text_set(...)".format(tracing))
+
+    # TablesEditor::
+    def criteria_update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.criteria_update()".format(tracing))
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.criteria_update()".format(tracing))
 
     # TablesEditor::
     def current_enumeration_set(self, enumeration, tracing=None):
@@ -1833,6 +1912,37 @@ class TablesEditor:
         # Perform any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.current_parameter_set(*, '{1}')".format(tracing, name))
+
+    # TablesEditor::
+    def current_search_set(self, new_current_search, tracing=None):
+        # Verify argument types:
+        assert isinstance(new_current_search, Search) or new_current_search is None, \
+          print(new_current_search)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        if not tracing is None:
+            print("{0}=>TablesEditor.current_search_set('{1}')".
+              format(tracing, "None" if new_current_search is None else new_current_search.name))
+    
+        # Make sure *new_current_search* is in *searches*:
+        tables_editor = self
+        searches = tables_editor.searches
+        if not new_current_search is None:
+            for search_index, search in enumerate(searches):
+                assert isinstance(search, Search)
+                if not tracing is None:
+                    print("{0}Search[{1}]: '{2}'".format(tracing, search_index, search.name))
+                if search is new_current_search:
+                    break
+            else:
+                assert False
+        tables_editor.current_search = new_current_search
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.current_table_set('{1}')".
+              format(tracing, "None" if new_current_search is None else new_current_search.name))
 
     # TablesEditor::
     def current_table_set(self, new_current_table, tracing=None):
@@ -1947,6 +2057,24 @@ class TablesEditor:
         # Update *enumerations* into *enumerations_combo_edit*:
         enumerations_combo_edit = tables_editor.enumerations_combo_edit
         enumerations_combo_edit.items_replace(enumerations)
+
+        # Make sure that *current_search* is valid (or *None*):
+        searches = tables_editor.searches
+        current_search = tables_editor.current_search
+        if current_search is None:
+            if len(searches) >= 1:
+                current_search = searches[0]
+        else:
+            for search_index, search in enumerate(searches):
+                if search is current_search:
+                    break
+            else:
+                # *current_search* is not in *searches* and must be invalid:
+                current_search = None
+        tables_editor.current_search = current_search
+        if not tracing is None:
+            print("{0}current_search='{1}'".
+              format(tracing, "None" if current_search is None else current_search.name))
 
         # Wrap up any requested tracing:
         if not tracing is None:
@@ -2113,6 +2241,33 @@ class TablesEditor:
         #    print("<=TablesEditor.enumerations_update()")
         if not tracing is None:
             print("{0}<=TablesEditor.enumerations_update()".format(tracing))
+
+    # TablesEditor::
+    def find_update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing == None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.find_update()".format(tracing))
+
+        tables_editor = self
+        main_window = tables_editor.main_window
+        find_tabs = main_window.find_tabs
+        find_tabs_index = find_tabs.currentIndex()
+        if find_tabs_index == 0:
+            tables_editor.searches_update(tracing=next_tracing)
+        elif find_tabs_index == 1:
+            tables_editor.criteria_update(tracing=next_tracing)
+        elif find_tabs_index == 2:
+            tables_editor.results_update(tracing=next_tracing)
+        else:
+            assert False
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.find_update()".format(tracing))
 
     # TablesEditor::
     def parameter_default_changed(self, new_default):
@@ -2497,6 +2652,20 @@ class TablesEditor:
         application.quit()
 
     # TablesEditor::
+    def results_update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.results_update()".format(tracing))
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.results_update()".format(tracing))
+
+    # TablesEditor::
     def run(self):
         # Show the *window* and exit when done:
         tables_editor = self 
@@ -2551,6 +2720,8 @@ class TablesEditor:
             tables_editor.parameters_update(tracing=next_tracing)
         elif schema_tabs_index == 2:
             tables_editor.enumerations_update(tracing=next_tracing)
+        else:
+            assert False
         #tables_editor.combo_edit.update()
         #tables_editor.parameters_update(None)
         #tables_editor.search_update()
@@ -2560,6 +2731,28 @@ class TablesEditor:
         #    print("<=TablesEditor.schema_update()")
         if not tracing is None:
             print("{0}=>TablesEditor.schema_update()".format(tracing))
+
+    # TablesEditor::
+    def search_new(self, name, tracing=None):
+        # Verify argument types:
+        assert isinstance(name, str)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.search_new('{1}')".format(tracing, name))
+
+        # Create *serach* with an empty English *serach_comment*:
+        search_comment = SearchComment(language="EN", lines=list())
+        search_comments = [ search_comment ]
+        search = Search(name, search_comments)
+
+        # Wrap up any requested *tracing* and return *search*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}<=TablesEditor.search_new('{1}')".format(tracing, name))
+        return search
 
     # TablesEditor::
     def search_update(self, tracing=None):
@@ -2573,11 +2766,11 @@ class TablesEditor:
 
         # Make sure that the *current_table*, *current_parameter*, and *current_enumeration*
         # in *tables_editor* are valid:
+        tables_editor = self
         tables_editor.current_update(tracing=next_tracing)
 
         # Grab the *current_table* *Table* object from *tables_editor* (i.e. *self*.)
         # Grab the *seach_table* widget from *tables_editor* as well:
-        tables_editor = self
         current_table = tables_editor.current_table
         main_window = tables_editor.main_window
         search_table = main_window.search_table
@@ -2657,6 +2850,64 @@ class TablesEditor:
             print("{0}<=TablesEditor.search_update(*)".format(tracing))
 
     # TablesEditor::
+    def search_comment_get(self, search, tracing=None):
+        # Verify argument types:
+        assert isinstance(search, Search) or search is None
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>table_comment_get('{1}')".format(tracing, search.name))
+
+        # Extract the comment *text* from *search*:
+        if search is None:
+            text = ""
+            position = 0
+        else:
+            comments = search.comments
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, SearchComment)
+            text = '\n'.join(comment.lines)
+            position = comment.position
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=table_comment_get('{1}')".format(tracing, search.name))
+        return text, position
+
+    # TablesEditor::
+    def search_comment_set(self, search, text, position, tracing=None):
+        # Verify argument types:
+        assert isinstance(search, Search) or search is None
+        assert isinstance(text, str)
+        assert isinstance(position, int)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.search_comment_set('{1}')".
+              format(tracing, "None" if search is None else search.name))
+
+        # Stuff *text* and *position* into *search*:
+        if not search is None:
+            comments = search.comments
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, SearchComment)
+            comment.lines = text.split('\n')
+            comment.position = position
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.search_comment_set('{1}')".
+              format(tracing, "None" if search is None else search.name))
+
+    # TablesEditor::
     def search_use_clicked(self, use_item, parameter, row, column):
         # Verify argument types:
         assert isinstance(use_item, QTableWidgetItem)
@@ -2682,6 +2933,81 @@ class TablesEditor:
         print("parameter check state={0}".format(result))
         print("<=TablesEditor.search_use_clicked(*, '{0}', {1}, {2})\n".
           format(parameter.name, row, column))
+
+    # TablesEditor::
+    def searches_table_changed(self, new_text):
+        # Verify argument types:
+        assert isinstance(new_text, str)
+
+        # Do nothing if we are already in a signal:
+        tables_editor = self
+        if not tables_editor.in_signal:
+            tables_editor.in_signal = True
+            # Perform any requested *tracing*:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_signals:
+                print("=>TablesEditor.searches_table_changed('{0}')".format(new_text))
+
+            # Make sure *current_search* is up to date:
+            tables_editor = self
+            tables_editor.current_update(tracing=next_tracing)
+            current_search = tables_editor.current_search
+
+            # Find the *table* that matches *new_text* and stuff it into *current_search*:
+            if not current_search is None:
+                match_table = None
+                tables = tables_editor.tables
+                for table_index, table in enumerate(tables):
+                    assert isinstance(table, Table)
+                    if table.name == new_text:
+                        current_search.table = table
+                        break
+                current_search.table = match_table
+
+            # Wrap up any requested *tracing*:
+            if trace_signals:
+                print("<=TablesEditor.searches_table_changed('{0}')\n".format(new_text))
+            tables_editor.in_signal = False
+
+    # TablesEditor::
+    def searches_update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.searches_update()".format(tracing))
+
+        # Make sure that *current_search* is up to date:
+        tables_editor = self
+        tables_editor.current_update(tracing=next_tracing)
+        current_search = tables_editor.current_search        
+
+        # Update *searches_combo_edit*:
+        searches_combo_edit = tables_editor.searches_combo_edit
+        searches_combo_edit.gui_update(tracing=next_tracing)
+
+        # Next: Update the table options:
+        search_table = None if current_search is None else current_search.table
+        tables = tables_editor.tables
+        main_window = tables_editor.main_window
+        searches_table_combo = main_window.searches_table_combo
+        searches_table_combo.clear()
+        if len(tables) >= 1:
+            match_index = -1
+            for table_index, table in enumerate(tables):
+                assert isinstance(table, Table)
+                searches_table_combo.addItem(table.name)
+                if table is search_table:
+                    match_index = table_index
+            if match_index >= 0:
+                searches_table_combo.setCurrentIndex(match_index)
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.searches_update()".format(tracing))
 
     # TablesEditor::
     def tab_changed(self, new_index):
@@ -2858,8 +3184,10 @@ class TablesEditor:
         if root_tabs_index == 0:
             tables_editor.schema_update(tracing=next_tracing)
         elif root_tabs_index == 1:
-            tables_editor.search_update(tracing=next_tracing)
+            tables_editor.find_update(tracing=next_tracing)
         elif root_tabs_index == 2:
+            tables_editor.search_update(tracing=next_tracing)
+        elif root_tabs_index == 3:
             tables_editor.data_update(tracing=next_tracing)
         else:
             assert False, "Illegal tab index: {0}".format(root_tabs_index)
