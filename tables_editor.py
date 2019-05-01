@@ -7,7 +7,7 @@
 # * All code and docmenation xml_lines must be on xml_lines of 100 characters or less.
 # * Comments:
 #   * All code comments are written in [Markdown](https://en.wikipedia.org/wiki/Markdown).
-#   * Code is organized into blocks that are preceeded by comment that explains the code block.
+#   * Code is organized into blocks are preceeded by comment that explains the code block.
 #   * For methods, the class name is listed on a comment preceding the **def**.
 # * Class/Function standards:
 #   * Indentation levels are multiples of 4 spaces and continuation xml_lines have 2 more spaces.
@@ -687,6 +687,8 @@ class ComboEdit:
     }
 
 class Comment:
+
+    # Comment::
     def __init__(self, tag_name, **arguments_table):
         # Verify argument types:
         assert isinstance(tag_name, str) and tag_name in \
@@ -725,6 +727,7 @@ class Comment:
         comment.lines = lines
         #print("Comment(): comment.lines=", tag_name, lines)
 
+    # Coment::
     def __eq__(self, comment2):
         # Verify argument types:
         assert isinstance(comment2, Comment)
@@ -739,6 +742,8 @@ class Comment:
         return all_equal
 
 class Enumeration:
+
+    # Enumeration::
     def __init__(self, **arguments_table): 
         is_enumeration_tree = "enumeration_tree" in arguments_table
         if is_enumeration_tree:
@@ -773,6 +778,7 @@ class Enumeration:
         enumeration.name = name
         enumeration.comments = comments
 
+    # Enumeration::
     def __eq__(self, enumeration2):
         # Verify argument types:
         assert isinstance(enumeration2, Enumeration)
@@ -782,40 +788,22 @@ class Enumeration:
         comments_equal = (enumeration1.comments == enumeration2.comments)
         return name_equal and comments_equal
 
-    def ui_lines_append(self, ui_lines):
+    # Enumeration::
+    def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
-        assert isinstance(ui_lines, list)
-        
-        enumeration = self
-        comments = enumeration.comments
-        assert len(comments) >= 1
-        comment = comments[0]
-        assert isinstance(comment, EnumerationComment)
-        #FIXME Enumeration Comment needs a translated name:
-        name = enumeration.name
-        ui_lines.append(    '       <item>')
-        if True:
-            ui_lines.append('        <property name="text">') 
-            ui_lines.append('         <string>{0}</string>'.format(name))
-            ui_lines.append('        </property>')
-        else:
-            ui_lines.append('        <widget class="QCheckBox" name="{0}_{1}_check_box">'.
-              format("xyz", name))
-            ui_lines.append('         <property name="text">')
-            ui_lines.append('          <string>{0}</string>'.format(name))
-            ui_lines.append('         </property>')
-            ui_lines.append('        </widget>')
-        ui_lines.append(    '       </item>')
-            
+        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
 
-    def xml_lines_append(self, xml_lines):
+        # Append an `<Enumeration>` element to *xml_lines*:
         enumeration = self
-        xml_lines.append('        <Enumeration name="{0}">'.format(enumeration.name))
+        xml_lines.append('{0}<Enumeration name="{1}">'.format(indent, enumeration.name))
         for comment in enumeration.comments:
-            comment.xml_lines_append(xml_lines)
-        xml_lines.append('        </Enumeration>')
+            comment.xml_lines_append(xml_lines, indent + "  ")
+        xml_lines.append('{0}</Enumeration>'.format(indent))
 
 class EnumerationComment(Comment):
+
+    # EnumerationComment::
     def __init__(self, **arguments_table):
         #print("=>EnumerationComment.__init__()")
         enumeration_comment = self
@@ -823,28 +811,63 @@ class EnumerationComment(Comment):
         assert isinstance(enumeration_comment.language, str)
         assert isinstance(enumeration_comment.lines, list)
 
+    # EnumerationComment::
     def __equ__(self, enumeration_comment2):
         assert isinstance(enumeration_comment2, EnumerationComment)
         return super.__eq__(enumeration_comment2)
 
-    def xml_lines_append(self, xml_lines):
-        #print("=>EnumerationComment.xml_lines_append()")
+    # EnumerationComment::
+    def xml_lines_append(self, xml_lines, indent):
+        # Verify argument types:
+        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
+
+        # Append and `<EnumerationComment>` an element to *xml_lines*:
         enumeration_comment = self
-        xml_lines.append('          <EnumerationComment language="{0}">'.
-          format(enumeration_comment.language))
+        xml_lines.append('{0}<EnumerationComment language="{1}">'.
+          format(indent, enumeration_comment.language))
         for line in enumeration_comment.lines:
-            xml_lines.append('            {0}'.format(line))
-        xml_lines.append('          </EnumerationComment>')
+            xml_lines.append('{0}  {1}'.format(indent, line))
+        xml_lines.append('{0}</EnumerationComment>'.format(indent))
 
 class Filter:
+
+    # Filter::
     def __init__(self, parameter):
         # Verify argument types:
         assert isinstance(parameter, Parameter)
 
-        filter = self
+        # Load up *filter* (i.e. *self*):
+        filter           = self
         filter.parameter = parameter
+        filter.use       = False
+
+    def xml_lines_append(self, xml_lines, indent):
+        # Verify argument types:
+        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
+
+        # Start appending the `<Filter...>` element to *xml_lines*:
+        filter = self
+        parameter = filter.parameter
+        xml_lines.append('{0}<Filter name="{1}" use="{2}">'.
+          format(indent, parameter.name, filter.use))
+
+        # Append any *enumerations*:
+        enumerations = parameter.enumerations
+        if len(enumerations) >= 1:
+            xml_lines.append('{0}  <FilterEnumerations>'.format(indent))
+            for enumeration in enumerations:
+                xml_lines.append('{0}    <FilterEnumeration name="{1}" match="{2}">'.
+                  format(indent, enumeration.name, False))
+            xml_lines.append('{0}  </FilterEnumerations>'.format(indent))
+
+        # Wrap up `<Filter...>` element:
+        xml_lines.append('{0}</Filter">'.format(indent))
 
 class Parameter:
+
+    # Parameter::
     def __init__(self, **arguments_table):
         is_parameter_tree = "parameter_tree" in arguments_table
         if is_parameter_tree:
@@ -926,6 +949,7 @@ class Parameter:
         parameter.use          = False
         #print("Parameter('{0}'): optional={1}".format(name, optional))
 
+    # Parameter::
     def __eq__(self, parameter2):
         #print("=>Parameter.__eq__()")
 
@@ -955,52 +979,10 @@ class Parameter:
 
         return all_equal
 
-    def ui_lines_append(self, ui_lines, row):
-        # Verify argument_types:
-        assert isinstance(ui_lines, list)
-        assert isinstance(row, int) and row >= 2
-
-        parameter = self
-        name = parameter.name
-        comments = parameter.comments
-        assert len(comments) >= 1
-        comment = comments[0]
-        long_heading = comment.long_heading
-
-        # Output the *long_heading* radio button:
-        ui_lines.append('     <item row="{0}" column="0">'.format(row))
-        ui_lines.append('      <widget class="QRadioButton" name="{0}_radio_button">'.format(name))
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>{0}</string>'.format(long_heading))
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-
-        # Output the use check box:
-        ui_lines.append('     <item row="{0}" column="1">'.format(row))
-        ui_lines.append('      <widget class="QCheckBox" name="{0}_check_box">'.format(name))
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string/>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-
-        # Output the criteria widget (which can be either a line edit or combo box widget:
-        ui_lines.append('     <item row="{0}" column="2">'.format(row))
-        if parameter.type == "enumeration":
-            ui_lines.append('      <widget class="QComboBox" name="{0}_combo_box">'.
-              format(name))
-            enumerations = parameter.enumerations
-            for enumeration in enumerations:
-                enumeration.ui_lines_append(ui_lines)
-            ui_lines.append('      </widget>')
-        else:
-            ui_lines.append('      <widget class="QLineEdit" name="{0}_line_edit"/>'.format(name))
-        ui_lines.append('     </item>')
-
-    def xml_lines_append(self, xml_lines):
+    # Parameter::
+    def xml_lines_append(self, xml_lines, indent):
         assert isinstance(xml_lines, list)
-        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
 
         # Grab some values from *parameter* (i.e. *self*):
         parameter = self
@@ -1008,7 +990,8 @@ class Parameter:
         optional = parameter.optional
 
         # Start the *parameter* XML add in *optional* and *default* if needed:
-        xml_line = '    <Parameter name="{0}" type="{1}"'.format(parameter.name, parameter.type)
+        xml_line = '{0}<Parameter name="{1}" type="{2}"'.format(
+          indent, parameter.name, parameter.type)
         if optional:
             xml_line += ' optional="true"'
         if not default is None:
@@ -1019,22 +1002,24 @@ class Parameter:
         # Append all of the comments*:
         comments = parameter.comments
         for comment in comments:
-            xml_lines.append('      <ParameterComments>')
+            xml_lines.append('{0}  <ParameterComments>'.format(indent))
             comment.xml_lines_append(xml_lines)
-            xml_lines.append('      </ParameterComments>')
+            xml_lines.append('{0}  </ParameterComments>'.format(indent))
 
         # Append all of the *enumerations*:
         enumerations = parameter.enumerations
         if len(enumerations) >= 1:
-            xml_lines.append('      <Enumerations>')
+            xml_lines.append('{0}  <Enumerations>'.format(indent))
             for enumeration in enumerations:
-                enumeration.xml_lines_append(xml_lines)
-            xml_lines.append('      </Enumerations>')
+                enumeration.xml_lines_append(xml_lines, indent + "    ")
+            xml_lines.append('{0}  </Enumerations>'.format(indent))
 
         # Close out the *parameter*:
-        xml_lines.append('    </Parameter>')
+        xml_lines.append('{0}</Parameter>'.format(indent))
 
 class ParameterComment(Comment):
+
+    # ParameterComment::
     def __init__(self, **arguments_table):
         # Verify argument types:        
         is_comment_tree = "comment_tree" in arguments_table
@@ -1082,6 +1067,7 @@ class ParameterComment(Comment):
         parameter_comment.long_heading = long_heading
         parameter_comment.short_heading = short_heading
 
+    # ParameterComment::
     def __eq__(self, parameter_comment2):
         # Verify argument types:
         assert isinstance(parameter_comment2, ParameterComment)
@@ -1094,6 +1080,7 @@ class ParameterComment(Comment):
         all_equal      = language_equal and lines_equal and long_equal and short_equal
         return all_equal
 
+    # ParameterComment::
     def xml_lines_append(self, xml_lines):
         parameter_comment = self
         xml_line = '        <ParameterComment language="{0}" longHeading="{1}"'.format(
@@ -1108,12 +1095,12 @@ class ParameterComment(Comment):
         xml_lines.append('        </ParameterComment>')
 
 class Search:
+
     # Search::
     def __init__(self, name, comments):
         # Verify argument types:
         assert isinstance(name, str)
         assert isinstance(comments, list)
-        assert len(comments) >= 1
         for comment in comments:
             assert isinstance(comment, SearchComment)
 
@@ -1123,25 +1110,6 @@ class Search:
         search.filters = list()
         search.name = name
         search.table = None
-
-    # Search::
-    def table_set(self, new_table, tracing=None):
-        # Verify argument types:
-        assert isinstance(new_table, Table) or new_table is None
-
-        # Perform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>Search.table_set('{1})".
-              format(tracing, "None" if new_table is None else new_table.name))
-
-        search = self
-        search.table = new_table
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=Search.table_set('{1}')".
-              format(tracing, "None" if new_table is None else new_table.name))
 
     # Search::
     def filters_update(self, tracing=None):
@@ -1180,7 +1148,7 @@ class Search:
                         # *Filter* by setting *filter* to *None*:
                         filter = None
 
-                # If *filter* is empty, genearte a new *filter*:
+                # If *filter* is empty, generate a new *filter*:
                 if filter is None:
                     filter = Filter(parameter)
                 filters.append(filter)
@@ -1191,6 +1159,56 @@ class Search:
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=Search.filters_update()".format(tracing))
+
+    # Search::
+    def table_set(self, new_table, tracing=None):
+        # Verify argument types:
+        assert isinstance(new_table, Table) or new_table is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Search.table_set('{1})".
+              format(tracing, "None" if new_table is None else new_table.name))
+
+        search = self
+        search.table = new_table
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=Search.table_set('{1}')".
+              format(tracing, "None" if new_table is None else new_table.name))
+
+    # Search:
+    def xml_lines_append(self, xml_lines, indent):
+        # Verify argument types:
+        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
+
+        # Start the `<Search...>` element:
+        search = self
+        table = search.table
+        xml_lines.append('{0}<Search name="{1}" table="{2}">'.
+          format(indent, search.name, table.name))
+
+        # Append the `<SearchComments>` element:
+        xml_lines.append('{0}  <SearchComments>'.format(indent))
+        search_comments = search.comments
+        search_comment_indent = indent + "    "
+        for search_comment in search_comments:
+            search_comment.xml_lines_append(xml_lines, search_comment_indent)
+        xml_lines.append('{0}  <SearchComments/>'.format(indent))
+
+        # Append the `<Filters>` element:
+        filters = search.filters
+        xml_lines.append('{0}  <Filters>'.format(indent))
+        filter_indent = indent + "    "
+        for filter in filters:        
+            filter.xml_lines_append(xml_lines, filter_indent)
+        xml_lines.append('{0}  </Filters>'.format(indent))
+
+        # Wrap up the `<Search>` element:
+        xml_lines.append('{0}</Search>'.format(indent))
 
 class SearchComment(Comment):
     # SearchComment::
@@ -1212,6 +1230,21 @@ class SearchComment(Comment):
         # There are no extra attributes above a *Comment* object, so we can just use the
         # intializer for the *Coment* class:
         super().__init__("SearchComment", **arguments_table)
+
+    # SearchComment::
+    def xml_lines_append(self, xml_lines, indent):
+        # Verify argument types:
+        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
+
+        # Append the <SearchComment> element:
+        search_comment = self
+        lines = search_comment.lines
+        xml_lines.append('{0}<SearchComment language="{1}">'.
+          format(indent, search_comment.language))
+        for line in lines:
+            xml_lines.append("{0}  {1}".format(indent, line))
+        xml_lines.append('{0}</SearchComment>'.format(indent))
 
 class Table:
     # Table::
@@ -1279,6 +1312,7 @@ class Table:
         table.comments = comments
         table.parameters = parameters
 
+    # Table::
     def __eq__(self, table2):
         # Verify argument types:
         assert isinstance(table2, Table), "{0}".format(type(table2))
@@ -1300,6 +1334,7 @@ class Table:
 
         return all_equal
 
+    # Table::
     def header_labels_get(self):
         table = self
         parameters = table.parameters
@@ -1316,152 +1351,6 @@ class Table:
                 header_label = short_heading if not short_heading is None else long_heading
             header_labels.append(header_label)
         return header_labels
-
-    def to_ui_string(self):
-        table = self
-        ui_lines = list()
-        table.ui_lines_append(ui_lines)
-        ui_text = '\n'.join(ui_lines)
-        return ui_text
-
-    def ui_lines_append(self, ui_lines):
-        # Verify argument types:
-        assert isinstance(ui_lines, list)
-
-        table = self
-        parameters = table.parameters
-        parameters_size = len(parameters)
-
-        # Output the initial plate:
-        ui_lines.append('<?xml version="1.0" encoding="UTF-8"?>')
-        ui_lines.append('<ui version="4.0">')
-        ui_lines.append(' <class>MainWindow</class>')
-        ui_lines.append(' <widget class="QMainWindow" name="search_window">')
-        ui_lines.append('  <property name="geometry">')
-        ui_lines.append('   <rect>')
-        ui_lines.append('    <x>0</x>')
-        ui_lines.append('    <y>0</y>')
-        ui_lines.append('    <width>800</width>')
-        ui_lines.append('    <height>600</height>')
-        ui_lines.append('   </rect>')
-        ui_lines.append('  </property>')
-        ui_lines.append('  <property name="windowTitle">')
-        ui_lines.append('   <string>Parametric Search</string>')
-        ui_lines.append('  </property>')
-
-        # Output the grid box:
-        ui_lines.append('  <widget class="QWidget" name="centralwidget">')
-        ui_lines.append('   <widget class="QWidget" name="gridLayoutWidget">')
-        ui_lines.append('    <property name="geometry">')
-        ui_lines.append('     <rect>')
-        ui_lines.append('      <x>0</x>')
-        ui_lines.append('      <y>0</y>')
-        ui_lines.append('      <width>781</width>')
-        ui_lines.append('      <height>531</height>')
-        ui_lines.append('     </rect>')
-        ui_lines.append('    </property>')
-
-        # Output the fixed widgets:
-        ui_lines.append('    <layout class="QGridLayout" name="gridLayout">'
-                        ' rowstretch="0,0,{0}1" columnstretch="0,0,1"'.
-                        format("0," * parameters_size) )
-
-        # Output row 0 buttons:
-        ui_lines.append('     <item row="0" column="2">')
-        ui_lines.append('      <widget class="QPushButton" name="dismiss_button">')
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>Dismiss</string>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-        ui_lines.append('     <item row="0" column="1">')
-        ui_lines.append('      <widget class="QPushButton" name="search_button">')
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>Search</string>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-        ui_lines.append('     <item row="0" column="0">')
-        ui_lines.append('      <widget class="QPushButton" name="clear_button">')
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>Clear</string>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-
-        # Output row 1 headers:
-        ui_lines.append('     <item row="1" column="2">')
-        ui_lines.append('      <widget class="QLabel" name="label">')
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>Criteria</string>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-        ui_lines.append('     <item row="1" column="1">')
-        ui_lines.append('      <widget class="QLabel" name="use_label">')
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>Use</string>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-        ui_lines.append('     <item row="1" column="0">')
-        ui_lines.append('      <widget class="QLabel" name="parameter_label">')
-        ui_lines.append('       <property name="text">')
-        ui_lines.append('        <string>Parameter</string>')
-        ui_lines.append('       </property>')
-        ui_lines.append('      </widget>')
-        ui_lines.append('     </item>')
-
-        # Ouput one row per *parameter* in *parameters*:
-        for index, parameter in enumerate(parameters):
-            parameter.ui_lines_append(ui_lines, index + 2)
-
-        # Output the final text edit:
-        ui_lines.append('     <item row="{0}" column="0" colspan="3">'.format(parameters_size + 3))
-        ui_lines.append('      <widget class="QTextEdit" name="comment_text"/>')
-        ui_lines.append('     </item>')
-
-        # Wrap up the grid box
-        ui_lines.append('    </layout>')
-        ui_lines.append('   </widget>')
-        ui_lines.append('  </widget>')
-
-        # Output remaining boiler plate:
-        ui_lines.append('  <widget class="QMenuBar" name="menubar">')
-        ui_lines.append('   <property name="geometry">')
-        ui_lines.append('    <rect>')
-        ui_lines.append('     <x>0</x>')
-        ui_lines.append('     <y>0</y>')
-        ui_lines.append('     <width>800</width>')
-        ui_lines.append('     <height>38</height>')
-        ui_lines.append('    </rect>')
-        ui_lines.append('   </property>')
-        ui_lines.append('  </widget>')
-        ui_lines.append('  <widget class="QStatusBar" name="statusbar"/>')
-        ui_lines.append(' </widget>')
-        ui_lines.append(' <resources/>')
-        ui_lines.append(' <connections/>')
-        ui_lines.append('</ui>')
-        ui_lines.append('')
-
-    def to_xml_string(self):
-        table = self
-        xml_lines = list()
-        xml_lines.append('<?xml version="1.0"?>')
-        xml_lines.append('<Table name="{0}">'.format(table.name))
-        xml_lines.append('  <TableComments>')
-        for comment in table.comments:
-            comment.xml_lines_append(xml_lines)
-        xml_lines.append('  </TableComments>')
-        xml_lines.append('  <Parameters>')
-        for parameter in table.parameters:
-            parameter.xml_lines_append(xml_lines)
-        xml_lines.append('  </Parameters>')
-        xml_lines.append('</Table>')
-        xml_lines.append('')
-
-        text = '\n'.join(xml_lines)
-        return text
 
     # Table::
     def save(self, tracing=None):
@@ -1484,7 +1373,42 @@ class Table:
         if not tracing is None:
             print("{0}=>Table.save('{1}')".format(tracing, table.name))
 
+    # Table::
+    def to_xml_string(self):
+        table = self
+        xml_lines = list()
+        xml_lines.append('<?xml version="1.0"?>')
+        table.xml_lines_append(xml_lines, "")
+        xml_lines.append("")
+        text = '\n'.join(xml_lines)
+        return text
+
+    def xml_lines_append(self, xml_lines, indent):
+        # Verify argument types:
+        assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
+
+        # Start appending the `<Table...>` element:
+        table = self
+        xml_lines.append('{0}<Table name="{1}">'.format(indent, table.name))
+
+        # Append the `<TableComments>` element:
+        xml_lines.append('{0}  <TableComments>'.format(indent))
+        for comment in table.comments:
+            comment.xml_lines_append(xml_lines, indent + "    ")
+        xml_lines.append('{0}  </TableComments>'.format(indent))
+
+        # Append the `<Parameters>` element:
+        xml_lines.append('{0}  <Parameters>'.format(indent))
+        for parameter in table.parameters:
+            parameter.xml_lines_append(xml_lines, "    ")
+        xml_lines.append('{0}  </Parameters>'.format(indent))
+
+        # Close out the `<Table>` element:
+        xml_lines.append('{0}</Table>'.format(indent))
+
 class TableComment(Comment):
+    # TableComment::
     def __init__(self, **arguments_table):
         # Verify argument types:
         is_comment_tree = "comment_tree" in arguments_table
@@ -1504,36 +1428,24 @@ class TableComment(Comment):
         # intializer for the *Coment* class:
         super().__init__("TableComment", **arguments_table)
 
+    # TableComment::
     def __equ__(self, table_comment2):
         # Verify argument types:
         assert isinstance(table_comment2, TableComment)
         return super().__eq__(table_comment2)
 
-    def xml_lines_append(self, xml_lines):
+    # TableComment::
+    def xml_lines_append(self, xml_lines, indent):
+        # Verify argument types:
         assert isinstance(xml_lines, list)
+        assert isinstance(indent, str)
+
+        # Append the <TableComment...> element:
         table_comment = self
-        xml_lines.append('    <TableComment language="{0}">'.format(table_comment.language))
+        xml_lines.append('{0}<TableComment language="{1}">'.format(indent, table_comment.language))
         for line in table_comment.lines:
-            xml_lines.append('      {0}'.format(line))
-        xml_lines.append('    </TableComment>')
-
-#FIXME: Old, delete!!!
-def show(element, indent):
-    # Verity argument types:
-    assert isinstance(element, etree._Element)
-    assert isinstance(indent, str)
-
-    print("{0}{1}: {2}".format(indent, element.tag, element.attrib))
-    element_text = element.text
-    if isinstance(element_text, str):
-        element_text = element_text.strip()
-        if len(element_text) > 0:
-            xml_lines = element_text.split('\n')
-            for line in xml_lines:
-                print("{0} {1}".format(indent, line.strip()))
-
-    for child in element:
-        show(child, indent + " ")
+            xml_lines.append('{0}  {1}'.format(indent, line))
+        xml_lines.append('{0}</TableComment>'.format(indent))
 
 def main():
     #table_file_name = "drills_table.xml"
@@ -1586,9 +1498,9 @@ def main():
             table = Table(file_name=table_file_name, table_tree=table_tree)
             tables.append(table)
 
-            ui_text = table.to_ui_string()
-            with open("/tmp/test.ui", "w") as ui_file:
-                ui_file.write(ui_text)
+            #ui_text = table.to_ui_string()
+            #with open("/tmp/test.ui", "w") as ui_file:
+            #    ui_file.write(ui_text)
 
             # For debugging only, write *table* out to the `/tmp` directory:
             debug = False
@@ -1928,22 +1840,60 @@ class TablesEditor:
         main_window = tables_editor.main_window
         filters_table = main_window.filters_table
         filters_table.clearContents()
-        filters_table.setHorizontalHeaderLabels(["Parameter", "Use", "?"])
 
         filters = current_search.filters
         filters_size = len(filters)
         filters_table.setRowCount(filters_size)
         filters_table.setColumnCount(3)
+        filters_table.setHorizontalHeaderLabels(["Parameter", "Use", "?"])
         for filter_index, filter in enumerate(filters):
             # Create the header label in the first column:
             parameter = filter.parameter
-            parameter_name = parameter.name            
             #if not tracing is None:
             #    print("{0}[{1}]: '{2}'".format(tracing, filter_index, parameter_name))
-            header_item = QTableWidgetItem(parameter_name)
+            parameter_comments = parameter.comments
+            assert len(parameter_comments) >= 1
+            parameter_comment = parameter_comments[0]
+            assert isinstance(parameter_comment, ParameterComment)
+
+            # Figure out what *heading* to use:
+            parameter_name = parameter.name
+            short_heading = parameter_comment.short_heading
+            long_heading = parameter_comment.long_heading
+            heading = short_heading
+            if heading is None:
+                heading = long_heading
+            if heading is None:
+                heading = parameter_name
+            if not tracing is None:
+                print("{0}[{1}]: sh='{2}' lh='{3}' pn='{4}".format(
+                  tracing, filter_index, short_heading, long_heading, parameter_name))
+
+            header_item = QTableWidgetItem(heading)
             header_item.setData(Qt.UserRole, parameter)
             filters_table.setItem(filter_index, 0, header_item)
             
+            # Create the use [] check box in the second column:
+            use_item = QTableWidgetItem("")
+            assert isinstance(use_item, QTableWidgetItem)
+            #print(type(use_item))
+            #print(use_item.__class__.__bases__)
+            flags = use_item.flags()
+            use_item.setFlags(flags | Qt.ItemIsUserCheckable)
+            check_state = Qt.Checked if filter.use else Qt.Unchecked
+            use_item.setCheckState(check_state)
+            #use_item.itemChanged.connect(
+            #  partial(TablesEditor.search_use_clicked, tables_editor, use_item, parameter))
+            #filter.use = False
+            filters_table.setItem(filter_index, 1, use_item)
+            filters_table.cellClicked.connect(
+              partial(TablesEditor.filter_use_clicked, tables_editor, use_item, filter))
+
+            pattern_item = QTableWidgetItem("")
+            pattern_item.setData(Qt.UserRole, parameter)
+            filters_table.setItem(filter_index, 2, pattern_item)
+            
+
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.filters_update()".format(tracing))
@@ -2347,6 +2297,46 @@ class TablesEditor:
         #    print("<=TablesEditor.enumerations_update()")
         if not tracing is None:
             print("{0}<=TablesEditor.enumerations_update()".format(tracing))
+
+    # TablesEditor::
+    def filter_use_clicked(self, use_item, filter, row, column):
+        # Verify argument types:
+        assert isinstance(use_item, QTableWidgetItem)
+        assert isinstance(filter, Filter)
+        assert isinstance(row, int)
+        assert isinstance(column, int)
+
+        # Do nothing if we are already in a signal:
+        tables_editor = self
+        if not tables_editor.in_signal:
+            tables_editor.in_signal = True
+
+            # Perform an requested signal tracing:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_signals:
+                print("=>TablesEditor.filter_use_clicked(*, '{0}', {1}, {2})".
+                  format(filter.parameter.name, row, column))
+
+            check_state = use_item.checkState()
+            print("check-state=", check_state)
+            if check_state == Qt.CheckState.Checked:
+                result = "checked"
+                filter.use = True
+            elif check_state == Qt.CheckState.Unchecked:
+                result = "unchecked"
+                filter.use = False
+            elif check_state == Qt.CheckState.PartiallyChecked:
+                result = "partially checked"
+            else:
+                result = "unknown"
+
+            # Wrap up any signal tracing:
+            if trace_signals:
+                print("parameter check state={0}".format(result))
+                print("<=TablesEditor.search_use_clicked(*, '{0}', {1}, {2})\n".
+                  format(filter.parameter.name, row, column))
+            tables_editor.in_signal = True
 
     # TablesEditor::
     def find_update(self, tracing=None):
@@ -2799,6 +2789,19 @@ class TablesEditor:
         for table in current_tables:
             table.save(tracing=next_tracing)
 
+        searches = tables_editor.searches
+        xml_lines = list()
+        xml_lines.append('<?xml version="1.0"?>')
+        xml_lines.append('<Searches>')
+        for search in searches:
+            search.xml_lines_append(xml_lines, "  ")
+        xml_lines.append('</Searches>')
+        xml_lines.append("")
+        xml_text = '\n'.join(xml_lines)
+        searches_xml_file_name = "/tmp/searches.xml"
+        with open(searches_xml_file_name, "w") as searches_xml_file:
+            searches_xml_file.write(xml_text)
+
         # Wrap up any requested signal tracing:
         if trace_signals:
             print("=>TablesEditor.save_button_clicked()\n")
@@ -2858,6 +2861,7 @@ class TablesEditor:
         tables_editor.current_update()
         current_table = tables_editor.current_table
         search.table_set(current_table)
+        search.filters_update()
 
         # Wrap up any requested *tracing* and return *search*:
         next_tracing = None if tracing is None else tracing + " "
@@ -3018,33 +3022,6 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.search_comment_set('{1}')".
               format(tracing, "None" if search is None else search.name))
-
-    # TablesEditor::
-    def search_use_clicked(self, use_item, parameter, row, column):
-        # Verify argument types:
-        assert isinstance(use_item, QTableWidgetItem)
-        assert isinstance(parameter, Parameter)
-        assert isinstance(row, int)
-        assert isinstance(column, int)
-
-        print("=>TablesEditor.search_use_clicked(*, '{0}', {1}, {2})".
-          format(parameter.name, row, column))
-        tables_editor = self
-        check_state = use_item.checkState()
-        print("check-state=", check_state)
-        if check_state == Qt.CheckState.Checked:
-            result = "checked"
-            parameter.use = True
-        elif check_state == Qt.CheckState.Unchecked:
-            result = "unchecked"
-            parameter.use = False
-        elif check_state == Qt.CheckState.PartiallyChecked:
-            result = "partially checked"
-        else:
-            result = "unknown"
-        print("parameter check state={0}".format(result))
-        print("<=TablesEditor.search_use_clicked(*, '{0}', {1}, {2})\n".
-          format(parameter.name, row, column))
 
     # TablesEditor::
     def searches_table_changed(self, new_text):
