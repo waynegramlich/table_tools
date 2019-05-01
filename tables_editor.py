@@ -836,6 +836,14 @@ class EnumerationComment(Comment):
             xml_lines.append('            {0}'.format(line))
         xml_lines.append('          </EnumerationComment>')
 
+class Filter:
+    def __init__(self, parameter):
+        # Verify argument types:
+        assert isinstance(parameter, Parameter)
+
+        filter = self
+        filter.parameter = parameter
+
 class Parameter:
     def __init__(self, **arguments_table):
         is_parameter_tree = "parameter_tree" in arguments_table
@@ -1100,6 +1108,7 @@ class ParameterComment(Comment):
         xml_lines.append('        </ParameterComment>')
 
 class Search:
+    # Search::
     def __init__(self, name, comments):
         # Verify argument types:
         assert isinstance(name, str)
@@ -1110,11 +1119,81 @@ class Search:
 
         # Load arguments into *search* (i.e. *self*):
         search = self
-        search.name = name
         search.comments = comments
+        search.filters = list()
+        search.name = name
         search.table = None
 
+    # Search::
+    def table_set(self, new_table, tracing=None):
+        # Verify argument types:
+        assert isinstance(new_table, Table) or new_table is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Search.table_set('{1})".
+              format(tracing, "None" if new_table is None else new_table.name))
+
+        search = self
+        search.table = new_table
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=Search.table_set('{1}')".
+              format(tracing, "None" if new_table is None else new_table.name))
+
+    # Search::
+    def filters_update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Search.filters_update()".format(tracing))
+
+        # Now we have to make sure that there is a one-to-one corresondance between *filters*
+        # and *parameters*:
+        search = self
+        table = search.table
+        if not table is None:
+            # Sweep through *filters* and stuff each one into *filters_table* keyed from
+            # the *parameter_name* (which is unique):
+            filters_table = dict()
+            filters = search.filters
+            for filter in filters:
+                parameter_name = filter.parameter.name
+                filters_table[filter.parameter.name] = filter
+
+            # Rebuild *filters* in the exact same order as *parameters*:
+            del filters[:]
+            parameters = table.parameters
+            for parameter_index, parameter in enumerate(parameters):
+                # Reuse the *fiter* from *filter_table* only if it has the same name and matches
+                # *parameter*:
+                filter = None
+                if parameter.name in filters_table:
+                    filter = filters_table[parameter.name]
+                    if not filter.parameter is parameter:
+                        # The names match, but the parameters do not; force generation of a new
+                        # *Filter* by setting *filter* to *None*:
+                        filter = None
+
+                # If *filter* is empty, genearte a new *filter*:
+                if filter is None:
+                    filter = Filter(parameter)
+                filters.append(filter)
+                #if not tracing is None:
+                #    print("{0}[{1}]: '{2}'".format(tracing, parameter_index,
+                #      filters[parameter_index].parameter.name))
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=Search.filters_update()".format(tracing))
+
 class SearchComment(Comment):
+    # SearchComment::
     def __init__(self, **arguments_table):
         # Verify argument types:
         is_comment_tree = "comment_tree" in arguments_table
@@ -1135,6 +1214,7 @@ class SearchComment(Comment):
         super().__init__("SearchComment", **arguments_table)
 
 class Table:
+    # Table::
     def __init__(self, **arguments_table):
         # Verify argument types:
         assert "file_name" in arguments_table and isinstance(arguments_table["file_name"], str)
@@ -1829,18 +1909,44 @@ class TablesEditor:
             print("{0}<=TablesEditor.comment_text_set(...)".format(tracing))
 
     # TablesEditor::
-    def criteria_update(self, tracing=None):
+    def filters_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
         next_tracing = None if tracing is None else tracing + " "
         if not tracing is None:
-            print("{0}=>TablesEditor.criteria_update()".format(tracing))
+            print("{0}=>TablesEditor.filters_update()".format(tracing))
 
+        #
+        tables_editor = self
+        tables_editor.current_update(tracing=next_tracing)
+        current_search = tables_editor.current_search
+        current_search.filters_update(tracing=next_tracing)
+
+        # Empty out *search_table*:
+        main_window = tables_editor.main_window
+        filters_table = main_window.filters_table
+        filters_table.clearContents()
+        filters_table.setHorizontalHeaderLabels(["Parameter", "Use", "?"])
+
+        filters = current_search.filters
+        filters_size = len(filters)
+        filters_table.setRowCount(filters_size)
+        filters_table.setColumnCount(3)
+        for filter_index, filter in enumerate(filters):
+            # Create the header label in the first column:
+            parameter = filter.parameter
+            parameter_name = parameter.name            
+            #if not tracing is None:
+            #    print("{0}[{1}]: '{2}'".format(tracing, filter_index, parameter_name))
+            header_item = QTableWidgetItem(parameter_name)
+            header_item.setData(Qt.UserRole, parameter)
+            filters_table.setItem(filter_index, 0, header_item)
+            
         # Wrap up any requested *tracing*:
         if not tracing is None:
-            print("{0}<=TablesEditor.criteria_update()".format(tracing))
+            print("{0}<=TablesEditor.filters_update()".format(tracing))
 
     # TablesEditor::
     def current_enumeration_set(self, enumeration, tracing=None):
@@ -2259,7 +2365,7 @@ class TablesEditor:
         if find_tabs_index == 0:
             tables_editor.searches_update(tracing=next_tracing)
         elif find_tabs_index == 1:
-            tables_editor.criteria_update(tracing=next_tracing)
+            tables_editor.filters_update(tracing=next_tracing)
         elif find_tabs_index == 2:
             tables_editor.results_update(tracing=next_tracing)
         else:
@@ -2748,6 +2854,11 @@ class TablesEditor:
         search_comments = [ search_comment ]
         search = Search(name, search_comments)
 
+        tables_editor = self
+        tables_editor.current_update()
+        current_table = tables_editor.current_table
+        search.table_set(current_table)
+
         # Wrap up any requested *tracing* and return *search*:
         next_tracing = None if tracing is None else tracing + " "
         if not tracing is None:
@@ -2962,9 +3073,9 @@ class TablesEditor:
                 for table_index, table in enumerate(tables):
                     assert isinstance(table, Table)
                     if table.name == new_text:
-                        current_search.table = table
+                        match_table = table
                         break
-                current_search.table = match_table
+                current_search.table_set(match_table, tracing=next_tracing)
 
             # Wrap up any requested *tracing*:
             if trace_signals:
