@@ -833,14 +833,75 @@ class EnumerationComment(Comment):
 class Filter:
 
     # Filter::
-    def __init__(self, parameter):
+    def __init__(self, **arguments_table):
         # Verify argument types:
-        assert isinstance(parameter, Parameter)
+        is_filter_tree = "tree" in arguments_table
+        arguments_table_size = len(arguments_table)
+        if is_filter_tree:
+            assert arguments_table_size == 2
+            assert "table" in arguments_table
+        else:
+            assert arguments_table_size == 3
+            assert "parameter" in arguments_table
+            assert "table" in arguments_table
+            assert "use" in arguments_table
+
+        # Dispatch on *is_filter_tree*:
+        if is_filter_tree:
+            # Grab *tree* and *table* out of *arguments_table*:
+            tree = arguments_table["tree"]
+            assert isinstance(tree, etree._Element)
+            table = arguments_table["table"]
+            assert isinstance(table, Table)
+
+            # Grab the *parameter_name* and *use* from *filter_tree*:
+            attributes_table = tree.attrib
+            assert len(attributes_table) == 2
+
+            # Extrace *use* from *attributes_table*:
+            assert "use" in attributes_table
+            use_text = attributes_table["use"].lower()
+            if use_text == "true":
+                use = True
+            elif use_text == "false":
+                use = False
+            else:
+                assert False
+
+            # Extract *parameter* from *attributes_table* and *table*:
+            assert "name" in attributes_table
+            parameter_name = attributes_table["name"]
+            parameters = table.parameters
+            match_parameter = None
+            for parameter in parameters:
+                if parameter.name == parameter_name:
+                    match_parameter = parameter
+                    break
+            else:
+                assert False
+            parameter = match_parameter
+        else:
+            # Just grab *table*, *parameter*, and *use* directly from *arguments_table*:
+            table = arguments_table["table"]
+            assert isinstance(table, Table)
+            parameter = arguments_table["parameter"]
+            assert isinstance(parameter, Parameter)
+            use = arguments_table["use"]
+            assert isinstance(use, bool)
+            
+            # Make sure that *parameter* is in *parameters*:
+            parameter_name = parameter.name
+            parameters = table.parameters
+            for parameter in parameters:
+                if parameter.name == parameter_name:
+                    break
+            else:
+                assert False
 
         # Load up *filter* (i.e. *self*):
         filter           = self
         filter.parameter = parameter
-        filter.use       = False
+        filter.use       = use
 
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
@@ -858,12 +919,12 @@ class Filter:
         if len(enumerations) >= 1:
             xml_lines.append('{0}  <FilterEnumerations>'.format(indent))
             for enumeration in enumerations:
-                xml_lines.append('{0}    <FilterEnumeration name="{1}" match="{2}">'.
+                xml_lines.append('{0}    <FilterEnumeration name="{1}" match="{2}"/>'.
                   format(indent, enumeration.name, False))
             xml_lines.append('{0}  </FilterEnumerations>'.format(indent))
 
         # Wrap up `<Filter...>` element:
-        xml_lines.append('{0}</Filter">'.format(indent))
+        xml_lines.append('{0}</Filter>'.format(indent))
 
 class Parameter:
 
@@ -1097,19 +1158,92 @@ class ParameterComment(Comment):
 class Search:
 
     # Search::
-    def __init__(self, name, comments):
+    def __init__(self, **arguments_table):
         # Verify argument types:
-        assert isinstance(name, str)
-        assert isinstance(comments, list)
-        for comment in comments:
-            assert isinstance(comment, SearchComment)
+        is_search_tree = "search_tree" in arguments_table
+        required_arguments_size = 1 if "tracing" in arguments_table else 0
+        if is_search_tree:
+            required_arguments_size += 2
+            assert "tables" in arguments_table
+        else:
+            required_arguments_size += 3
+            assert "name" in arguments_table
+            assert "comments" in arguments_table
+            assert "table" in arguments_table
+        assert len(arguments_table) == required_arguments_size
+
+        # Perform any request 
+        tracing = arguments_table["tracing"] if "tracing" in arguments_table else None
+        assert isinstance(tracing, str) or tracing is None
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Search(*)".format(tracing))
+
+        # Dispatch on is *is_search_tree*:
+        if is_search_tree:
+            search_tree = arguments_table["search_tree"]
+            tables = arguments_table["tables"]
+            assert isinstance(tables, list)
+            for table in tables:
+                assert isinstance(table, Table)
+            attributes_table = search_tree.attrib
+            assert "name" in attributes_table
+            name = attributes_table["name"]
+
+            assert "table" in attributes_table
+            table_name = attributes_table["table"]
+            match_table = None
+            for table in tables:
+                if table.name == table_name:
+                    match_table = table
+                    break
+            else:
+                assert False, "No table named '{0}'".format(table_name)
+            table = match_table
+
+            comments = list()
+            filters = list()
+            sub_trees = list(search_tree)
+            assert len(sub_trees) == 2
+            for sub_tree in sub_trees:
+                sub_tree_tag = sub_tree.tag
+                if sub_tree_tag == "SearchComments":
+                    search_comment_trees = list(sub_tree)
+                    for search_comment_tree in search_comment_trees:
+                        assert search_comment_tree.tag == "SearchComment"
+                        comment = SearchComment(comment_tree=search_comment_tree)
+                        comments.append(comment)
+                elif sub_tree_tag == "Filters":
+                    filter_trees = list(sub_tree)
+                    for filter_tree in filter_trees:
+                        assert filter_tree.tag == "Filter"
+                        filter = Filter(tree=filter_tree, table=table)
+                        filters.append(filter)
+                else:
+                    assert False
+
+        else:
+            # Grab *name*, *comments* and *table* from *arguments_table*:
+            name = arguments_table["name"]
+            assert isinstance(name, str)
+            comments = arguments_table["comments"]
+            assert isinstance(comments, list)
+            table = arguments_table["table"]
+            assert isinstance(table, Table)
+            for comment in comments:
+                assert isinstance(comment, SearchComment)
+            filters = list()
 
         # Load arguments into *search* (i.e. *self*):
         search = self
         search.comments = comments
-        search.filters = list()
+        search.filters = filters
         search.name = name
-        search.table = None
+        search.table = table
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=Search(*):name={1}".format(tracing, name))
 
     # Search::
     def filters_update(self, tracing=None):
@@ -1141,7 +1275,8 @@ class Search:
                 # Reuse the *fiter* from *filter_table* only if it has the same name and matches
                 # *parameter*:
                 filter = None
-                if parameter.name in filters_table:
+                parameter_name = parameter.name
+                if parameter_name in filters_table:
                     filter = filters_table[parameter.name]
                     if not filter.parameter is parameter:
                         # The names match, but the parameters do not; force generation of a new
@@ -1150,7 +1285,7 @@ class Search:
 
                 # If *filter* is empty, generate a new *filter*:
                 if filter is None:
-                    filter = Filter(parameter)
+                    filter = Filter(parameter=parameter, use=False, table=table)
                 filters.append(filter)
                 #if not tracing is None:
                 #    print("{0}[{1}]: '{2}'".format(tracing, parameter_index,
@@ -1197,7 +1332,7 @@ class Search:
         search_comment_indent = indent + "    "
         for search_comment in search_comments:
             search_comment.xml_lines_append(xml_lines, search_comment_indent)
-        xml_lines.append('{0}  <SearchComments/>'.format(indent))
+        xml_lines.append('{0}  </SearchComments>'.format(indent))
 
         # Append the `<Filters>` element:
         filters = search.filters
@@ -1475,7 +1610,6 @@ def main():
     #assert len(xsd_file_names) > 0, "No '.xsd' file specified"
     #assert len(xml_file_names) > 0, "No '.xml' file specified"
 
-    print("here 1")
     # Deal with command line *arguments*:
     arguments = sys.argv[1:]
     #print("arguments=", arguments)
@@ -1512,6 +1646,8 @@ def main():
 
         # Now create the *tables_editor* graphical user interface (GUI) and run it:
         tables_editor = TablesEditor(tables, tracing="")
+
+        # Start up the GUI:
         tables_editor.run()
 
     # When we get here, *tables_editor* has stopped running and we can return.
@@ -1780,16 +1916,10 @@ class TablesEditor:
         table.current_parameter   = current_parameter
         table.current_enumeration = current_enumeration
 
-        #search_grid = main_window.search_grid
-        #print("search_grid=", search_grid)
-
-        # Grab the various item tables from *tables_editor*:
-        #radio_buttons = tables_editor.radio_buttons
-        #check_boxes   = tables_editor.radio_buttons
-        #combo_boxes   = tables_editor.combo_boxes
-        #line_edits    = tables_editor.line_edits
-
         #tables_editor.table_setup(tracing=next_tracing)
+
+        # Read in `/tmp/searches.xml` if it exists:
+        tables_editor.searches_load("/tmp/searches.xml", tracing=next_tracing)
 
         # Update the entire user interface:
         tables_editor.update(tracing=next_tracing)
@@ -2842,6 +2972,50 @@ class TablesEditor:
             print("{0}=>TablesEditor.schema_update()".format(tracing))
 
     # TablesEditor::
+    def searches_load(self, xml_file_name, tracing=None):
+        # Veify argument types:
+        assert isinstance(xml_file_name, str)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.searches_load('{1})".format(tracing, xml_file_name))
+
+        # Read in *xml_file_name* (if it exists):
+        if os.path.isfile(xml_file_name):
+            with open(xml_file_name) as xml_file:
+                xml_text = xml_file.read()
+
+            # Parse *xml_text* into *searches_tree*:
+            searches_tree = etree.fromstring(xml_text)
+            assert isinstance(searches_tree, etree._Element)
+            assert searches_tree.tag == "Searches"
+
+            # Dig dow the next layer of *searches_tree*
+            search_trees = list(searches_tree)
+
+            # Grab *searches* from *tables_editor* (i.e. *self*) and empty it out:
+            tables_editor = self
+            searches = tables_editor.searches
+            assert isinstance(searches, list)
+            del searches[:]
+
+            # Parse each *search_tree* in *search_trees*:
+            for search_tree in search_trees:
+                assert isinstance(search_tree, etree._Element)
+                search = Search(search_tree=search_tree,
+                    tables=tables_editor.tables, tracing=next_tracing)
+                searches.append(search)
+            
+            # Set *current_search*
+            tables_editor.current_search = searches[0] if len(searches) >= 1 else None
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.searches_load('{1})".format(tracing, xml_file_name))
+
+    # TablesEditor::
     def search_new(self, name, tracing=None):
         # Verify argument types:
         assert isinstance(name, str)
@@ -2852,15 +3026,14 @@ class TablesEditor:
         if not tracing is None:
             print("{0}=>TablesEditor.search_new('{1}')".format(tracing, name))
 
-        # Create *serach* with an empty English *serach_comment*:
-        search_comment = SearchComment(language="EN", lines=list())
-        search_comments = [ search_comment ]
-        search = Search(name, search_comments)
-
         tables_editor = self
         tables_editor.current_update()
         current_table = tables_editor.current_table
-        search.table_set(current_table)
+
+        # Create *serach* with an empty English *serach_comment*:
+        search_comment = SearchComment(language="EN", lines=list())
+        search_comments = [ search_comment ]
+        search = Search(name=name, comments=search_comments, table=current_table)
         search.filters_update()
 
         # Wrap up any requested *tracing* and return *search*:
