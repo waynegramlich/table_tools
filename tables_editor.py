@@ -20,11 +20,13 @@
 #     can be enclosed in single quotes.
 
 # Import some libraries:
+import re
+import csv
 import os
 import sys
 import xmlschema
 import lxml.etree as etree
-import copy
+import copy  # Is this used any more?
 from functools import partial
 import PySide2
 from PySide2.QtGui import (QStandardItem, QStandardItemModel)
@@ -1583,6 +1585,13 @@ class TableComment(Comment):
         xml_lines.append('{0}</TableComment>'.format(indent))
 
 def main():
+    with open("/home/wayne/Downloads/download (1).csv", newline="") as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+        for row_index, row in enumerate(csv_reader):
+            print(row)
+            if row_index > 3:
+                break
+
     #table_file_name = "drills_table.xml"
     #assert os.path.isfile(table_file_name)
     #with open(table_file_name) as table_read_file:
@@ -1926,6 +1935,8 @@ class TablesEditor:
 
         tables_editor.in_signal = False
 
+        tables_editor.foo()
+
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.__init__(...)\n".format(tracing))
@@ -1960,69 +1971,74 @@ class TablesEditor:
         if not tracing is None:
             print("{0}=>TablesEditor.filters_update()".format(tracing))
 
-        #
+        # Empty out *filters_table* widget:
         tables_editor = self
-        tables_editor.current_update(tracing=next_tracing)
-        current_search = tables_editor.current_search
-        current_search.filters_update(tracing=next_tracing)
-
-        # Empty out *search_table*:
         main_window = tables_editor.main_window
         filters_table = main_window.filters_table
         filters_table.clearContents()
-
-        filters = current_search.filters
-        filters_size = len(filters)
-        filters_table.setRowCount(filters_size)
-        filters_table.setColumnCount(3)
         filters_table.setHorizontalHeaderLabels(["Parameter", "Use", "?"])
-        for filter_index, filter in enumerate(filters):
-            # Create the header label in the first column:
-            parameter = filter.parameter
-            #if not tracing is None:
-            #    print("{0}[{1}]: '{2}'".format(tracing, filter_index, parameter_name))
-            parameter_comments = parameter.comments
-            assert len(parameter_comments) >= 1
-            parameter_comment = parameter_comments[0]
-            assert isinstance(parameter_comment, ParameterComment)
+        filters_table.setColumnCount(3)
+        
+        # Only fill in *filters_table* if there is a valid *current_search*:
+        tables_editor.current_update(tracing=next_tracing)
+        current_search = tables_editor.current_search
+        if current_search is None:
+            # No *current_search* so there is nothing to show:
+            filters_table.setRowCount(0)    
+        else:
+            # Let's update the *filters* and load them into the *filters_table* widget:
+            current_search.filters_update(tracing=next_tracing)
+            filters = current_search.filters
+            filters_size = len(filters)
+            filters_table.setRowCount(filters_size)
 
-            # Figure out what *heading* to use:
-            parameter_name = parameter.name
-            short_heading = parameter_comment.short_heading
-            long_heading = parameter_comment.long_heading
-            heading = short_heading
-            if heading is None:
-                heading = long_heading
-            if heading is None:
-                heading = parameter_name
-            if not tracing is None:
-                print("{0}[{1}]: sh='{2}' lh='{3}' pn='{4}".format(
-                  tracing, filter_index, short_heading, long_heading, parameter_name))
-
-            header_item = QTableWidgetItem(heading)
-            header_item.setData(Qt.UserRole, parameter)
-            filters_table.setItem(filter_index, 0, header_item)
-            
-            # Create the use [] check box in the second column:
-            use_item = QTableWidgetItem("")
-            assert isinstance(use_item, QTableWidgetItem)
-            #print(type(use_item))
-            #print(use_item.__class__.__bases__)
-            flags = use_item.flags()
-            use_item.setFlags(flags | Qt.ItemIsUserCheckable)
-            check_state = Qt.Checked if filter.use else Qt.Unchecked
-            use_item.setCheckState(check_state)
-            #use_item.itemChanged.connect(
-            #  partial(TablesEditor.search_use_clicked, tables_editor, use_item, parameter))
-            #filter.use = False
-            filters_table.setItem(filter_index, 1, use_item)
-            filters_table.cellClicked.connect(
-              partial(TablesEditor.filter_use_clicked, tables_editor, use_item, filter))
-
-            pattern_item = QTableWidgetItem("")
-            pattern_item.setData(Qt.UserRole, parameter)
-            filters_table.setItem(filter_index, 2, pattern_item)
-            
+            # Fill in one *filter* at a time:
+            for filter_index, filter in enumerate(filters):
+                # Create the header label in the first column:
+                parameter = filter.parameter
+                #if not tracing is None:
+                #    print("{0}[{1}]: '{2}'".format(tracing, filter_index, parameter_name))
+                parameter_comments = parameter.comments
+                assert len(parameter_comments) >= 1
+                parameter_comment = parameter_comments[0]
+                assert isinstance(parameter_comment, ParameterComment)
+    
+                # Figure out what *heading* to use:
+                parameter_name = parameter.name
+                short_heading = parameter_comment.short_heading
+                long_heading = parameter_comment.long_heading
+                heading = short_heading
+                if heading is None:
+                    heading = long_heading
+                if heading is None:
+                    heading = parameter_name
+                if not tracing is None:
+                    print("{0}[{1}]: sh='{2}' lh='{3}' pn='{4}".format(
+                      tracing, filter_index, short_heading, long_heading, parameter_name))
+    
+                header_item = QTableWidgetItem(heading)
+                header_item.setData(Qt.UserRole, parameter)
+                filters_table.setItem(filter_index, 0, header_item)
+                
+                # Create the use [] check box in the second column:
+                use_item = QTableWidgetItem("")
+                assert isinstance(use_item, QTableWidgetItem)
+                #print(type(use_item))
+                #print(use_item.__class__.__bases__)
+                flags = use_item.flags()
+                use_item.setFlags(flags | Qt.ItemIsUserCheckable)
+                check_state = Qt.Checked if filter.use else Qt.Unchecked
+                use_item.setCheckState(check_state)
+                #use_item.itemChanged.connect(
+                #  partial(TablesEditor.search_use_clicked, tables_editor, use_item, parameter))
+                #filter.use = False
+                filters_table.setItem(filter_index, 1, use_item)
+                filters_table.cellClicked.connect(
+                  partial(TablesEditor.filter_use_clicked, tables_editor, use_item, filter))
+    
+                pattern_item = QTableWidgetItem("")
+                pattern_item.setData(Qt.UserRole, parameter)
+                filters_table.setItem(filter_index, 2, pattern_item)
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
@@ -2887,9 +2903,92 @@ class TablesEditor:
         if not tracing is None:
             print("{0}=>TablesEditor.results_update()".format(tracing))
 
+        tables_editor = self
+        main_window = tables_editor.main_window
+        results_table = main_window.results_table        
+        results_table.clearContents()
+        
+        with open("/home/wayne/Downloads/download (1).csv", newline="") as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+            rows = list(csv_reader)
+            for row_index, row in enumerate(rows):
+                if row_index == 0:
+                    results_table.setColumnCount(len(row))
+                    results_table.setRowCount(len(rows))
+                    headers = [header.replace(' ', '\n') for header in row]
+                    results_table.setHorizontalHeaderLabels(headers)
+                else:
+                    for column_index, datum in enumerate(row):
+                        assert isinstance(datum, str)
+                        datum_item = QTableWidgetItem(datum)
+                        if not tracing is None and row_index == 1:
+                            print("{0}[{1},{2}]:'{3}'".
+                              format(tracing, row_index, column_index, datum))
+                        results_table.setRowCount(row_index)
+                        results_table.setItem(row_index - 1, column_index, datum_item)
+            results_table.resizeRowsToContents()
+
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.results_update()".format(tracing))
+
+    def foo(self):
+        with open("/home/wayne/Downloads/download (1).csv", newline="") as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+            column_tables = None
+            headers = None
+            columns_count = -1
+            for row_index, row in enumerate(csv_reader):
+                if row_index == 0:
+                    column_tables = [ dict() for header in row ]
+                    headers = row
+                else:
+                    for column_index, value in enumerate(row):
+                        column_table = column_tables[column_index]
+                        if value in column_table:
+                            column_table[value] += 1
+                        else:
+                            column_table[value] = 1
+
+            columns_size = len(headers)
+            for column_index, column_table in enumerate(column_tables):
+                column_list = sorted(list(column_table.items()),
+                  key=lambda pair: pair[1], reverse=True)
+                #print("Column[{0}]: {1}".format(column_index, column_table))
+                print("Column[{0}]: {1}".format(column_index, column_list))
+
+            integer_re = re.compile("-?[0-9]+$")
+            float_re   = re.compile("-?[0-9]*\.[0-9]*$")
+            url_re     = re.compile("(https?://)|(//).*$")
+            empty_re   = re.compile("-?$")
+            funits_re  = re.compile("-?[0-9]*\.[0-9]* *.?[a-zA-Z]+$")
+            iunits_re  = re.compile("-?[0-9]+.? *[a-zA-Z]+$")
+            range_re   = re.compile(".+ ~ .+$")
+            list_re    = re.compile("([^,]+,)+[^,]*$")
+            re_list = [
+              ["Integer", integer_re],
+              ["Float",   float_re],
+              ["URL",     url_re],
+              ["Empty",   empty_re],
+              ["FUnits",  funits_re],
+              ["IUnits",  iunits_re],
+              ["Range",   range_re],
+              ["List",    list_re],
+            ]
+            for column_index, column_table in enumerate(column_tables):
+                column_list = sorted(list(column_table.items()),
+                  key=lambda pair: pair[1], reverse=True)
+                for value, count in column_list:
+                    #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
+                    matches = list()
+                    for name, regex in re_list:
+                        if not regex.match(value) is None:
+                            matches.append(name)
+                    print("Column[{0}]: '{1}':{2} => {3}".
+                      format(column_index, value, count, matches))
+
+                    #print("Column[{0}]: {1}".format(column_index, column_table))
+                    #print("Column[{0}]: {1}".format(column_index, column_list))
 
     # TablesEditor::
     def run(self):
