@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<Table name="DrillBit">
+<Table name="DrillBit" csv_file_name="README.md">
   <TableComments>
     <TableComment language="EN">
       A drill is ...
