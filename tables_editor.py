@@ -1406,7 +1406,7 @@ class Table:
                 assert isinstance(comment, TableComment)
             # Verify that *csv_file_name* is present and has correct type:
             assert "csv_file_name" in arguments_table
-            csv_file_name = arguments_table
+            csv_file_name = arguments_table["csv_file_name"]
             assert isinstance(csv_file_name, str)
             # Verify that *name* is present and has correct type:
             assert "name" in arguments_table
@@ -1414,8 +1414,8 @@ class Table:
             assert isinstance(name, str)
             # Verify that *parameters* is present and has correct type:
             assert "parameters" in arguments_table
-            assert isinstance(parameters, list)
             parameters = arguments_table["parameters"]
+            assert isinstance(parameters, list)
             for parameter in parameters:
                 assert isinstance(parameter, paraemeters)
         
@@ -1636,10 +1636,7 @@ def main():
     # Deal with command line *arguments*:
     arguments = sys.argv[1:]
     #print("arguments=", arguments)
-    arguments_size = len(arguments)
-    if len(arguments) == 0:
-        print("Usage: {0} table.xml ...".format(arguments[0]))
-    else:
+    if True:
         # Read in each *table_file_name* in *arguments* and append result to *tables*:
         tables = list()
         for table_file_name in arguments:
@@ -1825,7 +1822,7 @@ class TablesEditor:
         tables_editor.tables_combo_edit = tables_combo_edit
 
         # Set up *parameters_combo_edit* and stuff into *tables_editor*:
-        parameters = current_table.parameters
+        parameters = list() if current_table is None else current_table.parameters
         new_item_function = partial(TablesEditor.parameter_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_parameter_set, tables_editor)
         comment_get_function = partial(TablesEditor.parameter_comment_get, tables_editor)
@@ -1852,7 +1849,8 @@ class TablesEditor:
         tables_editor.parameters_combo_edit = parameters_combo_edit
 
         # Set up *enumerations_combo_edit* and stuff into *tables_editor*:
-        enumerations = parameters[0].enumerations
+        enumerations = \
+          list() if parameters is None or len(parameters) == 0 else parameters[0].enumerations
         new_item_function = partial(TablesEditor.enumeration_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_enumeration_set, tables_editor)
         comment_get_function = partial(TablesEditor.enumeration_comment_get, tables_editor)
@@ -1936,9 +1934,9 @@ class TablesEditor:
                 if len(enumerations) >= 1:
                     enumeration = enumerations[0]
                     current_enumeration = enumeration
-        table.current_table       = current_table
-        table.current_parameter   = current_parameter
-        table.current_enumeration = current_enumeration
+            table.current_table       = current_table
+            table.current_parameter   = current_parameter
+            table.current_enumeration = current_enumeration
 
         #tables_editor.table_setup(tracing=next_tracing)
 
@@ -1986,7 +1984,7 @@ class TablesEditor:
         next_tracing = None if tracing is None else tracing + " "
         if not tracing is None:
             print("{0}=>TablesEditor.current_enumeration_set('{1}')".
-              format(tracing, enumeration.name))
+              format(tracing, "None" if enumeration is None else enumeration.name))
 
         # Only do something if we are not in a signal:
         tables_editor = self
@@ -2010,7 +2008,7 @@ class TablesEditor:
 
         if not tracing is None:
             print("{0}<=TablesEditor.current_enumeration_set('{1}')".
-              format(tracing, enumeration.name))
+              format(tracing, "None" if enumeration is None else enumeration.name))
 
     # TablesEditor::current_parameter_set()
     def current_parameter_set(self, parameter, tracing=None):
@@ -2081,25 +2079,29 @@ class TablesEditor:
     # TablesEditor::current_table_set()
     def current_table_set(self, new_current_table, tracing=None):
         # Verify argument types:
-        assert isinstance(new_current_table, Table)
+        assert isinstance(new_current_table, Table) or new_current_table is None
         assert isinstance(tracing, str) or tracing is None
 
+        # Perform any requested *tracing*:
         if not tracing is None:
             print("{0}=>TablesEditor.current_table_set('{1}')".
-              format(tracing, new_current_table.name))
+              format(tracing, "None" if new_current_table is None else new_current_table.name))
 
+        # Stuff *new_current_table* into *tables_editor*:
         tables_editor = self
-        tables = tables_editor.tables
-        for table in tables:
-            if table is new_current_table:
-                break
-        else:
-            assert False
+        if not new_current_table is None:
+            tables = tables_editor.tables
+            for table in tables:
+                if table is new_current_table:
+                    break
+            else:
+                assert False, "table '{0}' not in tables list".format(new_current_table.name)
         tables_editor.current_table = new_current_table 
 
+        # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.current_table_set('{1}')".
-              format(tracing, new_current_table.name))
+              format(tracing, "None" if new_current_table is None else new_current_table.name))
 
     # TablesEditor::current_update()
     def current_update(self, tracing=None):
@@ -2579,7 +2581,7 @@ class TablesEditor:
         import_read = main_window.import_read
 
         # Update the *import_csv_file_name* widget:
-        csv_file_name = current_table.csv_file_name
+        csv_file_name = "" if current_table is None else current_table.csv_file_name
         previous_csv_file_name = import_csv_file_line.text()
         if previous_csv_file_name != csv_file_name:
             import_csv_file_line.setText(csv_file_name)
@@ -3540,14 +3542,23 @@ class TablesEditor:
             print("{0}<=table_comment_set('{1}')".format(tracing, table.name))
 
     # TablesEditor::table_new():
-    def table_new(self, name):
+    def table_new(self, name, tracing = None):
         # Verify argument types:
         assert isinstance(name, str)
+
+        # Perform an requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.table_new('{1}')".format(tracing, name))
 
         file_name = "{0}.xml".format(name)
         table_comment = TableComment(language="EN", lines=list())
         table = Table(file_name=file_name,
           name=name, comments=[table_comment], parameters=list(), csv_file_name="")
+
+        # Wrap up any requested *tracing* and return table:
+        if not tracing is None:
+            print("{0}<=TablesEditor.table_new('{1}')".format(tracing, name))
         return table
 
     # TablesEditor::table_setup():
