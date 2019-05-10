@@ -939,8 +939,9 @@ class Parameter:
         else:
             assert "name" in arguments_table
             assert "type" in arguments_table
+            assert "csv" in arguments_table
             assert "comments" in arguments_table
-            arguments_count = 3
+            arguments_count = 4
             if "default" in arguments_table:
                 arguments_count += 1
                 assert isinstance(arguments_table["default"], str)
@@ -968,6 +969,7 @@ class Parameter:
                 optional = (optional_text == "true")
             else:
                 optional = False
+            csv = attributes_table["csv"] if "csv" in attributes_table else ""
             default = attributes_table["default"] if "default" in attributes_table else None
             parameter_tree_elements = list(parameter_tree)
             assert len(parameter_tree_elements) >= 1
@@ -994,6 +996,7 @@ class Parameter:
         else:
             name = arguments_table["name"]
             type = arguments_table["type"]
+            csv  = arguments_table["csv"]
             default = arguments_table["defualt"] if "default" in arguments_table else None
             optional = arguments_table["optional"] if "optional" in arguments_table else False
             comments = arguments_table["comments"] if "comments" in arguments_table else list()
@@ -1004,6 +1007,7 @@ class Parameter:
         super().__init__()
         parameter = self
         parameter.comments     = comments
+        parameter.csv          = csv
         parameter.default      = default
         parameter.enumerations = enumerations
         parameter.name         = name
@@ -1011,6 +1015,7 @@ class Parameter:
         parameter.type         = type
         parameter.use          = False
         #print("Parameter('{0}'): optional={1}".format(name, optional))
+        print("Parameter('{0}', csv='{1}')".format(name, parameter.csv))
 
     # Parameter::
     def __eq__(self, parameter2):
@@ -1053,8 +1058,8 @@ class Parameter:
         optional = parameter.optional
 
         # Start the *parameter* XML add in *optional* and *default* if needed:
-        xml_line = '{0}<Parameter name="{1}" type="{2}"'.format(
-          indent, parameter.name, parameter.type)
+        xml_line = '{0}<Parameter name="{1}" type="{2}" csv="{3}"'.format(
+          indent, parameter.name, parameter.type, parameter.csv)
         if optional:
             xml_line += ' optional="true"'
         if not default is None:
@@ -1728,6 +1733,7 @@ class TablesEditor:
         loader = QUiLoader()
         main_window = loader.load(ui_qfile)
 
+        
         #ui_qfile = QFile("/tmp/test.ui")
         #ui_qfile.open(QFile.ReadOnly)
         #loader.registerCustomWidget(CheckableComboBox)
@@ -1911,13 +1917,15 @@ class TablesEditor:
         mw.find_tabs.currentChanged.connect(                tables_editor.tab_changed)
         mw.common_save_button.clicked.connect(              tables_editor.save_button_clicked)
         mw.common_quit_button.clicked.connect(              tables_editor.quit_button_clicked)
+        mw.parameters_csv_line.textChanged.connect(         tables_editor.parameter_csv_changed)
         mw.parameters_default_line.textChanged.connect(     tables_editor.parameter_default_changed)
         mw.parameters_long_line.textChanged.connect(        tables_editor.parameter_long_changed)
         mw.parameters_optional_check.clicked.connect(      tables_editor.parameter_optional_clicked)
         mw.parameters_short_line.textChanged.connect(       tables_editor.parameter_short_changed)
         mw.parameters_type_combo.currentTextChanged.connect(tables_editor.parameters_type_changed)
-        mw.searches_table_combo.currentTextChanged.connect(tables_editor.searches_table_changed)
+        mw.searches_table_combo.currentTextChanged.connect( tables_editor.searches_table_changed)
         mw.import_csv_file_line.textChanged.connect(     tables_editor.import_csv_file_line_changed)
+        mw.import_read.clicked.connect(                    tables_editor.import_read_button_clicked)
 
         # Set the *current_table*, *current_parameter*, and *current_enumeration*
         # in *tables_editor*:
@@ -1947,8 +1955,6 @@ class TablesEditor:
         tables_editor.update(tracing=next_tracing)
 
         tables_editor.in_signal = False
-
-        #tables_editor.foo()
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
@@ -2021,27 +2027,11 @@ class TablesEditor:
             name = "None" if parameter is None else parameter.name
             print("{0}=>TablesEditor.current_parameter_set(*, '{1}')".format(tracing, name))
 
-        # Make sure we are not alrready *in_signal*:
+        # Set the *current_parameter* in *tables_editor*:
         tables_editor = self
-        if not tables_editor.in_signal:
-            tables_editor.in_signal = True
+        tables_editor.current_parameter = parameter
 
-            # Perform any tracing requested by *tables_editor* (i.e. *self*):
-            trace_signals = tables_editor.trace_signals
-            if trace_signals:
-                print("=>TablesEditor.current_parameter_set('{0}')".
-                  format("None" if parameter is None else parameter.name))
-
-            # Finally set the *current_parameter*:
-            tables_editor.current_parameter = parameter
-
-            # Wrap up any requested tracing:
-            if trace_signals:
-                print("<=TablesEditor.current_parameter_set('{0}')".
-                  format("None" if parameter is None else parameter.name))
-            tables_editor.in_signal = False
-
-        # Perform any requested *tracing*:
+        # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.current_parameter_set(*, '{1}')".format(tracing, name))
 
@@ -2528,6 +2518,128 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.find_update()".format(tracing))
 
+    # TablesEditor::import_button_clicked():
+    def import_read_button_clicked(self):
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = "" if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.import_read_button_clicked()")
+
+        # Update *current_table* an *parameters* from *tables_editor*:
+        tables_editor.current_update(tracing=next_tracing)
+        current_table = tables_editor.current_table
+        assert not current_table is None
+        parameters = current_table.parameters
+        assert not parameters is None
+
+        # Read the *csv_file_name* from the *import_csv_file_line* widget:
+        main_window = tables_editor.main_window
+        import_csv_file_line = main_window.import_csv_file_line
+        csv_file_name = import_csv_file_line.text()
+
+        # Open *csv_file_name* and start processing it:
+        with open(csv_file_name, newline="") as csv_file:
+            # Read in *csv_file* using *csv_reader*:
+            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+            column_tables = None
+            headers = None
+            columns_count = -1
+
+            # Process each *row* that comes in from *csv_reader*:
+            for row_index, row in enumerate(csv_reader):
+                if row_index == 0:
+                    # The first row is a header line:
+                    for header in row:
+                        scrunched_header = header.replace(" ", "").replace(".", "")
+                        for parameter in parameters:
+                            if parameter.name == scrunched_header:
+                                break
+                        else:
+                            comments = [ ParameterComment(language="EN",
+                              lines=list(), long_heading=scrunched_header) ]
+                            parameter = Parameter(name=scrunched_header,
+                              type="string",  csv=header, comments = comments)
+                            parameters.append(parameter)
+                    column_tables = [ dict() for header in row ]
+                    headers = row
+                else:
+                    # All other rows contain data.  Count the various different *value*'s
+                    # from *row*:
+                    for column_index, value in enumerate(row):
+                        column_table = column_tables[column_index]
+                        if value in column_table:
+                            column_table[value] += 1
+                        else:
+                            column_table[value] = 1
+
+            # Now sweep ...
+            columns_size = len(headers)
+            for column_index, column_table in enumerate(column_tables):
+                column_list = sorted(list(column_table.items()),
+                  key=lambda pair: pair[1], reverse=True)
+                #print("Column[{0}]: {1}".format(column_index, column_table))
+                #print("Column[{0}]: {1}".format(column_index, column_list))
+
+            # Create some regular expressions and stuff the into *re_list*:
+            integer_re = re.compile("-?[0-9]+$")
+            float_re   = re.compile("-?[0-9]*\.[0-9]*$")
+            url_re     = re.compile("(https?://)|(//).*$")
+            empty_re   = re.compile("-?$")
+            funits_re  = re.compile("-?[0-9]*\.[0-9]* *.?[a-zA-Z]+$")
+            iunits_re  = re.compile("-?[0-9]+.? *[a-zA-Z]+$")
+            range_re   = re.compile(".+ ~ .+$")
+            list_re    = re.compile("([^,]+,)+[^,]*$")
+            re_list = [
+              ["Integer", integer_re],
+              ["Float",   float_re],
+              ["URL",     url_re],
+              ["Empty",   empty_re],
+              ["FUnits",  funits_re],
+              ["IUnits",  iunits_re],
+              ["Range",   range_re],
+              ["List",    list_re],
+            ]
+
+            # Now sweep through *column_tables*:
+            for column_index, column_table in enumerate(column_tables):
+                # Sort *column_list* so that the most common value in the columns come first:
+                column_list = sorted(list(column_table.items()),
+                  key=lambda pair: pair[1], reverse=True)
+
+                # Build up *matches* which is the regular expressions that match best:
+                for value, count in column_list:
+                    #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
+                    matches = list()
+                    for name, regex in re_list:
+                        if not regex.match(value) is None:
+                            matches.append(name)
+                    #print("Column[{0}]: '{1}':{2} => {3}".
+                    #  format(column_index, value, count, matches))
+
+                    #print("Column[{0}]: {1}".format(column_index, column_table))
+                    #print("Column[{0}]: {1}".format(column_index, column_list))
+
+                    assert column_index < len(parameters)
+                    parameter = parameters[column_index]
+                    type = "String"
+                    if len(matches) >= 1:
+                        match = matches[0]
+                        if match == "Integer":
+                            type = "Integer"
+                        elif match == "Float":
+                            type = "Float"
+                    parameter.type = type
+
+        # Force an update:
+        tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.import_read_button_clicked()\n")
+        tables_editor.in_signal = False
+
     # TablesEditor::import_file_line_changed():
     def import_csv_file_line_changed(self):
         tables_editor = self
@@ -2596,6 +2708,35 @@ class TablesEditor:
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TabledsEditor.import_update".format(tracing))
+
+    # TablesEditor::parameter_default_changed():
+    def parameter_csv_changed(self, new_csv):
+        # Verify argument types:
+        assert isinstance(new_csv, str)
+        
+        # Perform any tracing requested by *tables_editor* (i.e. *self*):
+        tables_editor = self
+        in_signal = tables_editor.in_signal
+        if not in_signal:
+            tables_editor.in_signal = True
+
+            # Perform any requested *tracing*:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_siginals:
+                print("=>TablesEditor.parameter_csv_changed('{0}')".format(new_csv))
+        
+            # Stuff *new_csv* into *current_parameter* (if possible):
+            tables_editor.current_parameter()
+            current_parameter = tables_editor.current_parameter
+            if not current_parameter is None:
+                current_parameter.csv = new_csv
+
+            tables_editor.update(tracing=next_tracing)
+            # Wrap up any requested signal tracing:
+            if trace_siginals:
+                print("=>TablesEditor.parameter_csv_changed('{0}')\n".format(new_csv))
+                tables_editor.in_signal = False
 
     # TablesEditor::parameter_default_changed():
     def parameter_default_changed(self, new_default):
@@ -2760,7 +2901,7 @@ class TablesEditor:
 
         # Create *new_parameter* named *name*:
         comments = [ ParameterComment(language="EN", long_heading=name, lines=list()) ]
-        new_parameter = Parameter(name=name, type="boolean", comments=comments)
+        new_parameter = Parameter(name=name, type="boolean", csv="", comments=comments)
 
         # Wrap up any requested tracing and return *new_parameter*:
         if not tracing is None:
@@ -2891,14 +3032,39 @@ class TablesEditor:
         # Make sure that the *current_table*, *current_parameter*, and *current_enumeration*
         # in *tables_editor* are valid:
         tables_editor = self
+
         tables_editor.current_update(tracing=next_tracing)
+        current_table = tables_editor.current_table
+        current_parameter = tables_editor.current_parameter
+        parameter = current_parameter
+
+        # Now we can update the other fields:
+        if parameter is None:
+            # *parameter* is empty:
+            csv      = ""
+            is_valid_parameter = False
+            default  = ""
+            optional = False
+            type     = ""
+        else:
+            # Grab some values from *parameter*:
+            csv      = parameter.csv
+            is_valid_parameter = True
+            default  = parameter.default
+            optional = parameter.optional
+            type     = parameter.type
+            #print("type='{0}' optional={1}".format(type, optional))
+        if not tracing is None:
+            print("{0}Parameter.name='{1}' csv='{2}'".
+              format(tracing, "None" if parameter is None else parameter.name, csv))
 
         # Grab some widgets from *main_window*:
         main_window    = tables_editor.main_window
-        table_name     = main_window.parameters_table_name
         comment_text   = main_window.parameters_comment_text
+        csv_line       = main_window.parameters_csv_line
         default_line   = main_window.parameters_default_line
         optional_check = main_window.parameters_optional_check
+        table_name     = main_window.parameters_table_name
         type_combo     = main_window.parameters_type_combo
 
         # The top-level update routine should have already called *TablesEditor*.*current_update*
@@ -2906,22 +3072,12 @@ class TablesEditor:
         current_table = tables_editor.current_table
         table_name.setText("" if current_table is None else current_table.name)
 
-        # Now we can update the other fields:
-        if parameter is None:
-            parameter = tables_editor.current_parameter
-        if parameter is None:
-            # *parameter* is empty:
-            is_valid_parameter = False
-            default  = ""
-            optional = False
-            type     = ""
-        else:
-            # Grab some values from *parameter*:
-            is_valid_parameter = True
-            default  = parameter.default
-            optional = parameter.optional
-            type     = parameter.type
-            #print("type='{0}' optional={1}".format(type, optional))
+        # Set the *csv_line* widget:
+        previous_csv = csv_line.text()
+        if previous_csv != csv:
+            csv_line.setText(csv)
+            if not tracing is None:
+                print("{0}Set csv to '{1}'".format(tracing, csv))
 
         # Stuff the values in to the *type_combo* widget:
         type_combo_size = type_combo.count()
@@ -2954,6 +3110,10 @@ class TablesEditor:
             # Update the headings:
             tables_editor.parameters_long_set(comment.long_heading,   tracing=next_tracing)
             tables_editor.parameters_short_set(comment.short_heading, tracing=next_tracing)
+
+            previous_csv = csv_line.text()
+            if csv != previous_csv:
+                csv_line.setText(csv)
 
             # Deal with comment text edit area:
             tables_editor.current_comment = comment
@@ -3017,65 +3177,6 @@ class TablesEditor:
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.results_update()".format(tracing))
-
-    # TablesEditor:foo():
-    def foo(self):
-        with open("/home/wayne/Downloads/download (1).csv", newline="") as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
-            column_tables = None
-            headers = None
-            columns_count = -1
-            for row_index, row in enumerate(csv_reader):
-                if row_index == 0:
-                    column_tables = [ dict() for header in row ]
-                    headers = row
-                else:
-                    for column_index, value in enumerate(row):
-                        column_table = column_tables[column_index]
-                        if value in column_table:
-                            column_table[value] += 1
-                        else:
-                            column_table[value] = 1
-
-            columns_size = len(headers)
-            for column_index, column_table in enumerate(column_tables):
-                column_list = sorted(list(column_table.items()),
-                  key=lambda pair: pair[1], reverse=True)
-                #print("Column[{0}]: {1}".format(column_index, column_table))
-                print("Column[{0}]: {1}".format(column_index, column_list))
-
-            integer_re = re.compile("-?[0-9]+$")
-            float_re   = re.compile("-?[0-9]*\.[0-9]*$")
-            url_re     = re.compile("(https?://)|(//).*$")
-            empty_re   = re.compile("-?$")
-            funits_re  = re.compile("-?[0-9]*\.[0-9]* *.?[a-zA-Z]+$")
-            iunits_re  = re.compile("-?[0-9]+.? *[a-zA-Z]+$")
-            range_re   = re.compile(".+ ~ .+$")
-            list_re    = re.compile("([^,]+,)+[^,]*$")
-            re_list = [
-              ["Integer", integer_re],
-              ["Float",   float_re],
-              ["URL",     url_re],
-              ["Empty",   empty_re],
-              ["FUnits",  funits_re],
-              ["IUnits",  iunits_re],
-              ["Range",   range_re],
-              ["List",    list_re],
-            ]
-            for column_index, column_table in enumerate(column_tables):
-                column_list = sorted(list(column_table.items()),
-                  key=lambda pair: pair[1], reverse=True)
-                for value, count in column_list:
-                    #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
-                    matches = list()
-                    for name, regex in re_list:
-                        if not regex.match(value) is None:
-                            matches.append(name)
-                    print("Column[{0}]: '{1}':{2} => {3}".
-                      format(column_index, value, count, matches))
-
-                    #print("Column[{0}]: {1}".format(column_index, column_table))
-                    #print("Column[{0}]: {1}".format(column_index, column_list))
 
     # TablesEditor::run():
     def run(self):
@@ -3598,7 +3699,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}=>TablesEditor.table_setup(*)".format(tracing))
 
-    # TablesEditor:tables_update():
+    # TablesEditor::tables_update():
     def tables_update(self, table=None, tracing=None):
         # Verify argument types:
         assert isinstance(table, Table) or table is None
