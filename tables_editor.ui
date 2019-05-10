@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>800</height>
+    <height>846</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -69,7 +69,7 @@
         <item row="0" column="0" colspan="2">
          <widget class="QTabWidget" name="schema_tabs">
           <property name="currentIndex">
-           <number>1</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tables_tab">
            <attribute name="title">
@@ -175,8 +175,22 @@
               </property>
              </widget>
             </item>
+            <item row="0" column="2">
+             <widget class="QLineEdit" name="import_csv_file_line">
+              <property name="placeholderText">
+               <string>download.csv</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" colspan="3">
+             <widget class="QTableWidget" name="import_table"/>
+            </item>
             <item row="0" column="1">
-             <widget class="QLineEdit" name="import_csv_file_line"/>
+             <widget class="QPushButton" name="import_bind">
+              <property name="text">
+               <string>Bind</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -244,7 +258,7 @@
                 </property>
                </widget>
               </item>
-              <item row="9" column="0">
+              <item row="10" column="0">
                <widget class="QLabel" name="parameters_optional_label">
                 <property name="text">
                  <string>Optional:</string>
@@ -264,14 +278,14 @@
               <item row="7" column="1" colspan="3">
                <widget class="QLineEdit" name="parameters_short_line"/>
               </item>
-              <item row="9" column="1" colspan="3">
+              <item row="10" column="1" colspan="3">
                <widget class="QCheckBox" name="parameters_optional_check">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="8" column="0">
+              <item row="9" column="0">
                <widget class="QLabel" name="parameters_type_label">
                 <property name="text">
                  <string>Type:</string>
@@ -281,7 +295,7 @@
                 </property>
                </widget>
               </item>
-              <item row="10" column="0">
+              <item row="11" column="0">
                <widget class="QLabel" name="parameters_default_label">
                 <property name="text">
                  <string>Default:</string>
@@ -291,7 +305,7 @@
                 </property>
                </widget>
               </item>
-              <item row="10" column="1" colspan="3">
+              <item row="11" column="1" colspan="3">
                <widget class="QLineEdit" name="parameters_default_line"/>
               </item>
               <item row="2" column="3">
@@ -315,11 +329,16 @@
                 </property>
                </widget>
               </item>
-              <item row="8" column="1" colspan="3">
+              <item row="9" column="1" colspan="3">
                <widget class="QComboBox" name="parameters_type_combo">
                 <item>
                  <property name="text">
                   <string>Boolean</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Empty</string>
                  </property>
                 </item>
                 <item>
@@ -329,17 +348,42 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>Integer</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
                   <string>Float</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
+                  <string>FUnits</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Integer</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>IUnits</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>List</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Range</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
                   <string>String</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>URL</string>
                  </property>
                 </item>
                </widget>
@@ -371,7 +415,7 @@
                 </property>
                </widget>
               </item>
-              <item row="11" column="0" colspan="4">
+              <item row="12" column="0" colspan="4">
                <widget class="QLabel" name="parameters_comment_label">
                 <property name="text">
                  <string>Comment</string>
@@ -388,8 +432,21 @@
                 </property>
                </widget>
               </item>
-              <item row="12" column="0" colspan="4">
+              <item row="13" column="0" colspan="4">
                <widget class="QPlainTextEdit" name="parameters_comment_text"/>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="parameters_csv_label">
+                <property name="text">
+                 <string>CSV Heading:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1" colspan="3">
+               <widget class="QLineEdit" name="parameters_csv_line"/>
               </item>
              </layout>
             </item>

@@ -1015,7 +1015,7 @@ class Parameter:
         parameter.type         = type
         parameter.use          = False
         #print("Parameter('{0}'): optional={1}".format(name, optional))
-        print("Parameter('{0}', csv='{1}')".format(name, parameter.csv))
+        print("Parameter(name='{0}', type='{1}', csv='{1}')".format(name, type, parameter.csv))
 
     # Parameter::
     def __eq__(self, parameter2):
@@ -1792,6 +1792,9 @@ class TablesEditor:
         tables_editor.current_table = current_table
         tables_editor.current_tables = tables
         tables_editor.in_signal = True
+        tables_editor.import_column_triples = None
+        tables_editor.import_headers = None
+        tables_editor.import_rows = None
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.main_window = main_window
         tables_editor.original_tables = copy.deepcopy(tables)
@@ -1926,6 +1929,9 @@ class TablesEditor:
         mw.searches_table_combo.currentTextChanged.connect( tables_editor.searches_table_changed)
         mw.import_csv_file_line.textChanged.connect(     tables_editor.import_csv_file_line_changed)
         mw.import_read.clicked.connect(                    tables_editor.import_read_button_clicked)
+        mw.import_bind.clicked.connect(                    tables_editor.import_bind_button_clicked)
+
+        mw.import_csv_file_line.setText("download.csv")
 
         # Set the *current_table*, *current_parameter*, and *current_enumeration*
         # in *tables_editor*:
@@ -2518,6 +2524,45 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.find_update()".format(tracing))
 
+    # TablesEditor::import_bind_clicked():
+    def import_bind_button_clicked(self):
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = "" if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.import_bind_button_clicked()")
+        
+        # Update *current_table* an *parameters* from *tables_editor*:
+        tables_editor.current_update(tracing=next_tracing)
+        current_table = tables_editor.current_table
+        if not current_table is None:
+            parameters = current_table.parameters
+            headers        = tables_editor.import_headers
+            column_triples = tables_editor.import_column_triples
+            for column_index, triples in enumerate(column_triples):
+                header = headers[column_index]
+                if len(triples) >= 1:
+                    triple = triples[0]
+                    count, name, value = triple
+                    for parameter_index, parameter in enumerate(parameters):
+                        if parameter.csv == name:
+                            break
+                    else:
+                        scrunched_name = \
+                          "".join([character for character in header if character.isalnum()])
+                        comments = [ ParameterComment( language="EN",
+                          long_heading=scrunched_name, lines=list() ) ]
+                        parameter = Parameter(name=scrunched_name,
+                          type=name, csv=header, comments=comments)
+                        parameters.append(parameter)
+                
+            tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.import_bind_button_clicked()")
+
     # TablesEditor::import_button_clicked():
     def import_read_button_clicked(self):
         # Perform any requested signal tracing:
@@ -2548,9 +2593,11 @@ class TablesEditor:
             columns_count = -1
 
             # Process each *row* that comes in from *csv_reader*:
+            data_rows = list()
+            column_tables = None
             for row_index, row in enumerate(csv_reader):
                 if row_index == 0:
-                    # The first row is a header line:
+                    # The first *row* is a header line:
                     for header in row:
                         scrunched_header = header.replace(" ", "").replace(".", "")
                         for parameter in parameters:
@@ -2559,78 +2606,97 @@ class TablesEditor:
                         else:
                             comments = [ ParameterComment(language="EN",
                               lines=list(), long_heading=scrunched_header) ]
-                            parameter = Parameter(name=scrunched_header,
-                              type="string",  csv=header, comments = comments)
-                            parameters.append(parameter)
+                            #parameter = Parameter(name=scrunched_header,
+                            #  type="string",  csv=header, comments = comments)
+                            #parameters.append(parameter)
+
+                    # Create *column_tables* which is used to process the following *row*'s:
                     column_tables = [ dict() for header in row ]
                     headers = row
                 else:
-                    # All other rows contain data.  Count the various different *value*'s
-                    # from *row*:
+                    # The second and subsequent *row*'s a contain data.  Build up a count of each
+                    # of the different data values in for a givin column in *column_table*:
+                    data_rows.append(row)
                     for column_index, value in enumerate(row):
                         column_table = column_tables[column_index]
                         if value in column_table:
+                            # We have seen *value* before, so increment its count:
                             column_table[value] += 1
                         else:
+                            # This is the first time we seen *value*, so insert it into
+                            # *column_table* as the first one:
                             column_table[value] = 1
 
-            # Now sweep ...
-            columns_size = len(headers)
-            for column_index, column_table in enumerate(column_tables):
-                column_list = sorted(list(column_table.items()),
-                  key=lambda pair: pair[1], reverse=True)
-                #print("Column[{0}]: {1}".format(column_index, column_table))
-                #print("Column[{0}]: {1}".format(column_index, column_list))
+                # Now *column_tables* has a list of tables (i.e. *dict*'s) where it entry
+                # has a count of the number of times that value occured in the column.
 
-            # Create some regular expressions and stuff the into *re_list*:
-            integer_re = re.compile("-?[0-9]+$")
-            float_re   = re.compile("-?[0-9]*\.[0-9]*$")
-            url_re     = re.compile("(https?://)|(//).*$")
-            empty_re   = re.compile("-?$")
-            funits_re  = re.compile("-?[0-9]*\.[0-9]* *.?[a-zA-Z]+$")
-            iunits_re  = re.compile("-?[0-9]+.? *[a-zA-Z]+$")
-            range_re   = re.compile(".+ ~ .+$")
-            list_re    = re.compile("([^,]+,)+[^,]*$")
-            re_list = [
-              ["Integer", integer_re],
-              ["Float",   float_re],
-              ["URL",     url_re],
-              ["Empty",   empty_re],
-              ["FUnits",  funits_re],
-              ["IUnits",  iunits_re],
-              ["Range",   range_re],
-              ["List",    list_re],
-            ]
+                # Create some regular expressions and stuff the into *re_list*:
+                integer_re = re.compile("-?[0-9]+$")
+                float_re   = re.compile("-?[0-9]*\.[0-9]*$")
+                url_re     = re.compile("(https?://)|(//).*$")
+                empty_re   = re.compile("-?$")
+                funits_re  = re.compile("-?[0-9]*\.[0-9]* *.?[a-zA-Z]+$")
+                iunits_re  = re.compile("-?[0-9]+.? *[a-zA-Z]+$")
+                range_re   = re.compile(".+ ~ .+$")
+                list_re    = re.compile("([^,]+,)+[^,]*$")
+                re_list = [
+                  ["Empty",   empty_re],
+                  ["Float",   float_re],
+                  ["FUnits",  funits_re],
+                  ["Integer", integer_re],
+                  ["IUnits",  iunits_re],
+                  ["List",    list_re],
+                  ["Range",   range_re],
+                  ["URL",     url_re],
+                ]
+    
+                # Now sweep through *column_tables*:
+                column_triples = list()
+                for column_index, column_table in enumerate(column_tables):
+                    # Create *column_list* such that the most common value in the columns
+                    # come first:
+                    column_list = sorted(list(column_table.items()),
+                      key=lambda pair: (pair[1], pair[0]), reverse=True)
+    
+                    # Build up *matches* which is the regular expressions that match best:
+                    regex_table = dict()
+                    regex_table["String"] = list()
+                    total_count = 0
+                    for value, count in column_list:
+                        #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
+                        total_count += count
+                        match_count = 0
+                        for regex_name, regex in re_list:
+                            if not regex.match(value) is None:
+                                if regex_name in regex_table:
+                                    regex_table[regex_name].append((value, count) )
+                                else:
+                                    regex_table[regex_name] = [ (value, count) ]
+    
+                                match_count += 1
+                        if match_count == 0:
+                            regex_table["String"].append( (value, count) )
+                    assert total_count == len(data_rows)
+    
+                    #if not tracing is None:
+                    #    print("{0}Column[{1}]: regex_table={2}".
+                    #      format(tracing, column_index, regex_table))
+    
+                    triples = list()
+                    for regex_name, pair_list in regex_table.items():
+                        total_count = 0
+                        value = ""
+                        for pair in pair_list:
+                            value, count = pair
+                            total_count += count
+                        triples.append( (total_count, regex_name, value) )
+                    triples.sort(reverse=True)
+                    column_triples.append(triples)
 
-            # Now sweep through *column_tables*:
-            for column_index, column_table in enumerate(column_tables):
-                # Sort *column_list* so that the most common value in the columns come first:
-                column_list = sorted(list(column_table.items()),
-                  key=lambda pair: pair[1], reverse=True)
-
-                # Build up *matches* which is the regular expressions that match best:
-                for value, count in column_list:
-                    #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
-                    matches = list()
-                    for name, regex in re_list:
-                        if not regex.match(value) is None:
-                            matches.append(name)
-                    #print("Column[{0}]: '{1}':{2} => {3}".
-                    #  format(column_index, value, count, matches))
-
-                    #print("Column[{0}]: {1}".format(column_index, column_table))
-                    #print("Column[{0}]: {1}".format(column_index, column_list))
-
-                    assert column_index < len(parameters)
-                    parameter = parameters[column_index]
-                    type = "String"
-                    if len(matches) >= 1:
-                        match = matches[0]
-                        if match == "Integer":
-                            type = "Integer"
-                        elif match == "Float":
-                            type = "Float"
-                    parameter.type = type
+            # Save some values into *tables_editor* for the update routine:
+            tables_editor.import_column_triples = column_triples
+            tables_editor.import_headers = headers
+            tables_editor.import_rows = data_rows
 
         # Force an update:
         tables_editor.update(tracing=next_tracing)
@@ -2688,9 +2754,11 @@ class TablesEditor:
         current_table = tables_editor.current_table
 
         # Grab some widgets from *tables_editor*:
-        main_window = tables_editor.main_window
+        main_window          = tables_editor.main_window
+        import_bind          = main_window.import_bind
         import_csv_file_line = main_window.import_csv_file_line
-        import_read = main_window.import_read
+        import_read          = main_window.import_read
+        import_table         = main_window.import_table
 
         # Update the *import_csv_file_name* widget:
         csv_file_name = "" if current_table is None else current_table.csv_file_name
@@ -2698,12 +2766,55 @@ class TablesEditor:
         if previous_csv_file_name != csv_file_name:
             import_csv_file_line.setText(csv_file_name)
 
+        # Load up *import_table*:
+        headers      = tables_editor.import_headers
+        #rows         = tables_editor.import_rows
+        column_triples = tables_editor.import_column_triples
+        import_table.clearContents()
+        if not headers is None and not column_triples is None:
+            if not tracing is None:
+                print("{0}Have column_triples".format(tracing))
+            import_table.setRowCount(len(headers))
+            import_table.setColumnCount(6)
+            # Fill in the left size row headers for *import_table*:
+            import_table.setVerticalHeaderLabels(headers)
+
+            assert len(column_triples) == len(headers)
+            for column_index, triples in enumerate(column_triples):
+                for triple_index, triple in enumerate(triples):
+                    assert len(triple) == 3
+                    count, name, value = triple
+
+                    if count >= 1:
+                        item = QTableWidgetItem("{0} x {1} '{2}'".
+                          format(count, name, value))
+                        import_table.setItem(column_index, triple_index, item)
+
+                    #print("Column[{0}]: '{1}':{2} => {3}".
+                    #  format(column_index, value, count, matches))
+
+                    #print("Column[{0}]: {1}".format(column_index, column_table))
+                    #print("Column[{0}]: {1}".format(column_index, column_list))
+
+                    #assert column_index < len(parameters)
+                    #parameter = parameters[column_index]
+                    #type = "String"
+                    #if len(matches) >= 1:
+                    #    match = matches[0]
+                    #    if match == "Integer":
+                    #        type = "Integer"
+                    #    elif match == "Float":
+                    #        type = "Float"
+                    #parameter.type = type
+
+
         if not tracing is None:
             print("{0}csv_file_name='{1}' previous='{2}'".
               format(tracing, csv_file_name, previous_csv_file_name))
 
         # Enable/Disable *import_read* button widget depending upon whether *csv_file_name* exists:
         import_read.setEnabled(os.path.isfile(csv_file_name))
+        import_bind.setEnabled(not tables_editor.import_headers is None)
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
