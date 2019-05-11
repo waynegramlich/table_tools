@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<Table name="ChipResistors" csv_file_name="download.csv">
+  <TableComments>
+    <TableComment language="EN">
+      
+    </TableComment>
+  </TableComments>
+  <Parameters>
+    <Parameter name="Datasheets" type="URL" csv="﻿Datasheets">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Datasheets">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Image" type="URL" csv="Image">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Image">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="DigiKeyPartNumber" type="String" csv="Digi-Key Part Number">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="DigiKeyPartNumber">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="ManufacturerPartNumber" type="String" csv="Manufacturer Part Number">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="ManufacturerPartNumber">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Manufacturer" type="String" csv="Manufacturer">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Manufacturer">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Description" type="String" csv="Description">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Description">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="QuantityAvailable" type="Integer" csv="Quantity Available">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="QuantityAvailable">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="FactoryStock" type="Integer" csv="Factory Stock">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="FactoryStock">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="UnitPriceUSD" type="Float" csv="Unit Price (USD)">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="UnitPriceUSD">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="qty" type="Integer" csv="@ qty">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="qty">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="MinimumQuantity" type="Integer" csv="Minimum Quantity">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="MinimumQuantity">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Packaging" type="String" csv="Packaging">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Packaging">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Series" type="String" csv="Series">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Series">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="PartStatus" type="String" csv="Part Status">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="PartStatus">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Resistance" type="IUnits" csv="Resistance">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Resistance">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Tolerance" type="String" csv="Tolerance">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Tolerance">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="PowerWatts" type="List" csv="Power (Watts)">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="PowerWatts">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Composition" type="String" csv="Composition">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Composition">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="Features" type="List" csv="Features">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="Features">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="TemperatureCoefficient" type="String" csv="Temperature Coefficient">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="TemperatureCoefficient">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="OperatingTemperature" type="Range" csv="Operating Temperature">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="OperatingTemperature">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="PackageCase" type="String" csv="Package / Case">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="PackageCase">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="SupplierDevicePackage" type="Integer" csv="Supplier Device Package">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="SupplierDevicePackage">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="SizeDimension" type="String" csv="Size / Dimension">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="SizeDimension">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="HeightSeatedMax" type="String" csv="Height - Seated (Max)">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="HeightSeatedMax">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="NumberofTerminations" type="Integer" csv="Number of Terminations">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="NumberofTerminations">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+    <Parameter name="FailureRate" type="Empty" csv="Failure Rate">
+      <ParameterComments>
+        <ParameterComment language="EN" longHeading="FailureRate">
+        </ParameterComment>
+      </ParameterComments>
+    </Parameter>
+  </Parameters>
+</Table>

@@ -3265,7 +3265,7 @@ class TablesEditor:
         results_table = main_window.results_table        
         results_table.clearContents()
         
-        with open("/home/wayne/Downloads/download (1).csv", newline="") as csv_file:
+        with open("download.csv", newline="") as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
             rows = list(csv_reader)
             for row_index, row in enumerate(rows):
@@ -4205,3 +4205,5 @@ if __name__ == "__main__":
 # * Tabs are actually named in the parent tab widget (1 level up.)
 # * To add a tab, hover the mouse over an existing tab, right click mouse, and select
 #   Insert page.
+
+
