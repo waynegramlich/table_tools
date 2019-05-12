@@ -1724,6 +1724,30 @@ class TablesEditor:
         if not tracing is None:
             print("{0}=>TablesEditor.__init__(...)".format(tracing))
 
+        # Create some regular expressions and stuff the into *re_list*:
+        si_units_re_text = Units.si_units_re_text_get()
+        float_re_text = "-?([0-9]+\.[0-9]*|\.[0-9]+)"
+        white_space_text = "[ \t]*"
+        integer_re_text = "-?[0-9]+"
+        integer_re = re.compile(integer_re_text + "$")
+        float_re   = re.compile(float_re_text + "$")
+        url_re     = re.compile("(https?://)|(//).*$")
+        empty_re   = re.compile("-?$")
+        funits_re  = re.compile(float_re_text + white_space_text + si_units_re_text + "$")
+        iunits_re  = re.compile(integer_re_text + white_space_text + si_units_re_text + "$")
+        range_re   = re.compile("[^~]+~[^~]+$")
+        list_re    = re.compile("([^,]+,)+[^,]+$")
+        re_list = [
+          ["Empty",   empty_re],
+          ["Float",   float_re],
+          ["FUnits",  funits_re],
+          ["Integer", integer_re],
+          ["IUnits",  iunits_re],
+          ["List",    list_re],
+          ["Range",   range_re],
+          ["URL",     url_re],
+        ]
+    
         # Create the *application* first:
         application = QApplication(sys.argv)
 
@@ -1798,6 +1822,7 @@ class TablesEditor:
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.main_window = main_window
         tables_editor.original_tables = copy.deepcopy(tables)
+        tables_editor.re_list = re_list
         tables_editor.searches = list()
         tables_editor.tables = tables
         tables_editor.trace_signals = not tracing is None
@@ -2584,119 +2609,97 @@ class TablesEditor:
         import_csv_file_line = main_window.import_csv_file_line
         csv_file_name = import_csv_file_line.text()
 
-        # Open *csv_file_name* and start processing it:
+        # Open *csv_file_name* read in both *rows* and *headers*:
+        rows = None
+        headers = None
         with open(csv_file_name, newline="") as csv_file:
             # Read in *csv_file* using *csv_reader*:
             csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
-            column_tables = None
-            headers = None
-            columns_count = -1
-
-            # Process each *row* that comes in from *csv_reader*:
-            data_rows = list()
-            column_tables = None
+            rows = list()
             for row_index, row in enumerate(csv_reader):
                 if row_index == 0:
-                    # The first *row* is a header line:
-                    for header in row:
-                        scrunched_header = header.replace(" ", "").replace(".", "")
-                        for parameter in parameters:
-                            if parameter.name == scrunched_header:
-                                break
-                        else:
-                            comments = [ ParameterComment(language="EN",
-                              lines=list(), long_heading=scrunched_header) ]
-                            #parameter = Parameter(name=scrunched_header,
-                            #  type="string",  csv=header, comments = comments)
-                            #parameters.append(parameter)
-
-                    # Create *column_tables* which is used to process the following *row*'s:
-                    column_tables = [ dict() for header in row ]
                     headers = row
                 else:
-                    # The second and subsequent *row*'s a contain data.  Build up a count of each
-                    # of the different data values in for a givin column in *column_table*:
-                    data_rows.append(row)
-                    for column_index, value in enumerate(row):
-                        column_table = column_tables[column_index]
-                        if value in column_table:
-                            # We have seen *value* before, so increment its count:
-                            column_table[value] += 1
+                    rows.append(row)
+
+        # Create *column_tables* which is used to process the following *row*'s:
+        column_tables = [ dict() for header in headers ]
+        for row in rows:
+            # Build up a count of each of the different data values in for a given column
+            # in *column_table*:
+            for column_index, value in enumerate(row):
+                column_table = column_tables[column_index]
+                if value in column_table:
+                    # We have seen *value* before, so increment its count:
+                    column_table[value] += 1
+                else:
+                    # This is the first time we seen *value*, so insert it into
+                    # *column_table* as the first one:
+                    column_table[value] = 1
+
+
+        # Now *column_tables* has a list of tables (i.e. *dict*'s) where it entry
+        # has a count of the number of times that value occured in the column.
+
+
+        # Now sweep through *column_tables* and build *column_triples*:
+        re_list = tables_editor.re_list
+        column_triples = list()
+        for column_index, column_table in enumerate(column_tables):
+            # FIXME: is *colmn_list* really used or could we just as easily use the unsorted list?!
+            # Create *column_list* from *column_table* such that the most common value in the
+            # columns comes first and the least commone one comes last:
+            column_list = sorted(list(column_table.items()),
+              key=lambda pair: (pair[1], pair[0]), reverse=True)
+    
+            # Build up *matches* which is the regular expressions that match best:
+            regex_table = dict()
+            regex_table["String"] = list()
+            total_count = 0
+            for value, count in column_list:
+                #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
+                total_count += count
+                match_count = 0
+                for regex_name, regex in re_list:
+                    if not regex.match(value) is None:
+                        if regex_name in regex_table:
+                            regex_table[regex_name].append((value, count) )
                         else:
-                            # This is the first time we seen *value*, so insert it into
-                            # *column_table* as the first one:
-                            column_table[value] = 1
+                            regex_table[regex_name] = [ (value, count) ]
+    
+                        match_count += 1
+                if match_count == 0:
+                    regex_table["String"].append( (value, count) )
+            assert total_count == len(rows)
+    
+            #if not tracing is None:
+            #    print("{0}Column[{1}]: regex_table={2}".
+            #      format(tracing, column_index, regex_table))
+    
+            # Now construct the *triples* list such containing of tuples that have
+            # three values -- *total_count*, *regex_name*, and *value* where,
+            # * *total_count*: is the number column values that the regular expression matched,
+            # * *regex_name*: is the name of the regular expression, and
+            # * *value*: is an example value that matches the regular expression.
+            triples = list()
+            for regex_name, pair_list in regex_table.items():
+                total_count = 0
+                value = ""
+                for pair in pair_list:
+                    value, count = pair
+                    total_count += count
+                triple = (total_count, regex_name, value)
+                triples.append(triple)
 
-                # Now *column_tables* has a list of tables (i.e. *dict*'s) where it entry
-                # has a count of the number of times that value occured in the column.
+            # Sort *triples* such that the regular expression that maches the most entries comes
+            # first the least matches are at the end.  Tack the result onto *column_triples*:
+            triples.sort(reverse=True)
+            column_triples.append(triples)
 
-                # Create some regular expressions and stuff the into *re_list*:
-                integer_re = re.compile("-?[0-9]+$")
-                float_re   = re.compile("-?[0-9]*\.[0-9]*$")
-                url_re     = re.compile("(https?://)|(//).*$")
-                empty_re   = re.compile("-?$")
-                funits_re  = re.compile("-?[0-9]*\.[0-9]* *.?[a-zA-Z]+$")
-                iunits_re  = re.compile("-?[0-9]+.? *[a-zA-Z]+$")
-                range_re   = re.compile(".+ ~ .+$")
-                list_re    = re.compile("([^,]+,)+[^,]*$")
-                re_list = [
-                  ["Empty",   empty_re],
-                  ["Float",   float_re],
-                  ["FUnits",  funits_re],
-                  ["Integer", integer_re],
-                  ["IUnits",  iunits_re],
-                  ["List",    list_re],
-                  ["Range",   range_re],
-                  ["URL",     url_re],
-                ]
-    
-                # Now sweep through *column_tables*:
-                column_triples = list()
-                for column_index, column_table in enumerate(column_tables):
-                    # Create *column_list* such that the most common value in the columns
-                    # come first:
-                    column_list = sorted(list(column_table.items()),
-                      key=lambda pair: (pair[1], pair[0]), reverse=True)
-    
-                    # Build up *matches* which is the regular expressions that match best:
-                    regex_table = dict()
-                    regex_table["String"] = list()
-                    total_count = 0
-                    for value, count in column_list:
-                        #print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
-                        total_count += count
-                        match_count = 0
-                        for regex_name, regex in re_list:
-                            if not regex.match(value) is None:
-                                if regex_name in regex_table:
-                                    regex_table[regex_name].append((value, count) )
-                                else:
-                                    regex_table[regex_name] = [ (value, count) ]
-    
-                                match_count += 1
-                        if match_count == 0:
-                            regex_table["String"].append( (value, count) )
-                    assert total_count == len(data_rows)
-    
-                    #if not tracing is None:
-                    #    print("{0}Column[{1}]: regex_table={2}".
-                    #      format(tracing, column_index, regex_table))
-    
-                    triples = list()
-                    for regex_name, pair_list in regex_table.items():
-                        total_count = 0
-                        value = ""
-                        for pair in pair_list:
-                            value, count = pair
-                            total_count += count
-                        triples.append( (total_count, regex_name, value) )
-                    triples.sort(reverse=True)
-                    column_triples.append(triples)
-
-            # Save some values into *tables_editor* for the update routine:
-            tables_editor.import_column_triples = column_triples
-            tables_editor.import_headers = headers
-            tables_editor.import_rows = data_rows
+        # Save some values into *tables_editor* for the update routine:
+        tables_editor.import_column_triples = column_triples
+        tables_editor.import_headers        = headers
+        tables_editor.import_rows           = rows
 
         # Force an update:
         tables_editor.update(tracing=next_tracing)
@@ -3865,6 +3868,44 @@ class TablesEditor:
         #    print("<=TablesEditor.update()")
         if not tracing is None:
             print("{0}<=TablesEditor.update()".format(tracing))
+
+class Units:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def si_units_re_text_get():
+        base_units = (
+          "s(ecs?)?", "seconds?", "m(eters?)?", "g(rams?)?", "[Aa](mps?)?", "[Kk](elvin)?", 
+          "mol(es?)?", "cd", "candelas?")
+        derived_units = ("rad", "sr", "[Hh]z", "[Hh]ertz", "[Nn](ewtons?)?", "Pa(scals?)?",
+           "J(oules?)?", "W(atts?)?", "°C", "V(olts?)?", "F(arads?)?", "Ω",
+           "O(hms?)?", "S", "Wb", "T(eslas?)?", "H", "degC", "lm", "lx", "Bq", "Gy", "Sv", "kat")
+        all_units = base_units + derived_units
+        all_units_re_text = "(" + "|".join(all_units) + ")"
+        prefixes = (
+          ("Y", 1e24),
+          ("Z", 1e21),
+          ("E", 1e18),
+          ("P", 1e15),
+          ("T", 1e12),
+          ("G", 1e9),
+          ("M", 1e6),
+          ("k", 1e3),
+          ("h", 1e2),
+          ("da", 1e1),
+          ("c", 1e-2),
+          ("u", 1e-6),
+          ("n", 1e-9),
+          ("p", 1e-12),
+          ("f", 1e-15),
+          ("a", 1e-18),
+          ("z", 1e-21),
+          ("y", 1e-24)
+        )
+        prefix_re_text = "([YZEPTGMkhcunpfazy]|da)"
+        si_units_re_text = prefix_re_text + "?" + all_units_re_text
+        return si_units_re_text
 
 class XXXAttribute:
     def __init__(self, name, type, default, optional, documentations, enumerates):
