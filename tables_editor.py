@@ -45,7 +45,7 @@ class ComboEdit:
     # are defined.
     WIDGET_CALLBACKS = dict()
 
-    # ComboEdit::
+    # ComboEdit.__init__():
     def __init__(self, name, tables_editor, items,
       new_item_function, current_item_set_function, comment_get_function, comment_set_function,
       tracing=None, **widgets):
@@ -142,7 +142,7 @@ class ComboEdit:
         if not tracing is None:
             print("{0}<=ComboEdit.__init__(*, {1}, ...)".format(tracing, name))
 
-    # ComboEdit::
+    # ComboEdit.combo_box_changed():
     def combo_box_changed(self, new_name):
         """ Callback method invoked when the *QComboBox* widget changes:
 
@@ -184,7 +184,7 @@ class ComboEdit:
                   format(combo_edit.name, new_name))
             tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.comment_text_changed():
     def comment_text_changed(self):
         # Do nothing if we are in a signal:
         combo_edit = self
@@ -220,7 +220,7 @@ class ComboEdit:
                 print(" <=ComboEditor.comment_text_changed():{0}\n".format(cursor.position()))
             tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.current_item_get():
     def current_item_get(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -259,7 +259,7 @@ class ComboEdit:
             print("{0}=>ComboEdit.current_item_get".format(tracing, combo_edit.name))
         return new_current_item
 
-    # ComboEdit::
+    # ComboEdit.current_item_set():
     def current_item_set(self, current_item, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -277,7 +277,7 @@ class ComboEdit:
         if not tracing is None:
             print("{0}<=ComboEdit.current_item_set('{1}', *)".format(tracing, combo_edit.name))
 
-    # ComboEdit::
+    # ComboEdit.delete_button_clicked():
     def delete_button_clicked(self):
         # Perform any requested tracing from *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -316,7 +316,7 @@ class ComboEdit:
             print("<=ComboEdit.delete_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.first_button_clicked():
     def first_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -342,7 +342,7 @@ class ComboEdit:
             print("<=ComboEdit.first_button_clicked('{0})\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.gui_update():
     def gui_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -452,7 +452,7 @@ class ComboEdit:
         if not tracing is None:
             print("{0}<=ComboEdit.gui_update('{1}')".format(tracing, combo_edit.name))
 
-    # ComboEdit::
+    # ComboEdit.items_replace():
     def items_replace(self, new_items):
         # Verify argument types:
         assert isinstance(new_items, list)
@@ -461,7 +461,7 @@ class ComboEdit:
         combo_item = self
         combo_item.items = new_items
 
-    # ComboEdit::
+    # ComboEdit.items_set():
     def items_set(self, items, update_function, new_item_function, current_item_set_function):
         # Verify argument types:
         assert isinstance(items, list)
@@ -479,7 +479,7 @@ class ComboEdit:
         # Set the *current_item* last to be sure that the call back occurs:
         combo_item.current_item_set(new_items[0] if len(new_items) > 0 else None, "items_set")
 
-    # ComboEdit::
+    # ComboEdit.last_button_clicked():
     def last_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -505,7 +505,7 @@ class ComboEdit:
             print("<=ComboEdit.last_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.line_edit_changed():
     def line_edit_changed(self, text):
         # Verify argument types:
         assert isinstance(text, str)
@@ -524,7 +524,7 @@ class ComboEdit:
                 print("<=ComboEditor.line_edit_changed('{0}')\n".format(text))
             tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.new_button_clicked():
     def new_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -557,7 +557,7 @@ class ComboEdit:
             print("<=ComboEdit.new_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.next_button_clicked():
     def next_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -587,7 +587,7 @@ class ComboEdit:
             print("<=ComboEdit.next_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.position_changed():
     def position_changed(self):
         # Do nothing if we already in a signal:
         combo_edit = self
@@ -616,7 +616,7 @@ class ComboEdit:
                 print("<=ComboEdit.position_changed('{0}')\n".format(combo_edit.name))
             tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.previous_button_clicked():
     def previous_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -646,7 +646,7 @@ class ComboEdit:
             print("<=ComboEdit.previous_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.rename_button_clicked():
     def rename_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
         combo_edit = self
@@ -673,7 +673,7 @@ class ComboEdit:
             print("=>ComboEdit.rename_button_clicked('{0}')\n".format(combo_edit.name))
         tables_editor.in_signal = False
 
-    # ComboEdit::
+    # ComboEdit.WIDGET_CALLBACKS:
     # *WIDGET_CALLBACKS* is defined here **after** the actual callback routines are defined:
     WIDGET_CALLBACKS = {
       "combo_box":       combo_box_changed,
@@ -690,7 +690,7 @@ class ComboEdit:
 
 class Comment:
 
-    # Comment::
+    # Comment.__init__():
     def __init__(self, tag_name, **arguments_table):
         # Verify argument types:
         assert isinstance(tag_name, str) and tag_name in \
@@ -729,7 +729,7 @@ class Comment:
         comment.lines = lines
         #print("Comment(): comment.lines=", tag_name, lines)
 
-    # Coment::
+    # Comment.__eq__():
     def __eq__(self, comment2):
         # Verify argument types:
         assert isinstance(comment2, Comment)
@@ -745,7 +745,7 @@ class Comment:
 
 class Enumeration:
 
-    # Enumeration::
+    # Enumeration.__init__():
     def __init__(self, **arguments_table): 
         is_enumeration_tree = "enumeration_tree" in arguments_table
         if is_enumeration_tree:
@@ -780,7 +780,7 @@ class Enumeration:
         enumeration.name = name
         enumeration.comments = comments
 
-    # Enumeration::
+    # Enumeration.__eq__():
     def __eq__(self, enumeration2):
         # Verify argument types:
         assert isinstance(enumeration2, Enumeration)
@@ -790,7 +790,7 @@ class Enumeration:
         comments_equal = (enumeration1.comments == enumeration2.comments)
         return name_equal and comments_equal
 
-    # Enumeration::
+    # Enumeration.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
         assert isinstance(xml_lines, list)
@@ -805,7 +805,7 @@ class Enumeration:
 
 class EnumerationComment(Comment):
 
-    # EnumerationComment::
+    # EnumerationComment.__init__():
     def __init__(self, **arguments_table):
         #print("=>EnumerationComment.__init__()")
         enumeration_comment = self
@@ -813,12 +813,12 @@ class EnumerationComment(Comment):
         assert isinstance(enumeration_comment.language, str)
         assert isinstance(enumeration_comment.lines, list)
 
-    # EnumerationComment::
+    # EnumerationComment.__equ__():
     def __equ__(self, enumeration_comment2):
         assert isinstance(enumeration_comment2, EnumerationComment)
         return super.__eq__(enumeration_comment2)
 
-    # EnumerationComment::
+    # EnumerationComment.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
         assert isinstance(xml_lines, list)
@@ -834,7 +834,7 @@ class EnumerationComment(Comment):
 
 class Filter:
 
-    # Filter::
+    # Filter.__init__():
     def __init__(self, **arguments_table):
         # Verify argument types:
         is_filter_tree = "tree" in arguments_table
@@ -843,10 +843,11 @@ class Filter:
             assert arguments_table_size == 2
             assert "table" in arguments_table
         else:
-            assert arguments_table_size == 3
+            assert arguments_table_size == 4
             assert "parameter" in arguments_table
             assert "table" in arguments_table
             assert "use" in arguments_table
+            assert "select" in arguments_table
 
         # Dispatch on *is_filter_tree*:
         if is_filter_tree:
@@ -858,7 +859,7 @@ class Filter:
 
             # Grab the *parameter_name* and *use* from *filter_tree*:
             attributes_table = tree.attrib
-            assert len(attributes_table) == 2
+            assert len(attributes_table) == 3
 
             # Extrace *use* from *attributes_table*:
             assert "use" in attributes_table
@@ -869,6 +870,10 @@ class Filter:
                 use = False
             else:
                 assert False
+
+            # Extract the *match* from *attributes_table*:
+            assert "select" in attributes_table
+            select = attributes_table["select"]
 
             # Extract *parameter* from *attributes_table* and *table*:
             assert "name" in attributes_table
@@ -883,13 +888,15 @@ class Filter:
                 assert False
             parameter = match_parameter
         else:
-            # Just grab *table*, *parameter*, and *use* directly from *arguments_table*:
+            # Just grab *table*, *parameter*, *use*, and *select* directly from *arguments_table*:
             table = arguments_table["table"]
             assert isinstance(table, Table)
             parameter = arguments_table["parameter"]
             assert isinstance(parameter, Parameter)
             use = arguments_table["use"]
             assert isinstance(use, bool)
+            select = arguments_table["select"]
+            assert isinstance(select, str)
             
             # Make sure that *parameter* is in *parameters*:
             parameter_name = parameter.name
@@ -901,20 +908,35 @@ class Filter:
                 assert False
 
         # Load up *filter* (i.e. *self*):
-        filter           = self
-        filter.parameter = parameter
-        filter.use       = use
+        filter             = self
+        filter.parameter   = parameter
+        filter.select      = select
+        filter.select_item = None
+        filter.use         = use
+        filter.use_item    = None
 
-    def xml_lines_append(self, xml_lines, indent):
+    # Filter.xml_lines_append():
+    def xml_lines_append(self, xml_lines, indent, tracing=None):
         # Verify argument types:
         assert isinstance(xml_lines, list)
         assert isinstance(indent, str)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Filter.xml_lines_append()".format(tracing))
 
         # Start appending the `<Filter...>` element to *xml_lines*:
         filter = self
         parameter = filter.parameter
-        xml_lines.append('{0}<Filter name="{1}" use="{2}">'.
-          format(indent, parameter.name, filter.use))
+        use = filter.use
+        select = filter.select
+        xml_lines.append('{0}<Filter name="{1}" use="{2}" select="{3}">'.
+          format(indent, parameter.name, use, select))
+        if not tracing is None:
+            print("{0}Name='{1}' Use='{2}' Select='{3}'".
+              format(tracing, parameter.name, filter.use, select))
 
         # Append any *enumerations*:
         enumerations = parameter.enumerations
@@ -928,9 +950,13 @@ class Filter:
         # Wrap up `<Filter...>` element:
         xml_lines.append('{0}</Filter>'.format(indent))
 
+        # Wrap up any requested *Tracing*:
+        if not tracing is None:
+            print("{0}<=Filter.xml_lines_append()".format(tracing))
+
 class Parameter:
 
-    # Parameter::
+    # Parameter.__init__():
     def __init__(self, **arguments_table):
         is_parameter_tree = "parameter_tree" in arguments_table
         if is_parameter_tree:
@@ -1017,7 +1043,7 @@ class Parameter:
         #print("Parameter('{0}'): optional={1}".format(name, optional))
         print("Parameter(name='{0}', type='{1}', csv='{1}')".format(name, type, parameter.csv))
 
-    # Parameter::
+    # Parameter.__equ__():
     def __eq__(self, parameter2):
         #print("=>Parameter.__eq__()")
 
@@ -1047,7 +1073,7 @@ class Parameter:
 
         return all_equal
 
-    # Parameter::
+    # Parameter.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         assert isinstance(xml_lines, list)
         assert isinstance(indent, str)
@@ -1087,7 +1113,7 @@ class Parameter:
 
 class ParameterComment(Comment):
 
-    # ParameterComment::
+    # ParameterComment.__init__():
     def __init__(self, **arguments_table):
         # Verify argument types:        
         is_comment_tree = "comment_tree" in arguments_table
@@ -1135,7 +1161,7 @@ class ParameterComment(Comment):
         parameter_comment.long_heading = long_heading
         parameter_comment.short_heading = short_heading
 
-    # ParameterComment::
+    # ParameterComment.__equ__():
     def __eq__(self, parameter_comment2):
         # Verify argument types:
         assert isinstance(parameter_comment2, ParameterComment)
@@ -1148,7 +1174,7 @@ class ParameterComment(Comment):
         all_equal      = language_equal and lines_equal and long_equal and short_equal
         return all_equal
 
-    # ParameterComment::
+    # ParameterComment.xml_lines_append():
     def xml_lines_append(self, xml_lines):
         parameter_comment = self
         xml_line = '        <ParameterComment language="{0}" longHeading="{1}"'.format(
@@ -1164,7 +1190,7 @@ class ParameterComment(Comment):
 
 class Search:
 
-    # Search::
+    # Search.__init__():
     def __init__(self, **arguments_table):
         # Verify argument types:
         is_search_tree = "search_tree" in arguments_table
@@ -1252,9 +1278,10 @@ class Search:
         if not tracing is None:
             print("{0}<=Search(*):name={1}".format(tracing, name))
 
-    # Search::
-    def filters_update(self, tracing=None):
+    # Search.filters_update()
+    def xxx_filters_update(self, tables_editor, tracing=None):
         # Verify argument types:
+        assert isinstance(tables_editor, TablesEditor)
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
@@ -1262,29 +1289,36 @@ class Search:
         if not tracing is None:
             print("{0}=>Search.filters_update()".format(tracing))
 
-        # Now we have to make sure that there is a one-to-one corresondance between *filters*
-        # and *parameters*:
+        # Before we do anything we have to make sure that *search* has an associated *table*.
+        # Frankly, it is should be impossible not to have an associated table, but we must
+        # be careful:
         search = self
         table = search.table
+        assert isinstance(table, Table) or table is None
         if not table is None:
-            # Sweep through *filters* and stuff each one into *filters_table* keyed from
+            # Now we have to make sure that there is a one-to-one correspondence between *filters*
+            # and *parameters*:
+
+            # Sweep through *filters* and stuff each one into *name2filters_table* keyed from
             # the *parameter_name* (which is unique):
-            filters_table = dict()
+            name2filters_table = dict()
             filters = search.filters
             for filter in filters:
                 parameter_name = filter.parameter.name
-                filters_table[filter.parameter.name] = filter
+                name2filters_table[parameter_name] = filter
 
             # Rebuild *filters* in the exact same order as *parameters*:
             del filters[:]
             parameters = table.parameters
             for parameter_index, parameter in enumerate(parameters):
+                print("Parameter[{0}]:'{1}'".format(parameter_index, parameter.name))
+
                 # Reuse the *fiter* from *filter_table* only if it has the same name and matches
                 # *parameter*:
                 filter = None
                 parameter_name = parameter.name
-                if parameter_name in filters_table:
-                    filter = filters_table[parameter.name]
+                if parameter_name in name2filters_table:
+                    filter = name2filters_table[parameter.name]
                     if not filter.parameter is parameter:
                         # The names match, but the parameters do not; force generation of a new
                         # *Filter* by setting *filter* to *None*:
@@ -1292,17 +1326,51 @@ class Search:
 
                 # If *filter* is empty, generate a new *filter*:
                 if filter is None:
-                    filter = Filter(parameter=parameter, use=False, table=table)
+                    filter = Filter(parameter=parameter, table=table, use=False, select="")
                 filters.append(filter)
+
                 #if not tracing is None:
                 #    print("{0}[{1}]: '{2}'".format(tracing, parameter_index,
                 #      filters[parameter_index].parameter.name))
+
+                main_window = tables_editor.main_window
+                filters_table = main_window.filters_table
+
+                # Create *header_item* and stuff it into *filters_Table
+                print("here 1 '{0}'".format(parameter.name))
+                header_item = QTableWidgetItem(parameter.name)
+                #filter.header_item = header_item
+                #header_item.setData(Qt.UserRole, filter)
+                #filters_table.setItem(parameter_index, 0, header_item)
+
+                # Create *use_item* for the filters table:
+                print("here 2")
+                use = filter.use
+                use_item = QTableWidgetItem("")
+                filter.use_item = use_item
+                use_item.setData(Qt.UserRole, filter)
+                #print(type(use_item))
+                #print(use_item.__class__.__bases__)
+                flags = filter.use
+                use_item.setFlags(flags | Qt.ItemIsUserCheckable)
+                check_state = Qt.CheckState.Checked if use else Qt.CheckState.Unchecked
+                use_item.setCheckState(check_state)
+                filters_table.setItem(parameter_index, 2, use_item)
+
+                # Create the *select_item* widget for the eventual use in the filters table:
+                print("here 3 select={0}".format(select))
+                select = filter.select
+                select_item = QTableWidgetItem(select)
+                filter.select_item = select_item
+                select_item.setData(Qt.UserRole, filter)
+                select_item.setText(select)
+                filters_table.setItem(parameter_index, 3, select_item)
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=Search.filters_update()".format(tracing))
 
-    # Search::
+    # Search.table_set():
     def table_set(self, new_table, tracing=None):
         # Verify argument types:
         assert isinstance(new_table, Table) or new_table is None
@@ -1321,11 +1389,17 @@ class Search:
             print("{0}<=Search.table_set('{1}')".
               format(tracing, "None" if new_table is None else new_table.name))
 
-    # Search:
-    def xml_lines_append(self, xml_lines, indent):
+    # Search.xml_lines_append()
+    def xml_lines_append(self, xml_lines, indent, tracing=None):
         # Verify argument types:
         assert isinstance(xml_lines, list)
         assert isinstance(indent, str)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Search.xml_lines_append()".format(tracing))
 
         # Start the `<Search...>` element:
         search = self
@@ -1346,14 +1420,18 @@ class Search:
         xml_lines.append('{0}  <Filters>'.format(indent))
         filter_indent = indent + "    "
         for filter in filters:        
-            filter.xml_lines_append(xml_lines, filter_indent)
+            filter.xml_lines_append(xml_lines, filter_indent, tracing=next_tracing)
         xml_lines.append('{0}  </Filters>'.format(indent))
 
         # Wrap up the `<Search>` element:
         xml_lines.append('{0}</Search>'.format(indent))
 
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=Search.xml_lines_append()".format(tracing))
+
 class SearchComment(Comment):
-    # SearchComment::
+    # SearchComment.__init()
     def __init__(self, **arguments_table):
         # Verify argument types:
         is_comment_tree = "comment_tree" in arguments_table
@@ -1373,7 +1451,7 @@ class SearchComment(Comment):
         # intializer for the *Coment* class:
         super().__init__("SearchComment", **arguments_table)
 
-    # SearchComment::
+    # SearchComment.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
         assert isinstance(xml_lines, list)
@@ -1389,7 +1467,7 @@ class SearchComment(Comment):
         xml_lines.append('{0}</SearchComment>'.format(indent))
 
 class Table:
-    # Table::__init__()
+    # Table.__init__()
     def __init__(self, **arguments_table):
         # Verify argument types:
         assert "file_name" in arguments_table
@@ -1474,7 +1552,7 @@ class Table:
         table.name          = name
         table.parameters    = parameters
 
-    # Table::
+    # Table.__equ__():
     def __eq__(self, table2):
         # Verify argument types:
         assert isinstance(table2, Table), "{0}".format(type(table2))
@@ -1496,7 +1574,7 @@ class Table:
 
         return all_equal
 
-    # Table::
+    # Table.header_labels_get():
     def header_labels_get(self):
         table = self
         parameters = table.parameters
@@ -1514,7 +1592,7 @@ class Table:
             header_labels.append(header_label)
         return header_labels
 
-    # Table::
+    # Table.save():
     def save(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -1535,7 +1613,7 @@ class Table:
         if not tracing is None:
             print("{0}=>Table.save('{1}')".format(tracing, table.name))
 
-    # Table::
+    # Table.to_xml_string():
     def to_xml_string(self):
         table = self
         xml_lines = list()
@@ -1545,6 +1623,7 @@ class Table:
         text = '\n'.join(xml_lines)
         return text
 
+    # Table.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
         assert isinstance(xml_lines, list)
@@ -1571,7 +1650,7 @@ class Table:
         xml_lines.append('{0}</Table>'.format(indent))
 
 class TableComment(Comment):
-    # TableComment::
+    # TableComment.__init__():
     def __init__(self, **arguments_table):
         # Verify argument types:
         is_comment_tree = "comment_tree" in arguments_table
@@ -1591,13 +1670,13 @@ class TableComment(Comment):
         # intializer for the *Coment* class:
         super().__init__("TableComment", **arguments_table)
 
-    # TableComment::
+    # TableComment.__equ__():
     def __equ__(self, table_comment2):
         # Verify argument types:
         assert isinstance(table_comment2, TableComment)
         return super().__eq__(table_comment2)
 
-    # TableComment::
+    # TableComment.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
         assert isinstance(xml_lines, list)
@@ -1610,109 +1689,9 @@ class TableComment(Comment):
             xml_lines.append('{0}  {1}'.format(indent, line))
         xml_lines.append('{0}</TableComment>'.format(indent))
 
-def main():
-    #table_file_name = "drills_table.xml"
-    #assert os.path.isfile(table_file_name)
-    #with open(table_file_name) as table_read_file:
-    #    table_input_text = table_read_file.read()
-    #table_tree = etree.fromstring(table_input_text)
-    #table = Table(file_name=table_file_name, table_tree=table_tree)
-    #table_write_text = table.to_xml_string()
-    #with open("/tmp/" + table_file_name, "w") as table_write_file:
-    #    table_write_file.write(table_write_text)
-
-    # Partition the command line *arguments* into *xml_file_names* and *xsd_file_names*:
-    #arguments = sys.argv[1:]
-    #xml_file_names = list()
-    #xsd_file_names = list()
-    #for argument in arguments:
-    #    if argument.endswith(".xml"):
-    #        xml_file_names.append(argument)
-    #    elif argument.endswith(".xsd"):
-    #        xsd_file_names.append(argument)
-    #    else:
-    #        assert "File name '{0}' does not have a suffix of '.xml' or '.xsd'"
-    #
-    ## Verify that we have one '.xsd' file and and one or more '.xml' files:
-    #assert len(xsd_file_names) < 2, "Too many '.xsd` files specified"
-    #assert len(xsd_file_names) > 0, "No '.xsd' file specified"
-    #assert len(xml_file_names) > 0, "No '.xml' file specified"
-
-    # Deal with command line *arguments*:
-    arguments = sys.argv[1:]
-    #print("arguments=", arguments)
-    if True:
-        # Read in each *table_file_name* in *arguments* and append result to *tables*:
-        tables = list()
-        for table_file_name in arguments:
-            # Verify that *table_file_name* exists and has a `.xml` suffix:
-            assert os.path.isfile(table_file_name), "'{0}' does not exist".format(table_file_name)
-            assert table_file_name.endswith(".xml"), \
-              "'{0}' does not have a .xml suffix".format(table_file_name)
-
-            # Read in *table_file_name* as a *table* and append to *tables* list:
-            with open(table_file_name) as table_read_file:
-                table_input_text = table_read_file.read()
-            table_tree = etree.fromstring(table_input_text)
-            table = Table(file_name=table_file_name, table_tree=table_tree, csv_file_name="")
-            tables.append(table)
-
-            #ui_text = table.to_ui_string()
-            #with open("/tmp/test.ui", "w") as ui_file:
-            #    ui_file.write(ui_text)
-
-            # For debugging only, write *table* out to the `/tmp` directory:
-            debug = False
-            debug = True
-            if debug:
-                table_write_text = table.to_xml_string()
-                with open("/tmp/" + table_file_name, "w") as table_write_file:
-                    table_write_file.write(table_write_text)
-
-        # Now create the *tables_editor* graphical user interface (GUI) and run it:
-        tables_editor = TablesEditor(tables, tracing="")
-
-        # Start up the GUI:
-        tables_editor.run()
-
-    # When we get here, *tables_editor* has stopped running and we can return.
-    return 0
-
-    # Old Stuff....
-
-    # Read the contents of the file named *xsd_file_name* into *xsd_file_text*:
-    xsd_file_name = xsd_file_names[0]
-    with open(xsd_file_name) as xsd_file:
-        xsd_file_text = xsd_file.read()
-
-    # Parse *xsd_file_text* into *xsd_schema*:
-    xsd_schema = xmlschema.XMLSchema(xsd_file_text)
-
-    # Iterate across all of the *xml_file_names* and verify that they are valid:
-    for xml_file_name in xml_file_names:
-        with open(xml_file_name) as xml_file:
-            xml_file_text = xml_file.read()
-        xsd_schema.validate(xml_file_text)
-
-    # Parse the *xsd_file_text* into *xsd_root*:
-    xsd_root = etree.fromstring(xsd_file_text)
-    show(xsd_root, "")
-
-    schema = Schema(xsd_root)
-    assert schema == schema
-
-    # For debugging:
-    schema_text = schema.to_string()
-    with open("/tmp/drills.xsd", "w") as schema_file:
-        schema_file.write(schema_text)
-
-    # Now run the *tables_editor* graphical user interface (GUI):
-    tables_editor = TablesEditor(xsd_root, schema)
-    tables_editor.run()
-
 class TablesEditor:
 
-    # TablesEditor::__init__()
+    # TablesEditor.__init__()
     def __init__(self, tables, tracing=None):
         # Verify argument types:
         assert isinstance(tables, list)
@@ -1824,6 +1803,7 @@ class TablesEditor:
         tables_editor.original_tables = copy.deepcopy(tables)
         tables_editor.re_list = re_list
         tables_editor.searches = list()
+        tables_editor.tab_unload = None
         tables_editor.tables = tables
         tables_editor.trace_signals = not tracing is None
 
@@ -1912,10 +1892,10 @@ class TablesEditor:
 
         # Now build the *searches_combo_edit* and stuff into *tables_editor*:
         searches = tables_editor.searches
-        new_item_function = partial(TablesEditor.search_new, tables_editor)
+        new_item_function = partial(TablesEditor.searches_new, tables_editor)
         current_item_set_function = partial(TablesEditor.current_search_set, tables_editor)
-        comment_get_function = partial(TablesEditor.search_comment_get, tables_editor)
-        comment_set_function = partial(TablesEditor.search_comment_set, tables_editor)
+        comment_get_function = partial(TablesEditor.searches_comment_get, tables_editor)
+        comment_set_function = partial(TablesEditor.searches_comment_set, tables_editor)
         searches_combo_edit = ComboEdit(
           "searches",
           tables_editor,
@@ -1945,16 +1925,18 @@ class TablesEditor:
         mw.find_tabs.currentChanged.connect(                tables_editor.tab_changed)
         mw.common_save_button.clicked.connect(              tables_editor.save_button_clicked)
         mw.common_quit_button.clicked.connect(              tables_editor.quit_button_clicked)
+        mw.import_csv_file_line.textChanged.connect(     tables_editor.import_csv_file_line_changed)
+        mw.import_read.clicked.connect(                    tables_editor.import_read_button_clicked)
+        mw.import_bind.clicked.connect(                    tables_editor.import_bind_button_clicked)
         mw.parameters_csv_line.textChanged.connect(         tables_editor.parameter_csv_changed)
         mw.parameters_default_line.textChanged.connect(     tables_editor.parameter_default_changed)
         mw.parameters_long_line.textChanged.connect(        tables_editor.parameter_long_changed)
         mw.parameters_optional_check.clicked.connect(      tables_editor.parameter_optional_clicked)
         mw.parameters_short_line.textChanged.connect(       tables_editor.parameter_short_changed)
         mw.parameters_type_combo.currentTextChanged.connect(tables_editor.parameters_type_changed)
+        mw.searches_save.clicked.connect(                tables_editor.searches_save_button_clicked)
         mw.searches_table_combo.currentTextChanged.connect( tables_editor.searches_table_changed)
-        mw.import_csv_file_line.textChanged.connect(     tables_editor.import_csv_file_line_changed)
-        mw.import_read.clicked.connect(                    tables_editor.import_read_button_clicked)
-        mw.import_bind.clicked.connect(                    tables_editor.import_bind_button_clicked)
+        mw.filters_table.cellChanged.connect(              tables_editor.filters_table_cell_changed)
 
         mw.import_csv_file_line.setText("download.csv")
 
@@ -1980,7 +1962,7 @@ class TablesEditor:
         #tables_editor.table_setup(tracing=next_tracing)
 
         # Read in `/tmp/searches.xml` if it exists:
-        tables_editor.searches_load("/tmp/searches.xml", tracing=next_tracing)
+        tables_editor.searches_file_load("/tmp/searches.xml", tracing=next_tracing)
 
         # Update the entire user interface:
         tables_editor.update(tracing=next_tracing)
@@ -1991,7 +1973,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.__init__(...)\n".format(tracing))
 
-    # TablesEditor::comment_text_set()
+    # TablesEditor.comment_text_set()
     def comment_text_set(self, new_text, tracing=None):
         # Verify argument types:
         assert isinstance(new_text, str)
@@ -2011,7 +1993,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.comment_text_set(...)".format(tracing))
 
-    # TablesEditor::current_enumeration_set()
+    # TablesEditor.current_enumeration_set()
     def current_enumeration_set(self, enumeration, tracing=None):
         # Verify argument types:
         assert isinstance(enumeration, Enumeration) or enumeration is None, \
@@ -2047,7 +2029,7 @@ class TablesEditor:
             print("{0}<=TablesEditor.current_enumeration_set('{1}')".
               format(tracing, "None" if enumeration is None else enumeration.name))
 
-    # TablesEditor::current_parameter_set()
+    # TablesEditor.current_parameter_set()
     def current_parameter_set(self, parameter, tracing=None):
         # Verify argument types:
         assert isinstance(parameter, Parameter) or parameter is None
@@ -2066,7 +2048,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.current_parameter_set(*, '{1}')".format(tracing, name))
 
-    # TablesEditor::current_search_set()
+    # TablesEditor.current_search_set()
     def current_search_set(self, new_current_search, tracing=None):
         # Verify argument types:
         assert isinstance(new_current_search, Search) or new_current_search is None, \
@@ -2097,7 +2079,7 @@ class TablesEditor:
             print("{0}<=TablesEditor.current_table_set('{1}')".
               format(tracing, "None" if new_current_search is None else new_current_search.name))
 
-    # TablesEditor::current_table_set()
+    # TablesEditor.current_table_set()
     def current_table_set(self, new_current_table, tracing=None):
         # Verify argument types:
         assert isinstance(new_current_table, Table) or new_current_table is None
@@ -2124,7 +2106,7 @@ class TablesEditor:
             print("{0}<=TablesEditor.current_table_set('{1}')".
               format(tracing, "None" if new_current_table is None else new_current_table.name))
 
-    # TablesEditor::current_update()
+    # TablesEditor.current_update()
     def current_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -2237,7 +2219,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.current_update()".format(tracing))
 
-    # TablesEditor::data_update()
+    # TablesEditor.data_update()
     def data_update(self, tracing=None):
         # Verify artument types:
         assert isinstance(tracing, str) or tracing is None
@@ -2256,11 +2238,11 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.data_update()".format(tracing))
 
-    # TablesEditor::enumeration_changed()
+    # TablesEditor.enumeration_changed()
     def enumeration_changed(self):
         assert False
 
-    # TablesEditor::enumeration_comment_get()
+    # TablesEditor.enumeration_comment_get()
     def enumeration_comment_get(self, enumeration, tracing=None):
         # Verify argument types:
         assert isinstance(enumeration, Enumeration) or enumeration is None
@@ -2289,7 +2271,7 @@ class TablesEditor:
             print("{0}<=table_enumeration_get('{1}')".format(tracing, name))
         return text, position
 
-    # TablesEditor::enumeration_comment_set()
+    # TablesEditor.enumeration_comment_set()
     def enumeration_comment_set(self, enumeration, text, position, tracing=None):
         # Verify argument types:
         assert isinstance(enumeration, Enumeration) or enumeration is None
@@ -2317,7 +2299,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=enumeration_comment_set('{1}')".format(tracing, name))
 
-    # TablesEditor::enumeration_new()
+    # TablesEditor.enumeration_new()
     def enumeration_new(self, name):
         # Verify argument types:
         assert isinstance(name, str)
@@ -2337,7 +2319,7 @@ class TablesEditor:
             print("<=TablesEditor.enumeration_new('{0}')=>'{1}'".format(new_enumeration.name))
         return new_parameter
 
-    # TablesEditor::enumerations_update()
+    # TablesEditor.enumerations_update()
     def enumerations_update(self, enumeration=None, tracing=None):
         # Verify argument types:
         assert isinstance(enumeration, Enumeration) or enumeration is None
@@ -2399,7 +2381,34 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.enumerations_update()".format(tracing))
 
-    # TablesEditor::filter_use_clicked()
+    # TablesEditor.filters_table_cell_changed():
+    def filters_table_cell_changed(self, row, column):
+        # Verify argument types:
+        assert isinstance(row, int)
+        assert isinstance(column, int)
+
+        # Only do something if we are not already *in_signal*:
+        tables_editor = self
+        if not tables_editor.in_signal:
+            tables_editor.in_signal = True
+
+            # Perform any requested signal tracing:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_signals:
+                print("=>TablesEditor.filters_table_cell_changed(*, {0}, {1})".
+                  format(row, column))
+
+            # Do something here:
+
+            # Wrap up any requested signal tracing:
+            if trace_signals:
+                print("<=TablesEditor.filters_table_cell_changed(*, {0}, {1})\n".
+                  format(row, column))
+            tables_editor.in_signal = False
+
+
+    # TablesEditor.filter_use_clicked()
     def filter_use_clicked(self, use_item, filter, row, column):
         # Verify argument types:
         assert isinstance(use_item, QTableWidgetItem)
@@ -2431,15 +2440,51 @@ class TablesEditor:
                 result = "partially checked"
             else:
                 result = "unknown"
+            print("filter.name='{0}' filter.use={1}".format(filter.parameter.name, filter.use))
 
             # Wrap up any signal tracing:
             if trace_signals:
                 print("parameter check state={0}".format(result))
                 print("<=TablesEditor.filter_use_clicked(*, '{0}', {1}, {2})\n".
                   format(filter.parameter.name, row, column))
-            tables_editor.in_signal = True
+            tables_editor.in_signal = False
 
-    # TablesEditor::filters_update()
+    # TablesEditor.filters_unload()
+    def filters_unload(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.filters_unload()".format(tracing))
+
+        tables_editor = self
+        tables_editor.current_update()
+        current_search = tables_editor.current_search
+        if not current_search is None:
+            filters = current_search.filters
+            for filter in filters:
+                use_item = filter.use_item
+                use = False
+                if not use_item is None:
+                    check_state = use_item.checkState()
+                    if check_state == Qt.CheckState.Checked:
+                        use = True
+                filter.use = use
+
+                select = ""
+                select_item = filter.select_item
+                if not select_item is None:
+                    select = select_item.text()
+                filter.select = select
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.filters_unload()".format(tracing))
+
+
+    # TablesEditor.filters_update()
     def filters_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -2454,8 +2499,8 @@ class TablesEditor:
         main_window = tables_editor.main_window
         filters_table = main_window.filters_table
         filters_table.clearContents()
-        filters_table.setHorizontalHeaderLabels(["Parameter", "Use", "?"])
-        filters_table.setColumnCount(3)
+        filters_table.setColumnCount(4)
+        filters_table.setHorizontalHeaderLabels(["Parameter", "Type", "Use", "Select"])
         
         # Only fill in *filters_table* if there is a valid *current_search*:
         tables_editor.current_update(tracing=next_tracing)
@@ -2465,7 +2510,7 @@ class TablesEditor:
             filters_table.setRowCount(0)    
         else:
             # Let's update the *filters* and load them into the *filters_table* widget:
-            current_search.filters_update(tracing=next_tracing)
+            #current_search.filters_update(tables_editor, tracing=next_tracing)
             filters = current_search.filters
             filters_size = len(filters)
             filters_table.setRowCount(filters_size)
@@ -2490,39 +2535,45 @@ class TablesEditor:
                     heading = long_heading
                 if heading is None:
                     heading = parameter_name
-                if not tracing is None:
-                    print("{0}[{1}]: sh='{2}' lh='{3}' pn='{4}".format(
-                      tracing, filter_index, short_heading, long_heading, parameter_name))
+                #if not tracing is None:
+                #    print("{0}[{1}]: sh='{2}' lh='{3}' pn='{4}".format(
+                #      tracing, filter_index, short_heading, long_heading, parameter_name))
     
+                # Stuff the *heading* into the first column:
                 header_item = QTableWidgetItem(heading)
-                header_item.setData(Qt.UserRole, parameter)
-                filters_table.setItem(filter_index, 0, header_item)
+                filter.header_item = header_item
+                filters_table.setItem(filter_index, 0, filter.header_item)
                 
-                # Create the use [] check box in the second column:
+                # Stuff the *type* into the second column:
+                type = parameter.type
+                type_item = QTableWidgetItem(type)
+                filters_table.setItem(filter_index, 1, type_item)
+
+                use = filter.use
                 use_item = QTableWidgetItem("")
-                assert isinstance(use_item, QTableWidgetItem)
+                filter.use_item = use_item
+                use_item.setData(Qt.UserRole, filter)
                 #print(type(use_item))
                 #print(use_item.__class__.__bases__)
-                flags = use_item.flags()
+                flags = filter.use
                 use_item.setFlags(flags | Qt.ItemIsUserCheckable)
-                check_state = Qt.Checked if filter.use else Qt.Unchecked
+                check_state = Qt.CheckState.Checked if use else Qt.CheckState.Unchecked
                 use_item.setCheckState(check_state)
-                #use_item.itemChanged.connect(
-                #  partial(TablesEditor.search_use_clicked, tables_editor, use_item, parameter))
-                #filter.use = False
-                filters_table.setItem(filter_index, 1, use_item)
-                filters_table.cellClicked.connect(
-                  partial(TablesEditor.filter_use_clicked, tables_editor, use_item, filter))
-    
-                pattern_item = QTableWidgetItem("")
-                pattern_item.setData(Qt.UserRole, parameter)
-                filters_table.setItem(filter_index, 2, pattern_item)
+                filters_table.setItem(filter_index, 2, use_item)
+
+                select_item = QTableWidgetItem(filter.select)
+                filter.select_item = select_item
+                select_item.setData(Qt.UserRole, filter)
+                filters_table.setItem(filter_index, 3, select_item)
+
+        # Remember to unload the filters before 
+        tables_editor.tab_unload = TablesEditor.filters_unload
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.filters_update()".format(tracing))
 
-    # TablesEditor::find_update():
+    # TablesEditor.find_update():
     def find_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing == None
@@ -2549,7 +2600,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.find_update()".format(tracing))
 
-    # TablesEditor::import_bind_clicked():
+    # TablesEditor.import_bind_clicked():
     def import_bind_button_clicked(self):
         # Perform any requested signal tracing:
         tables_editor = self
@@ -2588,7 +2639,7 @@ class TablesEditor:
         if trace_signals:
             print("<=TablesEditor.import_bind_button_clicked()")
 
-    # TablesEditor::import_button_clicked():
+    # TablesEditor.import_button_clicked():
     def import_read_button_clicked(self):
         # Perform any requested signal tracing:
         tables_editor = self
@@ -2709,7 +2760,7 @@ class TablesEditor:
             print("<=TablesEditor.import_read_button_clicked()\n")
         tables_editor.in_signal = False
 
-    # TablesEditor::import_file_line_changed():
+    # TablesEditor.import_file_line_changed():
     def import_csv_file_line_changed(self):
         tables_editor = self
         in_signal = tables_editor.in_signal
@@ -2741,7 +2792,7 @@ class TablesEditor:
                 print("<=TablesEditor.import_csv_file_line_changed()\n")
             tables_editor.in_signal = False
 
-    # TablesEditor::import_update():
+    # TablesEditor.import_update():
     def import_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -2823,7 +2874,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TabledsEditor.import_update".format(tracing))
 
-    # TablesEditor::parameter_default_changed():
+    # TablesEditor.parameter_default_changed():
     def parameter_csv_changed(self, new_csv):
         # Verify argument types:
         assert isinstance(new_csv, str)
@@ -2852,7 +2903,7 @@ class TablesEditor:
                 print("=>TablesEditor.parameter_csv_changed('{0}')\n".format(new_csv))
                 tables_editor.in_signal = False
 
-    # TablesEditor::parameter_default_changed():
+    # TablesEditor.parameter_default_changed():
     def parameter_default_changed(self, new_default):
         # Verify argument types:
         assert isinstance(new_default, str)
@@ -2873,7 +2924,7 @@ class TablesEditor:
         if trace_level >= 1:
             print("<=TablesEditor.parameter_default_changed('{0}')\n".format(new_default))
 
-    # TablesEditor::parameter_comment_get():
+    # TablesEditor.parameter_comment_get():
     def parameter_comment_get(self, parameter, tracing=None):
         # Verify argument types:
         assert isinstance(parameter, Parameter) or parameter is None
@@ -2903,7 +2954,7 @@ class TablesEditor:
             print("{0}<=table_parameter_get('{1}')=>(*, {2})".format(tracing, name, position))
         return text, position
 
-    # TablesEditor::parameter_comment_set():
+    # TablesEditor.parameter_comment_set():
     def parameter_comment_set(self, parameter, text, position, tracing=None):
         # Verify argument types:
         assert isinstance(parameter, Parameter) or parameter is None
@@ -2938,7 +2989,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=parameter_comment_set('{1}', *, {2}')".format(tracing, name, position))
 
-    # TablesEditor::parameter_long_changed():
+    # TablesEditor.parameter_long_changed():
     def parameter_long_changed(self, new_long_heading):
         # Verify argument types:
         assert isinstance(new_long_heading, str)
@@ -2970,7 +3021,7 @@ class TablesEditor:
                 print("<=TablesEditor.parameter_long_changed('{0}')\n".format(new_long_heading))
             tables_editor.in_signal = False
 
-    # TablesEditor::parameters_long_set():
+    # TablesEditor.parameters_long_set():
     def parameters_long_set(self, new_long_heading, tracing=None):
         # Verify argument types:
         assert isinstance(new_long_heading, str)
@@ -3002,7 +3053,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.parameters_long_set('{1}')".format(tracing, new_long_heading))
 
-    # TablesEditor::parameter_new():
+    # TablesEditor.parameter_new():
     def parameter_new(self, name, tracing= None):
         # Verify argument types:
         assert isinstance(name, str)
@@ -3022,7 +3073,7 @@ class TablesEditor:
             print("{0}<=TablesEditor.parmeter_new('{1}')".format(tracing, name))
         return new_parameter
 
-    # TablesEditor::parameter_optional_clicked():
+    # TablesEditor.parameter_optional_clicked():
     def parameter_optional_clicked(self):
         # Perform any tracing requested by *tables_editor* (i.e. *self*):
         tables_editor = self
@@ -3041,7 +3092,7 @@ class TablesEditor:
         if trace_level >= 1:
             print("=>TablesEditor.parameter_optional_clicked()\n")
 
-    # TablesEditor::parameter_short_changed():
+    # TablesEditor.parameter_short_changed():
     def parameter_short_changed(self, new_short_heading):
         # Verify argument types:
         assert isinstance(new_short_heading, str)
@@ -3074,7 +3125,7 @@ class TablesEditor:
                 print("<=TablesEditor.parameter_short_changed('{0}')\n".format(new_short_heading))
             tables_editor.in_signal = False
 
-    # TablesEditor::parameters_short_set():
+    # TablesEditor.parameters_short_set():
     def parameters_short_set(self, new_short_heading, tracing=None):
         # Verify argument types:
         assert isinstance(new_short_heading, str) or new_short_heading is None
@@ -3106,7 +3157,7 @@ class TablesEditor:
             print("{0}<=TablesEditor.parameters_short_set('{1}')".
               format(tracing, new_short_heading))
 
-    # TablesEditor::parameters_type_changed():
+    # TablesEditor.parameters_type_changed():
     def parameters_type_changed(self):
         # Perform any requested *signal_tracing* from *tables_editor* (i.e. *self*):
         tables_editor = self
@@ -3131,7 +3182,7 @@ class TablesEditor:
                   format(None if current_parameter is None else current_parameter.name))
             tables_editor.in_signal = False
 
-    # TablesEditor::parameters_update():
+    # TablesEditor.parameters_update():
     def parameters_update(self, parameter=None, tracing=None):
         # Verify argument types:
         assert isinstance(parameter, Parameter) or parameter is None
@@ -3246,14 +3297,14 @@ class TablesEditor:
             print("{0}<=TablesEditor.parameters_update('{1}')".
               format(tracing, "None" if parameter is None else parameter.name))
 
-    # TablesEditor::quit_button_clicked():
+    # TablesEditor.quit_button_clicked():
     def quit_button_clicked(self):
         tables_editor = self
         print("TablesEditor.quit_button_clicked() called")
         application = tables_editor.application
         application.quit()
 
-    # TablesEditor::results_update():
+    # TablesEditor.results_update():
     def results_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
@@ -3292,7 +3343,7 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.results_update()".format(tracing))
 
-    # TablesEditor::run():
+    # TablesEditor.run():
     def run(self):
         # Show the *window* and exit when done:
         tables_editor = self 
@@ -3306,7 +3357,7 @@ class TablesEditor:
 
         sys.exit(application.exec_())
 
-    # TablesEditor::save_button_clicked():
+    # TablesEditor.save_button_clicked():
     def save_button_clicked(self):
         # Perform any requested signal tracing:
         tables_editor = self
@@ -3337,7 +3388,7 @@ class TablesEditor:
         if trace_signals:
             print("=>TablesEditor.save_button_clicked()\n")
 
-    # TablesEditor::schema_update():
+    # TablesEditor.schema_update():
     def schema_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing == None
@@ -3374,8 +3425,100 @@ class TablesEditor:
         if not tracing is None:
             print("{0}=>TablesEditor.schema_update()".format(tracing))
 
-    # TablesEditor::searches_load():
-    def searches_load(self, xml_file_name, tracing=None):
+    # TablesEditor.searches_comment_get():
+    def searches_comment_get(self, search, tracing=None):
+        # Verify argument types:
+        assert isinstance(search, Search) or search is None
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TableEditor.searches_comment_get('{1}')".format(tracing, search.name))
+
+        # Extract the comment *text* from *search*:
+        if search is None:
+            text = ""
+            position = 0
+        else:
+            comments = search.comments
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, SearchComment)
+            text = '\n'.join(comment.lines)
+            position = comment.position
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.searches_comment_get('{1}')".format(tracing, search.name))
+        return text, position
+
+    # TablesEditor.searches_comment_set():
+    def searches_comment_set(self, search, text, position, tracing=None):
+        # Verify argument types:
+        assert isinstance(search, Search) or search is None
+        assert isinstance(text, str)
+        assert isinstance(position, int)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.searches_comment_set('{1}')".
+              format(tracing, "None" if search is None else search.name))
+
+        # Stuff *text* and *position* into *search*:
+        if not search is None:
+            comments = search.comments
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, SearchComment)
+            comment.lines = text.split('\n')
+            comment.position = position
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.searches_comment_set('{1}')".
+              format(tracing, "None" if search is None else search.name))
+
+    # TablesEditor.searches_file_save():
+    def searches_file_save(self, file_name, tracing=None):
+        # Verify argument types:
+        assert isinstance(file_name, str)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.searches_file_save('{1}')".format(tracing, file_name))
+
+        xml_lines = list()
+        xml_lines.append('<?xml version="1.0"?>')
+        xml_lines.append('<Searches>')
+
+        # Sweep through each *search* in *searches* and append the results to *xml_lines*:
+        tables_editor = self
+        searches = tables_editor.searches
+        for search in searches:
+            search.xml_lines_append(xml_lines, "  ", tracing=next_tracing)
+
+        # Wrap up *xml_lines* and generate *xml_text*:
+        xml_lines.append('</Searches>')
+        xml_lines.append("")
+        xml_text = '\n'.join(xml_lines)
+
+        # Write out *xml_text* to *file_name*:
+        with open(file_name, "w") as xml_file:
+            xml_file.write(xml_text)
+
+        # Wrqp up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.searches_file_save('{1}')".format(tracing, file_name))
+
+    # TablesEditor.searches_file_load():
+    def searches_file_load(self, xml_file_name, tracing=None):
         # Veify argument types:
         assert isinstance(xml_file_name, str)
         assert isinstance(tracing, str) or tracing is None
@@ -3383,7 +3526,7 @@ class TablesEditor:
         # Perform any requested *tracing*:
         next_tracing = None if tracing is None else tracing + " "
         if not tracing is None:
-            print("{0}=>TablesEditor.searches_load('{1})".format(tracing, xml_file_name))
+            print("{0}=>TablesEditor.searches_file_load('{1})".format(tracing, xml_file_name))
 
         # Read in *xml_file_name* (if it exists):
         if os.path.isfile(xml_file_name):
@@ -3416,10 +3559,10 @@ class TablesEditor:
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
-            print("{0}<=TablesEditor.searches_load('{1})".format(tracing, xml_file_name))
+            print("{0}<=TablesEditor.searches_file_load('{1})".format(tracing, xml_file_name))
 
-    # TablesEditor::search_new():
-    def search_new(self, name, tracing=None):
+    # TablesEditor.searches_new():
+    def searches_new(self, name, tracing=None):
         # Verify argument types:
         assert isinstance(name, str)
         assert isinstance(tracing, str) or tracing is None
@@ -3427,7 +3570,7 @@ class TablesEditor:
         # Perform requested *tracing*:
         next_tracing = None if tracing is None else tracing + " "
         if not tracing is None:
-            print("{0}=>TablesEditor.search_new('{1}')".format(tracing, name))
+            print("{0}=>TablesEditor.searches_new('{1}')".format(tracing, name))
 
         tables_editor = self
         tables_editor.current_update()
@@ -3437,16 +3580,307 @@ class TablesEditor:
         search_comment = SearchComment(language="EN", lines=list())
         search_comments = [ search_comment ]
         search = Search(name=name, comments=search_comments, table=current_table)
-        search.filters_update()
+        search.filters_update(tables_editor)
 
         # Wrap up any requested *tracing* and return *search*:
         next_tracing = None if tracing is None else tracing + " "
         if not tracing is None:
-            print("{0}<=TablesEditor.search_new('{1}')".format(tracing, name))
+            print("{0}<=TablesEditor.searches_new('{1}')".format(tracing, name))
         return search
 
-    # TablesEditor::search_update():
-    def search_update(self, tracing=None):
+    # TablesEditor.searches_save_button_clicked():
+    def searches_save_button_clicked(self):
+        # Peform an requested signal tracing:
+        tables_editor = self
+        tracing = " " if tables_editor.trace_signals else None
+        next_tracing = None if tracing is None else " "
+        if not tracing is None:
+            print("=>TablesEditor.searches_save_button_clicked()".format(tracing))
+            
+        # Write out the searches to *file_name*:
+        file_name = "/tmp/searches.xml"
+        tables_editor.searches_file_save(file_name, tracing=next_tracing)
+
+        if not tracing is None:
+            print("<=TablesEditor.searches_save_button_clicked()\n".format(tracing))
+
+    # TablesEditor.searches_table_changed():
+    def searches_table_changed(self, new_text):
+        # Verify argument types:
+        assert isinstance(new_text, str)
+
+        # Do nothing if we are already in a signal:
+        tables_editor = self
+        if not tables_editor.in_signal:
+            tables_editor.in_signal = True
+            # Perform any requested *tracing*:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_signals:
+                print("=>TablesEditor.searches_table_changed('{0}')".format(new_text))
+
+            # Make sure *current_search* is up to date:
+            tables_editor = self
+            tables_editor.current_update(tracing=next_tracing)
+            current_search = tables_editor.current_search
+
+            # Find the *table* that matches *new_text* and stuff it into *current_search*:
+            if not current_search is None:
+                match_table = None
+                tables = tables_editor.tables
+                for table_index, table in enumerate(tables):
+                    assert isinstance(table, Table)
+                    if table.name == new_text:
+                        match_table = table
+                        break
+                current_search.table_set(match_table, tracing=next_tracing)
+
+            # Wrap up any requested *tracing*:
+            if trace_signals:
+                print("<=TablesEditor.searches_table_changed('{0}')\n".format(new_text))
+            tables_editor.in_signal = False
+
+    # TablesEditor.searches_update():
+    def searches_update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.searches_update()".format(tracing))
+
+        # Make sure that *current_search* is up to date:
+        tables_editor = self
+        tables_editor.current_update(tracing=next_tracing)
+        current_search = tables_editor.current_search        
+
+        # Update *searches_combo_edit*:
+        searches_combo_edit = tables_editor.searches_combo_edit
+        searches_combo_edit.gui_update(tracing=next_tracing)
+
+        # Next: Update the table options:
+        search_table = None if current_search is None else current_search.table
+        tables = tables_editor.tables
+        main_window = tables_editor.main_window
+        searches_table_combo = main_window.searches_table_combo
+        searches_table_combo.clear()
+        if len(tables) >= 1:
+            match_index = -1
+            for table_index, table in enumerate(tables):
+                assert isinstance(table, Table)
+                searches_table_combo.addItem(table.name)
+                if table is search_table:
+                    match_index = table_index
+            if match_index >= 0:
+                searches_table_combo.setCurrentIndex(match_index)
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.searches_update()".format(tracing))
+
+    # TablesEditor.tab_changed():
+    def tab_changed(self, new_index):
+        # Verify argument types:
+        assert isinstance(new_index, int)
+
+        # Note: *new_index* is only used for debugging.
+
+        # Only deal with this siginal if we are not already *in_signal*:
+        tables_editor = self
+        if not tables_editor.in_signal:
+            # Disable  *nested_signals*:
+            tables_editor.in_signal = True
+
+            # Perform any requested signal tracing:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_signals:
+                print("=>TablesEditor.tab_changed(*, {0})".format(new_index))
+
+            # Deal with clean-up of previous tab (if requested):
+            tab_unload = tables_editor.tab_unload
+            if callable(tab_unload):
+                tab_unload(tables_editor, tracing=next_tracing)
+
+            # Perform the update:
+            tables_editor.update(tracing=next_tracing)
+
+            # Wrap up any requested signal tracing and restore *in_signal*:
+            if trace_signals:
+                print("<=TablesEditor.tab_changed(*, {0})\n".format(new_index))
+            tables_editor.in_signal = False
+
+    # TablesEditor.table_comment_get():
+    def table_comment_get(self, table, tracing=None):
+        # Verify argument types:
+        assert isinstance(table, Table)
+        assert isinstance(tracing, str) or tracing is None
+
+        curosr = 0
+        text = ""
+        # Perform any requested *tracing*:
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>table_comment_get('{1}')".format(tracing, table.name))
+
+        # Extract the comment *text* from *table*:
+        if not table is None:
+            comments = table.comments
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, TableComment)
+            text = '\n'.join(comment.lines)
+            position = comment.position
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=table_comment_get('{1}')".format(tracing, table.name))
+        return text, position
+
+    # TablesEditor.table_comment_set():
+    def table_comment_set(self, table, text, position, tracing=None):
+        # Verify argument types:
+        assert isinstance(table, Table)
+        assert isinstance(text, str)
+        assert isinstance(position, int)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>table_comment_set('{1}')".format(tracing, table.name))
+
+        # Stuff *text* into *table*:
+        if not table is None:
+            comments = table.comments
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, TableComment)
+            comment.lines = text.split('\n')
+            comment.position = position
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=table_comment_set('{1}')".format(tracing, table.name))
+
+    # TablesEditor.table_new():
+    def table_new(self, name, tracing = None):
+        # Verify argument types:
+        assert isinstance(name, str)
+
+        # Perform an requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.table_new('{1}')".format(tracing, name))
+
+        file_name = "{0}.xml".format(name)
+        table_comment = TableComment(language="EN", lines=list())
+        table = Table(file_name=file_name,
+          name=name, comments=[table_comment], parameters=list(), csv_file_name="")
+
+        # Wrap up any requested *tracing* and return table:
+        if not tracing is None:
+            print("{0}<=TablesEditor.table_new('{1}')".format(tracing, name))
+        return table
+
+    # TablesEditor.table_setup():
+    def table_setup(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any tracing requested from *tables_editor* (i.e. *self*):
+        tables_editor = self
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.table_setup(*)".format(tracing))
+
+        # Grab the *table* widget and *current_table* from *tables_editor* (i.e. *self*):
+        tables_editor = self
+        main_window = tables_editor.main_window
+        data_table = main_window.data_table
+        assert isinstance(data_table, QTableWidget)
+        current_table = tables_editor.current_table
+
+        # Dispatch on *current_table* depending upon whether it exists or not:
+        if current_table is None:
+            # *current_table* is empty, so we initialize the *table* widget to be empty:
+            data_table.setHorizontalHeaderLabels([])
+            data_table.setColumnCount(0)
+            data_table.setRowCount(0)
+        else:
+            # *current_table* is valid, so we extract the *header_labels* and attach them to the
+            # *table* widget:
+            assert isinstance(current_table, Table)
+            header_labels = current_table.header_labels_get()
+            data_table.setHorizontalHeaderLabels(header_labels)
+            data_table.setColumnCount(len(header_labels))
+            data_table.setRowCount(1)
+
+        # Wrap up any requested tracing:
+        if not tracing is None:
+            print("{0}=>TablesEditor.table_setup(*)".format(tracing))
+
+    # TablesEditor.tables_update():
+    def tables_update(self, table=None, tracing=None):
+        # Verify argument types:
+        assert isinstance(table, Table) or table is None
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any tracing requested by *tables_editor* (i.e. *self*):
+        tables_editor   = self
+
+        # Perform any requested *trracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.tables_update()".format(tracing))
+        
+        # Make sure that the *current_table*, *current_parameter*, and *current_enumeration*
+        # in *tables_editor* are valid:
+        tables_editor.current_update(tracing=next_tracing)
+
+        # Update the *tables_combo_edit*:
+        tables_editor.tables_combo_edit.gui_update(tracing=next_tracing)
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=TablesEditor.tables_update()".format(tracing))
+
+    # TablesEditor.update():
+    def update(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any tracing requested by *tables_editor* (i.e. *self*):
+        tables_editor   = self
+        #trace_level = tables_editor.trace_level
+        #if trace_level >= 1:
+        #    print("=>TablesEditor.update()")
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>TablesEditor.update()".format(tracing))
+
+        # Only update the visible tabs based on *root_tabs_index*:
+        main_window = tables_editor.main_window
+        root_tabs = main_window.root_tabs
+        root_tabs_index = root_tabs.currentIndex()
+        if root_tabs_index == 0:
+            tables_editor.schema_update(tracing=next_tracing)
+        elif root_tabs_index == 1:
+            tables_editor.find_update(tracing=next_tracing)
+        else:
+            assert False, "Illegal tab index: {0}".format(root_tabs_index)
+        
+        # Wrap up any tracing requested by *tables_editor*:
+        #if trace_level >= 1:
+        #    print("<=TablesEditor.update()")
+        if not tracing is None:
+            print("{0}<=TablesEditor.update()".format(tracing))
+
+    # TablesEditor.search_update():
+    def xxx_search_update(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
 
@@ -3540,334 +3974,6 @@ class TablesEditor:
 
         if not tracing is None:
             print("{0}<=TablesEditor.search_update(*)".format(tracing))
-
-    # TablesEditor::search_comment_get():
-    def search_comment_get(self, search, tracing=None):
-        # Verify argument types:
-        assert isinstance(search, Search) or search is None
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any requested *tracing*:
-        tables_editor = self
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>table_comment_get('{1}')".format(tracing, search.name))
-
-        # Extract the comment *text* from *search*:
-        if search is None:
-            text = ""
-            position = 0
-        else:
-            comments = search.comments
-            assert len(comments) >= 1
-            comment = comments[0]
-            assert isinstance(comment, SearchComment)
-            text = '\n'.join(comment.lines)
-            position = comment.position
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=table_comment_get('{1}')".format(tracing, search.name))
-        return text, position
-
-    # TablesEditor::search_comment_set():
-    def search_comment_set(self, search, text, position, tracing=None):
-        # Verify argument types:
-        assert isinstance(search, Search) or search is None
-        assert isinstance(text, str)
-        assert isinstance(position, int)
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any requested *tracing*:
-        tables_editor = self
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>TablesEditor.search_comment_set('{1}')".
-              format(tracing, "None" if search is None else search.name))
-
-        # Stuff *text* and *position* into *search*:
-        if not search is None:
-            comments = search.comments
-            assert len(comments) >= 1
-            comment = comments[0]
-            assert isinstance(comment, SearchComment)
-            comment.lines = text.split('\n')
-            comment.position = position
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=TablesEditor.search_comment_set('{1}')".
-              format(tracing, "None" if search is None else search.name))
-
-    # TablesEditor::searches_table_changed():
-    def searches_table_changed(self, new_text):
-        # Verify argument types:
-        assert isinstance(new_text, str)
-
-        # Do nothing if we are already in a signal:
-        tables_editor = self
-        if not tables_editor.in_signal:
-            tables_editor.in_signal = True
-            # Perform any requested *tracing*:
-            trace_signals = tables_editor.trace_signals
-            next_tracing = " " if trace_signals else None
-            if trace_signals:
-                print("=>TablesEditor.searches_table_changed('{0}')".format(new_text))
-
-            # Make sure *current_search* is up to date:
-            tables_editor = self
-            tables_editor.current_update(tracing=next_tracing)
-            current_search = tables_editor.current_search
-
-            # Find the *table* that matches *new_text* and stuff it into *current_search*:
-            if not current_search is None:
-                match_table = None
-                tables = tables_editor.tables
-                for table_index, table in enumerate(tables):
-                    assert isinstance(table, Table)
-                    if table.name == new_text:
-                        match_table = table
-                        break
-                current_search.table_set(match_table, tracing=next_tracing)
-
-            # Wrap up any requested *tracing*:
-            if trace_signals:
-                print("<=TablesEditor.searches_table_changed('{0}')\n".format(new_text))
-            tables_editor.in_signal = False
-
-    # TablesEditor::searches_update():
-    def searches_update(self, tracing=None):
-        # Verify argument types:
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>TablesEditor.searches_update()".format(tracing))
-
-        # Make sure that *current_search* is up to date:
-        tables_editor = self
-        tables_editor.current_update(tracing=next_tracing)
-        current_search = tables_editor.current_search        
-
-        # Update *searches_combo_edit*:
-        searches_combo_edit = tables_editor.searches_combo_edit
-        searches_combo_edit.gui_update(tracing=next_tracing)
-
-        # Next: Update the table options:
-        search_table = None if current_search is None else current_search.table
-        tables = tables_editor.tables
-        main_window = tables_editor.main_window
-        searches_table_combo = main_window.searches_table_combo
-        searches_table_combo.clear()
-        if len(tables) >= 1:
-            match_index = -1
-            for table_index, table in enumerate(tables):
-                assert isinstance(table, Table)
-                searches_table_combo.addItem(table.name)
-                if table is search_table:
-                    match_index = table_index
-            if match_index >= 0:
-                searches_table_combo.setCurrentIndex(match_index)
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=TablesEditor.searches_update()".format(tracing))
-
-    # TablesEditor::tab_changed():
-    def tab_changed(self, new_index):
-        # Verify argument types:
-        assert isinstance(new_index, int)
-
-        # Note: *new_index* is only used for debugging.
-
-        # Only deal with this siginal if we are not already *in_signal*:
-        tables_editor = self
-        if not tables_editor.in_signal:
-            # Disable  *nested_signals*:
-            tables_editor.in_signal = True
-
-            # Perform any requested signal tracing:
-            trace_signals = tables_editor.trace_signals
-            next_tracing = " " if trace_signals else None
-            if trace_signals:
-                print("=>TablesEditor.tab_changed(*, {0})".format(new_index))
-
-            # Perform the update:
-            tables_editor.update(tracing=next_tracing)
-
-            # Wrap up any requested signal tracing and restore *in_signal*:
-            if trace_signals:
-                print("<=TablesEditor.tab_changed(*, {0})\n".format(new_index))
-            tables_editor.in_signal = False
-
-    # TablesEditor::table_comment_get():
-    def table_comment_get(self, table, tracing=None):
-        # Verify argument types:
-        assert isinstance(table, Table)
-        assert isinstance(tracing, str) or tracing is None
-
-        curosr = 0
-        text = ""
-        # Perform any requested *tracing*:
-        tables_editor = self
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>table_comment_get('{1}')".format(tracing, table.name))
-
-        # Extract the comment *text* from *table*:
-        if not table is None:
-            comments = table.comments
-            assert len(comments) >= 1
-            comment = comments[0]
-            assert isinstance(comment, TableComment)
-            text = '\n'.join(comment.lines)
-            position = comment.position
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=table_comment_get('{1}')".format(tracing, table.name))
-        return text, position
-
-    # TablesEditor::table_comment_set():
-    def table_comment_set(self, table, text, position, tracing=None):
-        # Verify argument types:
-        assert isinstance(table, Table)
-        assert isinstance(text, str)
-        assert isinstance(position, int)
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any requested *tracing*:
-        tables_editor = self
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>table_comment_set('{1}')".format(tracing, table.name))
-
-        # Stuff *text* into *table*:
-        if not table is None:
-            comments = table.comments
-            assert len(comments) >= 1
-            comment = comments[0]
-            assert isinstance(comment, TableComment)
-            comment.lines = text.split('\n')
-            comment.position = position
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=table_comment_set('{1}')".format(tracing, table.name))
-
-    # TablesEditor::table_new():
-    def table_new(self, name, tracing = None):
-        # Verify argument types:
-        assert isinstance(name, str)
-
-        # Perform an requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>TablesEditor.table_new('{1}')".format(tracing, name))
-
-        file_name = "{0}.xml".format(name)
-        table_comment = TableComment(language="EN", lines=list())
-        table = Table(file_name=file_name,
-          name=name, comments=[table_comment], parameters=list(), csv_file_name="")
-
-        # Wrap up any requested *tracing* and return table:
-        if not tracing is None:
-            print("{0}<=TablesEditor.table_new('{1}')".format(tracing, name))
-        return table
-
-    # TablesEditor::table_setup():
-    def table_setup(self, tracing=None):
-        # Verify argument types:
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any tracing requested from *tables_editor* (i.e. *self*):
-        tables_editor = self
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>TablesEditor.table_setup(*)".format(tracing))
-
-        # Grab the *table* widget and *current_table* from *tables_editor* (i.e. *self*):
-        tables_editor = self
-        main_window = tables_editor.main_window
-        data_table = main_window.data_table
-        assert isinstance(data_table, QTableWidget)
-        current_table = tables_editor.current_table
-
-        # Dispatch on *current_table* depending upon whether it exists or not:
-        if current_table is None:
-            # *current_table* is empty, so we initialize the *table* widget to be empty:
-            data_table.setHorizontalHeaderLabels([])
-            data_table.setColumnCount(0)
-            data_table.setRowCount(0)
-        else:
-            # *current_table* is valid, so we extract the *header_labels* and attach them to the
-            # *table* widget:
-            assert isinstance(current_table, Table)
-            header_labels = current_table.header_labels_get()
-            data_table.setHorizontalHeaderLabels(header_labels)
-            data_table.setColumnCount(len(header_labels))
-            data_table.setRowCount(1)
-
-        # Wrap up any requested tracing:
-        if not tracing is None:
-            print("{0}=>TablesEditor.table_setup(*)".format(tracing))
-
-    # TablesEditor::tables_update():
-    def tables_update(self, table=None, tracing=None):
-        # Verify argument types:
-        assert isinstance(table, Table) or table is None
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any tracing requested by *tables_editor* (i.e. *self*):
-        tables_editor   = self
-
-        # Perform any requested *trracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>TablesEditor.tables_update()".format(tracing))
-        
-        # Make sure that the *current_table*, *current_parameter*, and *current_enumeration*
-        # in *tables_editor* are valid:
-        tables_editor.current_update(tracing=next_tracing)
-
-        # Update the *tables_combo_edit*:
-        tables_editor.tables_combo_edit.gui_update(tracing=next_tracing)
-
-        # Wrap up any requested *tracing*:
-        if not tracing is None:
-            print("{0}<=TablesEditor.tables_update()".format(tracing))
-
-    # TablesEditor::update():
-    def update(self, tracing=None):
-        # Verify argument types:
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any tracing requested by *tables_editor* (i.e. *self*):
-        tables_editor   = self
-        #trace_level = tables_editor.trace_level
-        #if trace_level >= 1:
-        #    print("=>TablesEditor.update()")
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
-            print("{0}=>TablesEditor.update()".format(tracing))
-
-        # Only update the visible tabs based on *root_tabs_index*:
-        main_window = tables_editor.main_window
-        root_tabs = main_window.root_tabs
-        root_tabs_index = root_tabs.currentIndex()
-        if root_tabs_index == 0:
-            tables_editor.schema_update(tracing=next_tracing)
-        elif root_tabs_index == 1:
-            tables_editor.find_update(tracing=next_tracing)
-        else:
-            assert False, "Illegal tab index: {0}".format(root_tabs_index)
-        
-        # Wrap up any tracing requested by *tables_editor*:
-        #if trace_level >= 1:
-        #    print("<=TablesEditor.update()")
-        if not tracing is None:
-            print("{0}<=TablesEditor.update()".format(tracing))
 
 class Units:
     def __init__(self):
@@ -4222,6 +4328,106 @@ class CheckableComboBox(QComboBox):
     def itemChecked(self, index):
         item = self.model().item(i,0)
         return item.checkState() == QtCore.Qt.Checked
+
+def main():
+    #table_file_name = "drills_table.xml"
+    #assert os.path.isfile(table_file_name)
+    #with open(table_file_name) as table_read_file:
+    #    table_input_text = table_read_file.read()
+    #table_tree = etree.fromstring(table_input_text)
+    #table = Table(file_name=table_file_name, table_tree=table_tree)
+    #table_write_text = table.to_xml_string()
+    #with open("/tmp/" + table_file_name, "w") as table_write_file:
+    #    table_write_file.write(table_write_text)
+
+    # Partition the command line *arguments* into *xml_file_names* and *xsd_file_names*:
+    #arguments = sys.argv[1:]
+    #xml_file_names = list()
+    #xsd_file_names = list()
+    #for argument in arguments:
+    #    if argument.endswith(".xml"):
+    #        xml_file_names.append(argument)
+    #    elif argument.endswith(".xsd"):
+    #        xsd_file_names.append(argument)
+    #    else:
+    #        assert "File name '{0}' does not have a suffix of '.xml' or '.xsd'"
+    #
+    ## Verify that we have one '.xsd' file and and one or more '.xml' files:
+    #assert len(xsd_file_names) < 2, "Too many '.xsd` files specified"
+    #assert len(xsd_file_names) > 0, "No '.xsd' file specified"
+    #assert len(xml_file_names) > 0, "No '.xml' file specified"
+
+    # Deal with command line *arguments*:
+    arguments = sys.argv[1:]
+    #print("arguments=", arguments)
+    if True:
+        # Read in each *table_file_name* in *arguments* and append result to *tables*:
+        tables = list()
+        for table_file_name in arguments:
+            # Verify that *table_file_name* exists and has a `.xml` suffix:
+            assert os.path.isfile(table_file_name), "'{0}' does not exist".format(table_file_name)
+            assert table_file_name.endswith(".xml"), \
+              "'{0}' does not have a .xml suffix".format(table_file_name)
+
+            # Read in *table_file_name* as a *table* and append to *tables* list:
+            with open(table_file_name) as table_read_file:
+                table_input_text = table_read_file.read()
+            table_tree = etree.fromstring(table_input_text)
+            table = Table(file_name=table_file_name, table_tree=table_tree, csv_file_name="")
+            tables.append(table)
+
+            #ui_text = table.to_ui_string()
+            #with open("/tmp/test.ui", "w") as ui_file:
+            #    ui_file.write(ui_text)
+
+            # For debugging only, write *table* out to the `/tmp` directory:
+            debug = False
+            debug = True
+            if debug:
+                table_write_text = table.to_xml_string()
+                with open("/tmp/" + table_file_name, "w") as table_write_file:
+                    table_write_file.write(table_write_text)
+
+        # Now create the *tables_editor* graphical user interface (GUI) and run it:
+        tables_editor = TablesEditor(tables, tracing="")
+
+        # Start up the GUI:
+        tables_editor.run()
+
+    # When we get here, *tables_editor* has stopped running and we can return.
+    return 0
+
+    # Old Stuff....
+
+    # Read the contents of the file named *xsd_file_name* into *xsd_file_text*:
+    xsd_file_name = xsd_file_names[0]
+    with open(xsd_file_name) as xsd_file:
+        xsd_file_text = xsd_file.read()
+
+    # Parse *xsd_file_text* into *xsd_schema*:
+    xsd_schema = xmlschema.XMLSchema(xsd_file_text)
+
+    # Iterate across all of the *xml_file_names* and verify that they are valid:
+    for xml_file_name in xml_file_names:
+        with open(xml_file_name) as xml_file:
+            xml_file_text = xml_file.read()
+        xsd_schema.validate(xml_file_text)
+
+    # Parse the *xsd_file_text* into *xsd_root*:
+    xsd_root = etree.fromstring(xsd_file_text)
+    show(xsd_root, "")
+
+    schema = Schema(xsd_root)
+    assert schema == schema
+
+    # For debugging:
+    schema_text = schema.to_string()
+    with open("/tmp/drills.xsd", "w") as schema_file:
+        schema_file.write(schema_text)
+
+    # Now run the *tables_editor* graphical user interface (GUI):
+    tables_editor = TablesEditor(xsd_root, schema)
+    tables_editor.run()
 
 if __name__ == "__main__":
     main()
