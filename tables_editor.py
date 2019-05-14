@@ -3,14 +3,15 @@
 #<-------------------------------------------- 100 characters ------------------------------------>|
 
 # Coding standards:
-# * In general, the coding guidexml_lines PEP 8 are used.
-# * All code and docmenation xml_lines must be on xml_lines of 100 characters or less.
+# * In general, the coding guidelines for PEP 8 are used.
+# * All code and docmenation lines must be on lines of 100 characters or less.
 # * Comments:
 #   * All code comments are written in [Markdown](https://en.wikipedia.org/wiki/Markdown).
 #   * Code is organized into blocks are preceeded by comment that explains the code block.
-#   * For methods, the class name is listed on a comment preceding the **def**.
+#   * For methods, a comment of the form `# CLASS_NAME.METHOD_NAME():` is before each method
+#     definition.
 # * Class/Function standards:
-#   * Indentation levels are multiples of 4 spaces and continuation xml_lines have 2 more spaces.
+#   * Indentation levels are multiples of 4 spaces and continuation lines have 2 more spaces.
 #   * All classes are listed alphabetically.
 #   * All methods within a class are listed alphabetically.
 #   * No duck typing!  All function/method arguments are checked for compatibale types.
@@ -18,6 +19,18 @@
 #   * Generally, single character strings are in single quotes (`'`) and multi characters in double
 #     quotes (`"`).  Empty strings are represented as `""`.  Strings with multiple double quotes
 #     can be enclosed in single quotes.
+#
+# Tasks:
+# * Decode Digi-Key parametric search URL's.
+# * Start integration with bom_manager.py
+#   * Record Digi-Key URL's via clip-board
+#   * Capture Digi-Key CSV table via F12 & clip-board
+# * Start providing ordering operations.
+# * Reorder tables/parameters/enumerations/searches.
+# * Sort search results
+# * Table search templates
+# * Footprint hooks
+# * Better parametric search
 
 # Import some libraries:
 import re
@@ -34,7 +47,7 @@ from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import (QApplication, QCheckBox, QComboBox, QLabel, QLineEdit,
                                QPlainTextEdit, QPushButton,
                                QTableView, QTableWidget, QTableWidgetItem, QWidget)
-from PySide2.QtCore import (Qt, QFile, QByteArray, QTimer)
+from PySide2.QtCore import (Qt, QFile, QByteArray, QTimer, QItemSelectionModel)
 #from PySide2.QtNetwork import (QUdpSocket, QHostAddress)
 
 class ComboEdit:
@@ -910,6 +923,7 @@ class Filter:
         # Load up *filter* (i.e. *self*):
         filter             = self
         filter.parameter   = parameter
+        filter.reg_ex      = None
         filter.select      = select
         filter.select_item = None
         filter.use         = use
@@ -1278,10 +1292,9 @@ class Search:
         if not tracing is None:
             print("{0}<=Search(*):name={1}".format(tracing, name))
 
-    # Search.filters_update()
-    def xxx_filters_update(self, tables_editor, tracing=None):
+    # Search.filters_refresh()
+    def filters_refresh(self, tracing=None):
         # Verify argument types:
-        assert isinstance(tables_editor, TablesEditor)
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
@@ -1333,42 +1346,9 @@ class Search:
                 #    print("{0}[{1}]: '{2}'".format(tracing, parameter_index,
                 #      filters[parameter_index].parameter.name))
 
-                main_window = tables_editor.main_window
-                filters_table = main_window.filters_table
-
-                # Create *header_item* and stuff it into *filters_Table
-                print("here 1 '{0}'".format(parameter.name))
-                header_item = QTableWidgetItem(parameter.name)
-                #filter.header_item = header_item
-                #header_item.setData(Qt.UserRole, filter)
-                #filters_table.setItem(parameter_index, 0, header_item)
-
-                # Create *use_item* for the filters table:
-                print("here 2")
-                use = filter.use
-                use_item = QTableWidgetItem("")
-                filter.use_item = use_item
-                use_item.setData(Qt.UserRole, filter)
-                #print(type(use_item))
-                #print(use_item.__class__.__bases__)
-                flags = filter.use
-                use_item.setFlags(flags | Qt.ItemIsUserCheckable)
-                check_state = Qt.CheckState.Checked if use else Qt.CheckState.Unchecked
-                use_item.setCheckState(check_state)
-                filters_table.setItem(parameter_index, 2, use_item)
-
-                # Create the *select_item* widget for the eventual use in the filters table:
-                print("here 3 select={0}".format(select))
-                select = filter.select
-                select_item = QTableWidgetItem(select)
-                filter.select_item = select_item
-                select_item.setData(Qt.UserRole, filter)
-                select_item.setText(select)
-                filters_table.setItem(parameter_index, 3, select_item)
-
         # Wrap up any requested *tracing*:
         if not tracing is None:
-            print("{0}<=Search.filters_update()".format(tracing))
+            print("{0}<=Search.filters_refresh()".format(tracing))
 
     # Search.table_set():
     def table_set(self, new_table, tracing=None):
@@ -1920,11 +1900,11 @@ class TablesEditor:
 
         # Perform some global signal connections to *main_window* (abbreviated as *mw*):
         mw = main_window
-        mw.root_tabs.currentChanged.connect(                tables_editor.tab_changed)
-        mw.schema_tabs.currentChanged.connect(              tables_editor.tab_changed)
-        mw.find_tabs.currentChanged.connect(                tables_editor.tab_changed)
         mw.common_save_button.clicked.connect(              tables_editor.save_button_clicked)
         mw.common_quit_button.clicked.connect(              tables_editor.quit_button_clicked)
+        mw.find_tabs.currentChanged.connect(                tables_editor.tab_changed)
+        mw.filters_down.clicked.connect(                  tables_editor.filters_down_button_clicked)
+        mw.filters_up.clicked.connect(                      tables_editor.filters_up_button_clicked)
         mw.import_csv_file_line.textChanged.connect(     tables_editor.import_csv_file_line_changed)
         mw.import_read.clicked.connect(                    tables_editor.import_read_button_clicked)
         mw.import_bind.clicked.connect(                    tables_editor.import_bind_button_clicked)
@@ -1934,9 +1914,10 @@ class TablesEditor:
         mw.parameters_optional_check.clicked.connect(      tables_editor.parameter_optional_clicked)
         mw.parameters_short_line.textChanged.connect(       tables_editor.parameter_short_changed)
         mw.parameters_type_combo.currentTextChanged.connect(tables_editor.parameters_type_changed)
+        mw.schema_tabs.currentChanged.connect(              tables_editor.tab_changed)
         mw.searches_save.clicked.connect(                tables_editor.searches_save_button_clicked)
         mw.searches_table_combo.currentTextChanged.connect( tables_editor.searches_table_changed)
-        mw.filters_table.cellChanged.connect(              tables_editor.filters_table_cell_changed)
+        mw.root_tabs.currentChanged.connect(                tables_editor.tab_changed)
 
         mw.import_csv_file_line.setText("download.csv")
 
@@ -2381,73 +2362,74 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=TablesEditor.enumerations_update()".format(tracing))
 
-    # TablesEditor.filters_table_cell_changed():
-    def filters_table_cell_changed(self, row, column):
+    # TablesEditor.filters_cell_clicked():
+    def filters_cell_clicked(self, row, column):
         # Verify argument types:
         assert isinstance(row, int)
         assert isinstance(column, int)
 
-        # Only do something if we are not already *in_signal*:
+        # Perform any requested signal tracing:
         tables_editor = self
-        if not tables_editor.in_signal:
-            tables_editor.in_signal = True
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.filters_cell_clicked()")
 
-            # Perform any requested signal tracing:
-            trace_signals = tables_editor.trace_signals
-            next_tracing = " " if trace_signals else None
-            if trace_signals:
-                print("=>TablesEditor.filters_table_cell_changed(*, {0}, {1})".
-                  format(row, column))
+        # Just update the filters tab:
+        tables_editor.filters_update(tracing=next_tracing)
 
-            # Do something here:
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.filters_cell_clicked()\n")
 
-            # Wrap up any requested signal tracing:
-            if trace_signals:
-                print("<=TablesEditor.filters_table_cell_changed(*, {0}, {1})\n".
-                  format(row, column))
-            tables_editor.in_signal = False
-
-
-    # TablesEditor.filter_use_clicked()
-    def filter_use_clicked(self, use_item, filter, row, column):
-        # Verify argument types:
-        assert isinstance(use_item, QTableWidgetItem)
-        assert isinstance(filter, Filter)
-        assert isinstance(row, int)
-        assert isinstance(column, int)
-
-        # Do nothing if we are already in a signal:
+    # TablesEditor.filters_down_button_clicked():
+    def filters_down_button_clicked(self):
         tables_editor = self
-        if not tables_editor.in_signal:
-            tables_editor.in_signal = True
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.filters_down_button_clicked()")
 
-            # Perform an requested signal tracing:
-            trace_signals = tables_editor.trace_signals
-            next_tracing = " " if trace_signals else None
-            if trace_signals:
-                print("=>TablesEditor.filter_use_clicked(*, '{0}', {1}, {2})".
-                  format(filter.parameter.name, row, column))
+        # Note: The code here is very similar to the code in
+        # *TablesEditor.filters_down_button_clicked*:
 
-            check_state = use_item.checkState()
-            print("check-state=", check_state)
-            if check_state == Qt.CheckState.Checked:
-                result = "checked"
-                filter.use = True
-            elif check_state == Qt.CheckState.Unchecked:
-                result = "unchecked"
-                filter.use = False
-            elif check_state == Qt.CheckState.PartiallyChecked:
-                result = "partially checked"
+        # Grab some values from *tables_editor*:
+        tables_editor.current_update(tracing=next_tracing)
+        main_window = tables_editor.main_window
+        filters_table = main_window.filters_table
+        current_search = tables_editor.current_search
+
+        # If there is no *current_search* there is nothing to be done:
+        if not current_search is None:
+            # We have a valid *current_search*, so grab *filters* and *current_row*:
+            filters = current_search.filters
+            current_row_index = filters_table.currentRow()
+
+            # Dispactch on *current_row*:
+            last_row_index = max(0, filters_table.rowCount() - 1)
+            if current_row_index < 0:
+                # No *current_row* is selected, so select the last row:
+                filters_table.setCurrentCell(last_row_index, 0, QItemSelectionModel.SelectCurrent)
             else:
-                result = "unknown"
-            print("filter.name='{0}' filter.use={1}".format(filter.parameter.name, filter.use))
+                # We can only move a filter up if it is not the last one:
+                if current_row_index < last_row_index:
+                    # Save all the stuff we care about from *filters_table* back into *filters*:
+                    tables_editor.filters_unload(tracing=next_tracing)
 
-            # Wrap up any signal tracing:
-            if trace_signals:
-                print("parameter check state={0}".format(result))
-                print("<=TablesEditor.filter_use_clicked(*, '{0}', {1}, {2})\n".
-                  format(filter.parameter.name, row, column))
-            tables_editor.in_signal = False
+                    # Swap *filter_at* with *filter_before*:
+                    filter_after = filters[current_row_index + 1]
+                    filter_at    = filters[current_row_index]
+                    filters[current_row_index + 1] = filter_at
+                    filters[current_row_index]     = filter_after
+
+                    # Force the *filters_table* to be updated:
+                    tables_editor.filters_update(tracing=next_tracing)
+                    filters_table.setCurrentCell(current_row_index + 1, 0,
+                      QItemSelectionModel.SelectCurrent)
+
+        # Wrap down any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.filters_down_button_clicked()\n")
 
     # TablesEditor.filters_unload()
     def filters_unload(self, tracing=None):
@@ -2484,6 +2466,55 @@ class TablesEditor:
             print("{0}<=TablesEditor.filters_unload()".format(tracing))
 
 
+    # TablesEditor.filters_up_button_clicked():
+    def filters_up_button_clicked(self):
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.filters_up_button_clicked()")
+
+        # Note: The code here is very similar to the code in
+        # *TablesEditor.filters_down_button_clicked*:
+
+        # Grab some values from *tables_editor*:
+        tables_editor.current_update(tracing=next_tracing)
+        main_window = tables_editor.main_window
+        filters_table = main_window.filters_table
+        current_search = tables_editor.current_search
+
+        # If there is no *current_search* there is nothing to be done:
+        if not current_search is None:
+            # We have a valid *current_search*, so grab *filters* and *current_row*:
+            filters = current_search.filters
+            current_row_index = filters_table.currentRow()
+
+            # Dispactch on *current_row_index*:
+            if current_row_index < 0:
+                # No *current_row_index* is selected, so select the first row:
+                filters_table.setCurrentCell(0, 0, QItemSelectionModel.SelectCurrent)
+            else:
+                # We can only move a filter up if it is not the first one:
+                if current_row_index >= 1:
+                    # Save all the stuff we care about from *filters_table* back into *filters*:
+                    tables_editor.filters_unload(tracing=next_tracing)
+
+                    # Swap *filter_at* with *filter_before*:
+                    filter_before = filters[current_row_index - 1]
+                    filter_at     = filters[current_row_index]
+                    filters[current_row_index - 1] = filter_at
+                    filters[current_row_index]     = filter_before
+
+                    # Force the *filters_table* to be updated:
+                    tables_editor.filters_update(tracing=next_tracing)
+                    filters_table.setCurrentCell(current_row_index - 1, 0,
+                      QItemSelectionModel.SelectCurrent)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.filters_up_button_clicked()\n")
+
     # TablesEditor.filters_update()
     def filters_update(self, tracing=None):
         # Verify argument types:
@@ -2496,8 +2527,11 @@ class TablesEditor:
 
         # Empty out *filters_table* widget:
         tables_editor = self
-        main_window = tables_editor.main_window
+        main_window   = tables_editor.main_window
+        filters_down  = main_window.filters_down
         filters_table = main_window.filters_table
+        filters_up    = main_window.filters_up
+        current_row_index = filters_table.currentRow()
         filters_table.clearContents()
         filters_table.setColumnCount(4)
         filters_table.setHorizontalHeaderLabels(["Parameter", "Type", "Use", "Select"])
@@ -2514,6 +2548,9 @@ class TablesEditor:
             filters = current_search.filters
             filters_size = len(filters)
             filters_table.setRowCount(filters_size)
+            if not tracing is None:
+                print("{0}current_search='{1}' filters_size={2}".
+                  format(tracing, current_search.name, filters_size))
 
             # Fill in one *filter* at a time:
             for filter_index, filter in enumerate(filters):
@@ -2555,7 +2592,7 @@ class TablesEditor:
                 use_item.setData(Qt.UserRole, filter)
                 #print(type(use_item))
                 #print(use_item.__class__.__bases__)
-                flags = filter.use
+                flags = use_item.flags()
                 use_item.setFlags(flags | Qt.ItemIsUserCheckable)
                 check_state = Qt.CheckState.Checked if use else Qt.CheckState.Unchecked
                 use_item.setCheckState(check_state)
@@ -2566,12 +2603,64 @@ class TablesEditor:
                 select_item.setData(Qt.UserRole, filter)
                 filters_table.setItem(filter_index, 3, select_item)
 
-        # Remember to unload the filters before 
+            #if current_row_index >= 0 and current_row_index < filters_size:
+            #    #filters_table.setCurrentCell(current_row_index, 0)
+            #    filters_down.setEnabled(True)
+            #    filters_up.setEnabled(True)
+            #else:
+            #    #filters_table.setCurrentCell(-1, -1)
+            #    filters_down.setEnabled(False)
+            #    filters_up.setEnabled(False)
+
+        # Remember to unload the filters before changing from the [Filters] tab:
         tables_editor.tab_unload = TablesEditor.filters_unload
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.filters_update()".format(tracing))
+
+    # TablesEditor.filter_use_clicked()
+    def filter_use_clicked(self, use_item, filter, row, column):
+        # Verify argument types:
+        assert isinstance(use_item, QTableWidgetItem)
+        assert isinstance(filter, Filter)
+        assert isinstance(row, int)
+        assert isinstance(column, int)
+
+        #FIXME: This routine probably no longer used!!!
+
+        # Do nothing if we are already in a signal:
+        tables_editor = self
+        if not tables_editor.in_signal:
+            tables_editor.in_signal = True
+
+            # Perform an requested signal tracing:
+            trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
+            if trace_signals:
+                print("=>TablesEditor.filter_use_clicked(*, '{0}', {1}, {2})".
+                  format(filter.parameter.name, row, column))
+
+            check_state = use_item.checkState()
+            print("check-state=", check_state)
+            if check_state == Qt.CheckState.Checked:
+                result = "checked"
+                filter.use = True
+            elif check_state == Qt.CheckState.Unchecked:
+                result = "unchecked"
+                filter.use = False
+            elif check_state == Qt.CheckState.PartiallyChecked:
+                result = "partially checked"
+            else:
+                result = "unknown"
+            print("filter.name='{0}' filter.use={1}".format(filter.parameter.name, filter.use))
+
+            # Wrap up any signal tracing:
+            if trace_signals:
+                print("parameter check state={0}".format(result))
+                print("<=TablesEditor.filter_use_clicked(*, '{0}', {1}, {2})\n".
+                  format(filter.parameter.name, row, column))
+            tables_editor.in_signal = False
 
     # TablesEditor.find_update():
     def find_update(self, tracing=None):
@@ -3319,24 +3408,48 @@ class TablesEditor:
         results_table = main_window.results_table        
         results_table.clearContents()
         
-        with open("download.csv", newline="") as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
-            rows = list(csv_reader)
-            for row_index, row in enumerate(rows):
-                if row_index == 0:
-                    results_table.setColumnCount(len(row))
-                    results_table.setRowCount(len(rows))
-                    headers = [header.replace(' ', '\n') for header in row]
-                    results_table.setHorizontalHeaderLabels(headers)
-                else:
-                    for column_index, datum in enumerate(row):
-                        assert isinstance(datum, str)
-                        datum_item = QTableWidgetItem(datum)
-                        if not tracing is None and row_index == 1:
-                            print("{0}[{1},{2}]:'{3}'".
-                              format(tracing, row_index, column_index, datum))
-                        results_table.setRowCount(row_index)
-                        results_table.setItem(row_index - 1, column_index, datum_item)
+        tables_editor.current_update(tracing=next_tracing)
+        current_search = tables_editor.current_search
+        if not current_search is None:
+            current_search.filters_refresh(tracing=next_tracing)
+            filters = current_search.filters
+
+            # Compile *reg_ex* for each *filter* in *filters* that is marked for *use*:
+            for filter_index, filter in enumerate(filters):
+                reg_ex = None
+                if filter.use:
+                    reg_ex = re.compile(filter.select + "$")
+                filter.reg_ex = reg_ex
+
+            with open("download.csv", newline="") as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+                rows = list(csv_reader)
+                table_row_index = 0
+                for row_index, row in enumerate(rows):
+                    if row_index == 0:
+                        results_table.setColumnCount(len(row))
+                        results_table.setRowCount(len(rows))
+                        headers = [header.replace(' ', '\n') for header in row]
+                        results_table.setHorizontalHeaderLabels(headers)
+                    else:
+                        match = True
+                        for filter_index, filter in enumerate(filters):
+                            value = row[filter_index]
+                            if filter.use and filter.reg_ex.match(value) is None:
+                                match=False
+                                break
+                        if match:
+                            for column_index, datum in enumerate(row):
+                                assert isinstance(datum, str)
+                                if not tracing is None and row_index == 1:
+                                    print("{0}[{1},{2}]:'{3}'".
+                                      format(tracing, row_index, column_index, datum))
+                                if column_index == 0:
+                                    results_table.setRowCount(table_row_index + 1)
+
+                                datum_item = QTableWidgetItem(datum)
+                                results_table.setItem(table_row_index, column_index, datum_item)
+                            table_row_index += 1
             results_table.resizeRowsToContents()
 
         # Wrap up any requested *tracing*:
@@ -3580,7 +3693,7 @@ class TablesEditor:
         search_comment = SearchComment(language="EN", lines=list())
         search_comments = [ search_comment ]
         search = Search(name=name, comments=search_comments, table=current_table)
-        search.filters_update(tables_editor)
+        search.filters_refresh(tracing=next_tracing)
 
         # Wrap up any requested *tracing* and return *search*:
         next_tracing = None if tracing is None else tracing + " "
