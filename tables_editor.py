@@ -61,7 +61,7 @@ class ComboEdit:
     # ComboEdit.__init__():
     def __init__(self, name, tables_editor, items,
       new_item_function, current_item_set_function, comment_get_function, comment_set_function,
-      tracing=None, **widgets):
+      is_active_function, tracing=None, **widgets):
         """ Initialize the *ComboEdit* object (i.e. *self*.)
 
         The arguments are:
@@ -69,6 +69,7 @@ class ComboEdit:
         * *tables_editor*: The root *TablesEditor* object.
         * *items*: A list of item objects to manage.
         * *new_item_function*: A function that is called to create a new item.
+        * *is_active_function*: A function that returns *True* if combo box should be active.
         * *current_item_set_function*: A function that is called each time the current item is set.
         * *comment_get_function*: A function that is called to get the comment text.
         * *comment_set_function*: A function that is called to set the comment new comment text.
@@ -94,6 +95,7 @@ class ComboEdit:
         assert callable(current_item_set_function)
         assert callable(comment_get_function)
         assert callable(comment_set_function)
+        assert callable(is_active_function)
         assert isinstance(tracing, str) or tracing == None
         widget_callbacks = ComboEdit.WIDGET_CALLBACKS
         widget_names = list(widget_callbacks)
@@ -114,6 +116,7 @@ class ComboEdit:
         combo_edit.comment_set_function = comment_set_function
         combo_edit.comment_position = 0 
         combo_edit.current_item_set_function = current_item_set_function
+        combo_edit.is_active_function = is_active_function
         combo_edit.items = items
         combo_edit.name = name
         combo_edit.new_item_function = new_item_function
@@ -523,16 +526,29 @@ class ComboEdit:
         # Verify argument types:
         assert isinstance(text, str)
 
-        # Perform any tracing requested by *combo_edit* (i.e. *self*):
+        # Make sure that we are not already in a signal before doing anything:
         combo_edit = self
         tables_editor = combo_edit.tables_editor
         if not tables_editor.in_signal:
             tables_editor.in_signal = True
+
+            # Perform any requested siginal tracing:
             trace_signals = tables_editor.trace_signals
+            next_tracing = " " if trace_signals else None
             if trace_signals:
                 print("=>ComboEditor.line_edit_changed('{0}')".format(text))
-            next_tracing = " " if trace_signals else None
+
+            # Make sure that the *combo_edit* *is_active*:
+            is_active = combo_edit.is_active_function()
+            if not is_active:
+                # We are not active, so do not let the user type anything in:
+                line_edit = combo_edit.line_edit
+                line_edit.setText("")  # Erase whatever was just typed in!
+        
+            # Now just update *combo_edit*:
             combo_edit.gui_update(tracing=next_tracing)
+
+            # Wrap up any requested signal tracing:
             if trace_signals:
                 print("<=ComboEditor.line_edit_changed('{0}')\n".format(text))
             tables_editor.in_signal = False
@@ -980,8 +996,9 @@ class Parameter:
             assert "name" in arguments_table
             assert "type" in arguments_table
             assert "csv" in arguments_table
+            assert "csv_index" in arguments_table
             assert "comments" in arguments_table
-            arguments_count = 4
+            arguments_count = 5
             if "default" in arguments_table:
                 arguments_count += 1
                 assert isinstance(arguments_table["default"], str)
@@ -1010,6 +1027,8 @@ class Parameter:
             else:
                 optional = False
             csv = attributes_table["csv"] if "csv" in attributes_table else ""
+            csv_index = \
+              int(attributes_table["csv_index"]) if "csv_index" in attributes_table else -1
             default = attributes_table["default"] if "default" in attributes_table else None
             parameter_tree_elements = list(parameter_tree)
             assert len(parameter_tree_elements) >= 1
@@ -1034,12 +1053,13 @@ class Parameter:
             else:
                 assert len(parameter_tree_elements) == 1
         else:
-            name = arguments_table["name"]
-            type = arguments_table["type"]
-            csv  = arguments_table["csv"]
-            default = arguments_table["defualt"] if "default" in arguments_table else None
-            optional = arguments_table["optional"] if "optional" in arguments_table else False
-            comments = arguments_table["comments"] if "comments" in arguments_table else list()
+            name      = arguments_table["name"]
+            type      = arguments_table["type"]
+            csv       = arguments_table["csv"]
+            csv_index = arguments_table["csv_index"]
+            default   = arguments_table["defualt"]  if "default"  in arguments_table else None
+            optional  = arguments_table["optional"] if "optional" in arguments_table else False
+            comments  = arguments_table["comments"] if "comments" in arguments_table else list()
             enumerations = \
               arguments_table["enumerations"] if "enumerations" in arguments_table else list()
 
@@ -1048,6 +1068,7 @@ class Parameter:
         parameter = self
         parameter.comments     = comments
         parameter.csv          = csv
+        parameter.csv_index    = csv_index
         parameter.default      = default
         parameter.enumerations = enumerations
         parameter.name         = name
@@ -1055,7 +1076,7 @@ class Parameter:
         parameter.type         = type
         parameter.use          = False
         #print("Parameter('{0}'): optional={1}".format(name, optional))
-        print("Parameter(name='{0}', type='{1}', csv='{1}')".format(name, type, parameter.csv))
+        #print("Parameter(name='{0}', type='{1}', csv='{1}')".format(name, type, parameter.csv))
 
     # Parameter.__equ__():
     def __eq__(self, parameter2):
@@ -1098,8 +1119,8 @@ class Parameter:
         optional = parameter.optional
 
         # Start the *parameter* XML add in *optional* and *default* if needed:
-        xml_line = '{0}<Parameter name="{1}" type="{2}" csv="{3}"'.format(
-          indent, parameter.name, parameter.type, parameter.csv)
+        xml_line = '{0}<Parameter name="{1}" type="{2}" csv="{3}" csv_index="{4}"'.format(
+          indent, parameter.name, parameter.type, parameter.csv, parameter.csv_index)
         if optional:
             xml_line += ' optional="true"'
         if not default is None:
@@ -1309,42 +1330,34 @@ class Search:
         table = search.table
         assert isinstance(table, Table) or table is None
         if not table is None:
-            # Now we have to make sure that there is a one-to-one correspondence between *filters*
-            # and *parameters*:
+            # Now we have to make sure that there is a *filter* for each *parameter* in
+            # *parameters*.  We want to preserve the order of *filters*, so this is pretty
+            # tedious:
 
-            # Sweep through *filters* and stuff each one into *name2filters_table* keyed from
-            # the *parameter_name* (which is unique):
-            name2filters_table = dict()
+            # Step 1: Start by deleting any *filter* from *filters* that does not have a
+            # matching *parameter* in parameters.  This algorithme is O(n^2), so it could
+            # be improved:
             filters = search.filters
-            for filter in filters:
-                parameter_name = filter.parameter.name
-                name2filters_table[parameter_name] = filter
-
-            # Rebuild *filters* in the exact same order as *parameters*:
-            del filters[:]
             parameters = table.parameters
-            for parameter_index, parameter in enumerate(parameters):
-                print("Parameter[{0}]:'{1}'".format(parameter_index, parameter.name))
+            new_filters = list()
+            for filter in filters:
+                for parameter in parameters:
+                    if filter.parameter is parameter:
+                        new_filters.append(filter)
+                        break
 
-                # Reuse the *fiter* from *filter_table* only if it has the same name and matches
-                # *parameter*:
-                filter = None
-                parameter_name = parameter.name
-                if parameter_name in name2filters_table:
-                    filter = name2filters_table[parameter.name]
-                    if not filter.parameter is parameter:
-                        # The names match, but the parameters do not; force generation of a new
-                        # *Filter* by setting *filter* to *None*:
-                        filter = None
+            # Carefully replace the entire contents of *filters* with the contents of *new_filters*:
+            filters[:] = new_filters[:]            
 
-                # If *filter* is empty, generate a new *filter*:
-                if filter is None:
+            # Step 2: Sweep through *parameters* and create a new *filter* for each *parameter*
+            # that does not already have a matching *filter* in *filters*.  Again, O(n^2):
+            for pararmeter_index, parameter in enumerate(parameters):
+                for filter in filters:
+                    if filter.parameter is parameter:
+                        break
+                else:
                     filter = Filter(parameter=parameter, table=table, use=False, select="")
-                filters.append(filter)
-
-                #if not tracing is None:
-                #    print("{0}[{1}]: '{2}'".format(tracing, parameter_index,
-                #      filters[parameter_index].parameter.name))
+                    filters.append(filter)
 
         # Wrap up any requested *tracing*:
         if not tracing is None:
@@ -1790,10 +1803,11 @@ class TablesEditor:
         # Set up *tables* first, followed by *parameters*, followed by *enumerations*:
 
         # Set up *tables_combo_edit* and stuff into *tables_editor*:
-        new_item_function = partial(TablesEditor.table_new, tables_editor)
+        new_item_function         = partial(TablesEditor.table_new,         tables_editor)
         current_item_set_function = partial(TablesEditor.current_table_set, tables_editor)
-        comment_get_function = partial(TablesEditor.table_comment_get, tables_editor)
-        comment_set_function = partial(TablesEditor.table_comment_set, tables_editor)
+        comment_get_function      = partial(TablesEditor.table_comment_get, tables_editor)
+        comment_set_function      = partial(TablesEditor.table_comment_set, tables_editor)
+        is_active_function        = partial(TablesEditor.table_is_active,   tables_editor)
         tables_combo_edit = ComboEdit(
           "tables",
           tables_editor,
@@ -1802,6 +1816,7 @@ class TablesEditor:
           current_item_set_function,
           comment_get_function,
           comment_set_function,
+          is_active_function,
           combo_box       = main_window.tables_combo,
           comment_text    = main_window.tables_comment_text,
           delete_button   = main_window.tables_delete, 
@@ -1817,10 +1832,11 @@ class TablesEditor:
 
         # Set up *parameters_combo_edit* and stuff into *tables_editor*:
         parameters = list() if current_table is None else current_table.parameters
-        new_item_function = partial(TablesEditor.parameter_new, tables_editor)
+        new_item_function         = partial(TablesEditor.parameter_new,         tables_editor)
         current_item_set_function = partial(TablesEditor.current_parameter_set, tables_editor)
-        comment_get_function = partial(TablesEditor.parameter_comment_get, tables_editor)
-        comment_set_function = partial(TablesEditor.parameter_comment_set, tables_editor)
+        comment_get_function      = partial(TablesEditor.parameter_comment_get, tables_editor)
+        comment_set_function      = partial(TablesEditor.parameter_comment_set, tables_editor)
+        is_active_function        = partial(TablesEditor.parameter_is_active,   tables_editor)
         parameters_combo_edit = ComboEdit(
           "parameters",
           tables_editor,
@@ -1829,6 +1845,7 @@ class TablesEditor:
           current_item_set_function,
           comment_get_function,
           comment_set_function,
+          is_active_function,
           combo_box       = main_window.parameters_combo,
           comment_text    = main_window.parameters_comment_text,
           delete_button   = main_window.parameters_delete, 
@@ -1845,10 +1862,11 @@ class TablesEditor:
         # Set up *enumerations_combo_edit* and stuff into *tables_editor*:
         enumerations = \
           list() if parameters is None or len(parameters) == 0 else parameters[0].enumerations
-        new_item_function = partial(TablesEditor.enumeration_new, tables_editor)
+        new_item_function         = partial(TablesEditor.enumeration_new,         tables_editor)
         current_item_set_function = partial(TablesEditor.current_enumeration_set, tables_editor)
-        comment_get_function = partial(TablesEditor.enumeration_comment_get, tables_editor)
-        comment_set_function = partial(TablesEditor.enumeration_comment_set, tables_editor)
+        comment_get_function      = partial(TablesEditor.enumeration_comment_get, tables_editor)
+        comment_set_function      = partial(TablesEditor.enumeration_comment_set, tables_editor)
+        is_active_function        = partial(TablesEditor.enumeration_is_active,   tables_editor)
         enumerations_combo_edit = ComboEdit(
           "enumerations",
           tables_editor,
@@ -1857,6 +1875,7 @@ class TablesEditor:
           current_item_set_function,
           comment_get_function,
           comment_set_function,
+          is_active_function,
           combo_box       = main_window.enumerations_combo,
           comment_text    = main_window.enumerations_comment_text,
           delete_button   = main_window.enumerations_delete, 
@@ -1872,10 +1891,11 @@ class TablesEditor:
 
         # Now build the *searches_combo_edit* and stuff into *tables_editor*:
         searches = tables_editor.searches
-        new_item_function = partial(TablesEditor.searches_new, tables_editor)
-        current_item_set_function = partial(TablesEditor.current_search_set, tables_editor)
-        comment_get_function = partial(TablesEditor.searches_comment_get, tables_editor)
-        comment_set_function = partial(TablesEditor.searches_comment_set, tables_editor)
+        new_item_function         = partial(TablesEditor.searches_new,         tables_editor)
+        current_item_set_function = partial(TablesEditor.current_search_set,   tables_editor)
+        comment_get_function      = partial(TablesEditor.searches_comment_get, tables_editor)
+        comment_set_function      = partial(TablesEditor.searches_comment_set, tables_editor)
+        is_active_function        = partial(TablesEditor.searches_is_active,   tables_editor)
         searches_combo_edit = ComboEdit(
           "searches",
           tables_editor,
@@ -1884,6 +1904,7 @@ class TablesEditor:
           current_item_set_function,
           comment_get_function,
           comment_set_function,
+          is_active_function,
           combo_box       = main_window.searches_combo,
           comment_text    = main_window.searches_comment_text,
           delete_button   = main_window.searches_delete, 
@@ -2280,6 +2301,13 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=enumeration_comment_set('{1}')".format(tracing, name))
 
+    # TablesEditor.enumeration_is_active():
+    def enumeration_is_active(self):
+        tables_editor = self
+        tables_editor.current_update()
+        current_parameter = tables_editor.current_parameter
+        return not current_parameter is None and current_parameter.type == "enumeration"
+
     # TablesEditor.enumeration_new()
     def enumeration_new(self, name):
         # Verify argument types:
@@ -2489,6 +2517,8 @@ class TablesEditor:
             # We have a valid *current_search*, so grab *filters* and *current_row*:
             filters = current_search.filters
             current_row_index = filters_table.currentRow()
+            #if trace_signals:
+            #    print(" filters_before={0}".format([filter.parameter.name for filter in filters]))
 
             # Dispactch on *current_row_index*:
             if current_row_index < 0:
@@ -2506,10 +2536,13 @@ class TablesEditor:
                     filters[current_row_index - 1] = filter_at
                     filters[current_row_index]     = filter_before
 
-                    # Force the *filters_table* to be updated:
+                     # Force the *filters_table* to be updated:
                     tables_editor.filters_update(tracing=next_tracing)
                     filters_table.setCurrentCell(current_row_index - 1, 0,
                       QItemSelectionModel.SelectCurrent)
+
+            #if trace_signals:
+            #    print(" filters_after={0}".format([filter.parameter.name for filter in filters]))
 
         # Wrap up any requested signal tracing:
         if trace_signals:
@@ -2719,7 +2752,7 @@ class TablesEditor:
                         comments = [ ParameterComment( language="EN",
                           long_heading=scrunched_name, lines=list() ) ]
                         parameter = Parameter(name=scrunched_name,
-                          type=name, csv=header, comments=comments)
+                          type=name, csv=header, csv_index=column_index, comments=comments)
                         parameters.append(parameter)
                 
             tables_editor.update(tracing=next_tracing)
@@ -2737,7 +2770,7 @@ class TablesEditor:
         if trace_signals:
             print("=>TablesEditor.import_read_button_clicked()")
 
-        # Update *current_table* an *parameters* from *tables_editor*:
+        # Update *current_table* and *parameters* from *tables_editor*:
         tables_editor.current_update(tracing=next_tracing)
         current_table = tables_editor.current_table
         assert not current_table is None
@@ -2781,12 +2814,11 @@ class TablesEditor:
         # Now *column_tables* has a list of tables (i.e. *dict*'s) where it entry
         # has a count of the number of times that value occured in the column.
 
-
         # Now sweep through *column_tables* and build *column_triples*:
         re_list = tables_editor.re_list
         column_triples = list()
         for column_index, column_table in enumerate(column_tables):
-            # FIXME: is *colmn_list* really used or could we just as easily use the unsorted list?!
+            # FIXME: Does *column_list* really need to be sorted???!!!!
             # Create *column_list* from *column_table* such that the most common value in the
             # columns comes first and the least commone one comes last:
             column_list = sorted(list(column_table.items()),
@@ -2832,7 +2864,7 @@ class TablesEditor:
                 triples.append(triple)
 
             # Sort *triples* such that the regular expression that maches the most entries comes
-            # first the least matches are at the end.  Tack the result onto *column_triples*:
+            # first the least matches are at the end.  Tack *triples* onto *column_triples* list:
             triples.sort(reverse=True)
             column_triples.append(triples)
 
@@ -3078,6 +3110,13 @@ class TablesEditor:
         if not tracing is None:
             print("{0}<=parameter_comment_set('{1}', *, {2}')".format(tracing, name, position))
 
+    # TablesEditor.parameter_is_active():
+    def parameter_is_active(self):
+        tables_editor = self
+        tables_editor.current_update()
+        # We can only create/edit parameters when there is an active *current_table*:
+        return not tables_editor.current_table is None
+
     # TablesEditor.parameter_long_changed():
     def parameter_long_changed(self, new_long_heading):
         # Verify argument types:
@@ -3155,7 +3194,8 @@ class TablesEditor:
 
         # Create *new_parameter* named *name*:
         comments = [ ParameterComment(language="EN", long_heading=name, lines=list()) ]
-        new_parameter = Parameter(name=name, type="boolean", csv="", comments=comments)
+        new_parameter = Parameter(name=name,
+          type="boolean", csv="", csv_index=-1, comments=comments)
 
         # Wrap up any requested tracing and return *new_parameter*:
         if not tracing is None:
@@ -3292,15 +3332,15 @@ class TablesEditor:
         current_parameter = tables_editor.current_parameter
         parameter = current_parameter
 
-        # Now we can update the other fields:
-        if parameter is None:
-            # *parameter* is empty:
-            csv      = ""
-            is_valid_parameter = False
-            default  = ""
-            optional = False
-            type     = ""
-        else:
+        # Initialize all fields to an "empty" value:
+        csv      = ""
+        is_valid_parameter = False
+        default  = ""
+        optional = False
+        type     = ""
+
+        # If we have a valid *parameter*, copy the field values out:
+        if not parameter is None:
             # Grab some values from *parameter*:
             csv      = parameter.csv
             is_valid_parameter = True
@@ -3429,7 +3469,7 @@ class TablesEditor:
                     if row_index == 0:
                         results_table.setColumnCount(len(row))
                         results_table.setRowCount(len(rows))
-                        headers = [header.replace(' ', '\n') for header in row]
+                        headers = [filter.parameter.name for filter in filters]
                         results_table.setHorizontalHeaderLabels(headers)
                     else:
                         match = True
@@ -3439,16 +3479,18 @@ class TablesEditor:
                                 match=False
                                 break
                         if match:
-                            for column_index, datum in enumerate(row):
-                                assert isinstance(datum, str)
+                            for filter_index, filter in enumerate(filters):
+                                parameter = filter.parameter
+                                datum = row[parameter.csv_index]
+                                assert isinstance(datum, str), "datum='{0}'".format(datum)
                                 if not tracing is None and row_index == 1:
-                                    print("{0}[{1},{2}]:'{3}'".
-                                      format(tracing, row_index, column_index, datum))
-                                if column_index == 0:
+                                    print("{0}[{1},{2}='{3}']:'{4}'".format(
+                                      tracing, row_index, filter_index, parameter.name, datum))
+                                if filter_index == 0:
                                     results_table.setRowCount(table_row_index + 1)
 
                                 datum_item = QTableWidgetItem(datum)
-                                results_table.setItem(table_row_index, column_index, datum_item)
+                                results_table.setItem(table_row_index, filter_index, datum_item)
                             table_row_index += 1
             results_table.resizeRowsToContents()
 
@@ -3499,7 +3541,7 @@ class TablesEditor:
 
         # Wrap up any requested signal tracing:
         if trace_signals:
-            print("=>TablesEditor.save_button_clicked()\n")
+            print("<=TablesEditor.save_button_clicked()\n")
 
     # TablesEditor.schema_update():
     def schema_update(self, tracing=None):
@@ -3673,6 +3715,13 @@ class TablesEditor:
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=TablesEditor.searches_file_load('{1})".format(tracing, xml_file_name))
+
+    # TablesEditor.searches_is_active():
+    def searches_is_active(self):
+        tables_editor = self
+        tables_editor.current_update()
+        # We can only edit searches if there is there is an active *current_table8:
+        return not tables_editor.current_table is None
 
     # TablesEditor.searches_new():
     def searches_new(self, name, tracing=None):
@@ -3878,6 +3927,10 @@ class TablesEditor:
         # Wrap up any requested *tracing*:
         if not tracing is None:
             print("{0}<=table_comment_set('{1}')".format(tracing, table.name))
+
+    def table_is_active(self):
+        # The table combo box is always active, so we return *True*:
+        return True
 
     # TablesEditor.table_new():
     def table_new(self, name, tracing = None):
