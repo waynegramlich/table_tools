@@ -36,7 +36,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="schema_tab">
        <property name="enabled">
@@ -69,7 +69,7 @@
         <item row="0" column="0" colspan="2">
          <widget class="QTabWidget" name="schema_tabs">
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tables_tab">
            <attribute name="title">
@@ -160,6 +160,15 @@
             </item>
             <item row="8" column="0" colspan="4">
              <widget class="QPlainTextEdit" name="tables_comment_text"/>
+            </item>
+            <item row="6" column="0" colspan="4">
+             <widget class="QTreeWidget" name="tables_root">
+              <column>
+               <property name="text">
+                <string notr="true">1</string>
+               </property>
+              </column>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -595,7 +604,7 @@
         <item row="0" column="0">
          <widget class="QTabWidget" name="find_tabs">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="searches_tab">
            <attribute name="title">
@@ -662,19 +671,6 @@
               <item row="3" column="1" colspan="3">
                <widget class="QComboBox" name="searches_combo"/>
               </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="searches_table_name">
-                <property name="text">
-                 <string>Table Name:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1" colspan="3">
-               <widget class="QComboBox" name="searches_table_combo"/>
-              </item>
               <item row="2" column="0">
                <widget class="QPushButton" name="searches_first">
                 <property name="text">
@@ -689,7 +685,7 @@
                 </property>
                </widget>
               </item>
-              <item row="5" column="0" colspan="4">
+              <item row="6" column="0" colspan="4">
                <widget class="QLabel" name="searches_comment_label">
                 <property name="text">
                  <string>Comment</string>
@@ -699,8 +695,34 @@
                 </property>
                </widget>
               </item>
-              <item row="6" column="0" colspan="4">
+              <item row="7" column="0" colspan="4">
                <widget class="QPlainTextEdit" name="searches_comment_text"/>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="searches_table_name">
+                <property name="text">
+                 <string>Table Name:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="searches_parent_label">
+                <property name="text">
+                 <string>Parent Search Name:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1" colspan="3">
+               <widget class="QComboBox" name="searches_parent_combo"/>
+              </item>
+              <item row="4" column="1" colspan="3">
+               <widget class="QComboBox" name="searches_table_combo"/>
               </item>
              </layout>
             </item>
