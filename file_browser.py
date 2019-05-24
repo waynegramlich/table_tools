@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
+
 from PySide2 import QtWidgets
 from PySide2 import QtGui
 from PySide2 import QtCore
+from PySide2.QtWidgets import (QApplication, )
+from PySide2.QtUiTools import (QUiLoader, )
+from PySide2.QtCore import (QDir, QFile)
 import os
 
-from ui import main
-
-
-class MyFileBrowser(main.Ui_MainWindow, QtWidgets.QMainWindow):
-    def __init__(self, maya=False):
+class MyFileBrowser():
+    def __init__(self, application, main_window, maya=False):
+        assert isinstance(application, QApplication)
+        assert isinstance(main_window, QtWidgets.QMainWindow)
         super(MyFileBrowser, self).__init__()
-        self.setupUi(self)
+        #self.setupUi(self)
+        treeView = main_window.treeView
+        self.treeView = treeView
         self.maya = maya
         self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.treeView.customContextMenuRequested.connect(self.context_menu)
@@ -83,8 +88,16 @@ class MyFileBrowser(main.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    fb = MyFileBrowser()
-    fb.show()
-    app.exec_()
+    application = QtWidgets.QApplication([])
+
+    # Read in the `.ui` file:
+    ui_qfile = QFile("ui/main.ui")
+    ui_qfile.open(QFile.ReadOnly)
+    loader = QUiLoader()
+    main_window = loader.load(ui_qfile)
+    print("main_window=", main_window)
+
+    fb = MyFileBrowser(application, main_window)
+    main_window.show()
+    application.exec_()
 
