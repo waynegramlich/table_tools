@@ -46,12 +46,13 @@ import lxml.etree as etree
 import copy  # Is this used any more?
 from functools import partial
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit,
+from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
                                QPlainTextEdit, QPushButton,
                                QTableWidget, QTableWidgetItem,
+                               QTreeView, QFileSystemModel,
                                QTreeWidget, QTreeWidgetItem,
                                QWidget)
-from PySide2.QtCore import (Qt, QFile, QItemSelectionModel)
+from PySide2.QtCore import (QDir, QFile, QItemSelectionModel, Qt)
 
 
 class ComboEdit:
@@ -1689,7 +1690,7 @@ class TableComment(Comment):
         xml_lines.append('{0}</TableComment>'.format(indent))
 
 
-class TablesEditor:
+class TablesEditor(QMainWindow):
 
     # TablesEditor.__init__()
     def __init__(self, tables, tracing=None):
@@ -1952,51 +1953,59 @@ class TablesEditor:
         file_names.sort()
         print("file_names=", file_names)
 
-        # Temporary tree widget experimentation here:
-        tables_root = mw.tables_root
-        assert isinstance(tables_root, QTreeWidget)
-        tables_root.setColumnCount(2)
-        tables_root.setHeaderLabels(["Tree", "Type"])
+        # Temporary *schema_tree* widget experimentation here:
+        schema_tree = mw.schema_tree
+        if isinstance(schema_tree, QTreeView):
+            print("*****************************************************")
+            path = "/home/wayne/public_html/project/digikey_tables"
+            tables_editor.model = model = QFileSystemModel()
+            model.setRootPath((QDir.rootPath()))
+            schema_tree.setModel(model)
+            schema_tree.setRootIndex(model.index(path))
+            schema_tree.setSortingEnabled(True)
+        elif isinstance(schema_tree, QTreeWidget):
+            schema_tree.setColumnCount(2)
+            schema_tree.setHeaderLabels(["Tree", "Type"])
 
-        # Intialize the root of the tree for *tables_root*:
-        root_table_item_pairs = dict()
-        root_item = QTreeWidgetItem(tables_root, ["Root", "R"])
-        root_table_item_pair = (dict(), root_item)
-        root_table_item_pairs["Root"] = root_table_item_pair
+            # Intialize the root of the tree for *tables_root*:
+            root_table_item_pairs = dict()
+            root_item = QTreeWidgetItem(schema_tree, ["Root", "R"])
+            root_table_item_pair = (dict(), root_item)
+            root_table_item_pairs["Root"] = root_table_item_pair
 
-        # Now flush out the rest of the tables_tree by sweeping through *file_names*:
-        for file_name_index, file_name in enumerate(file_names):
-            # print("File_Name[{0}]:'{1}'".format(file_name_index, file_name))
+            # Now flush out the rest of the *schema_tree* by sweeping through *file_names*:
+            for file_name_index, file_name in enumerate(file_names):
+                # print("File_Name[{0}]:'{1}'".format(file_name_index, file_name))
 
-            # FIXME: Fixup *file_name*!!!:
-            assert file_name[:17] == "../digikey_tables"
-            file_name = "Root" + file_name[17:]
+                # FIXME: Fixup *file_name*!!!:
+                assert file_name[:17] == "../digikey_tables"
+                file_name = "Root" + file_name[17:]
 
-            # Now construct the tree for *tables_root*:
-            current_table_item_pair = root_table_item_pair
-            sub_names = file_name.split('/')
-            for sub_name_index, sub_name in enumerate(sub_names[1:]):
-                # Skip any empty *sub_name*:
-                # print("  Sub_Name[{0}]:'{1}'".format(sub_name_index, sub_name))
-                if sub_name != "":
-                    # Unpack *current_table_item_pair*:
-                    current_table, current_item = current_table_item_pair
+                # Now construct the tree for *tables_root*:
+                current_table_item_pair = root_table_item_pair
+                sub_names = file_name.split('/')
+                for sub_name_index, sub_name in enumerate(sub_names[1:]):
+                    # Skip any empty *sub_name*:
+                    # print("  Sub_Name[{0}]:'{1}'".format(sub_name_index, sub_name))
+                    if sub_name != "":
+                        # Unpack *current_table_item_pair*:
+                        current_table, current_item = current_table_item_pair
 
-                    # Figure out if we have already done this *sub_name* before:
-                    if sub_name in current_table:
-                        # Yes, we have already done this *sub_name*:
-                        next_table_item_pair = current_table[sub_name]
-                    else:
-                        # No, this is the first time we have seen this *sub_name*; create new
-                        # *next_table_item_pair* and stuff it into *current_table*:
-                        type = "T" if sub_name.endswith("_Table.xml") else "D"
-                        next_item = QTreeWidgetItem(current_item, [sub_name, type])
-                        next_table = dict()
-                        next_table_item_pair = (next_table, next_item)
-                        current_table[sub_name] = next_table_item_pair
+                        # Figure out if we have already done this *sub_name* before:
+                        if sub_name in current_table:
+                            # Yes, we have already done this *sub_name*:
+                            next_table_item_pair = current_table[sub_name]
+                        else:
+                            # No, this is the first time we have seen this *sub_name*; create new
+                            # *next_table_item_pair* and stuff it into *current_table*:
+                            type = "T" if sub_name.endswith("_Table.xml") else "D"
+                            next_item = QTreeWidgetItem(current_item, [sub_name, type])
+                            next_table = dict()
+                            next_table_item_pair = (next_table, next_item)
+                            current_table[sub_name] = next_table_item_pair
 
-                    # Update *current_item_pair* to point to the next level down:
-                    current_table_item_pair = next_table_item_pair
+                        # Update *current_item_pair* to point to the next level down:
+                        current_table_item_pair = next_table_item_pair
 
         # root_item = QTreeWidgetItem(tables_root, [ "Root", "R" ])
         # directory1_item = QTreeWidgetItem(root_item, [ "Dir1", "D" ])
@@ -2008,6 +2017,7 @@ class TablesEditor:
 
         # Set the *current_table*, *current_parameter*, and *current_enumeration*
         # in *tables_editor*:
+        # FIXME: Used *tables_editor.current_update()* instead!!!
         current_table = None
         current_parameter = None
         current_enumeration = None
@@ -4666,3 +4676,7 @@ if __name__ == "__main__":
 # * Tabs are actually named in the parent tab widget (1 level up.)
 # * To add a tab, hover the mouse over an existing tab, right click mouse, and select
 #   Insert page.
+
+
+# PySide2 TableView Video: https://www.youtube.com/watch?v=4PkPezdpO90
+# Associatied repo: https://github.com/vfxpipeline/filebrowser
