@@ -8,45 +8,62 @@ class Node(object):
             assert isinstance(path, str)
             assert isinstance(parent, Node) or parent is None
 
+            # Initilize the parent type of *node* (i.e. *self*):
+            node = self
             super(Node, self).__init__()
 
-            node = self
-            self.name = name
-            self.children = []
-            self.parent = parent
+            is_dir = os.path.isdir(path)
+            is_traversed = not is_dir or is_dir and len(list(os.listdir(path))) == 0
 
-            self.is_dir = os.path.isdir(path)
-            self.path = path
-            self.is_traversed = False
+            # Load up *node* (i.e. *self*):
+            node.children = []
+            node.name = name
+            node.is_dir = is_dir
+            node.is_traversed = is_traversed
+            node.parent = parent
+            node.path = path
 
+            # Force *node* to be in *parent*:
             if parent is not None:
-                parent.add_child(self)
+                parent.add_child(node)
 
         def add_child(self, child):
-            self.children.append(child)
-            child.parent = self
+            # Verify argument types:
+            assert isinstance(child, Node)
+
+            # Append *child* to the *node* (i.e. *self*) children list:
+            node = self
+            node.children.append(child)
+            child.parent = node
 
         def insert_child(self, position, child):
-            if position < 0 or position > self.child_count():
-                return False
-
-            self.children.insert(position, child)
-            child.parent = self
-
-            return True
+            # Verify argument types:
+            assert isinstance(position, int)
+            assert isinstance(child, Node)
+        
+            node = self
+            children = node.children
+            inserted = 0 <= position <= len(children)
+            if inserted:
+                children.insert(position, child)
+                child.parent = node
+            return inserted
 
         def child(self, row):
-            # Probably should be `return self.children[row]` with error checking:
+            # Verify argument types:
             assert isinstance(row, int)
+
             node = self
             children = node.children
             result = children[row] if 0 <= row < len(children) else None
             return result
 
         def child_count(self):
-            return len(self.children)
+            node = self
+            return len(node.children)
 
         def row(self):
-            if self.parent is not None:
-                return self.parent.children.index(self)
-            return 0
+            node = self
+            parent = node.parent
+            result = 0 if parent is None else parent.children.index(node)
+            return result

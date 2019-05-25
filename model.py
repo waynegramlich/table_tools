@@ -17,19 +17,19 @@ class FileSystemTreeModel(QAbstractItemModel):
             # Initialize the parent *QAbstraceItemModel*:
             super(FileSystemTreeModel, self).__init__()
 
+            assert root_node.is_dir
+
             # Stuff *root* into *model* (i.e. *self*):
             model = self
             model.root_node = root_node
             model.path = path
 
-            # Populate the 
+            # Populate the top level of *root_node*:
             file_names = sorted(os.listdir(path))
             for file in file_names:
                 file_path = os.path.join(path, file)
-
                 node = Node(file, file_path, parent=root_node)
-                if os.path.isdir(file_path):
-                    node.is_dir = True
+            root_node.is_traversed = True
 
         # takes a model index and returns the related Python node
         def getNode(self, index):
@@ -55,11 +55,7 @@ class FileSystemTreeModel(QAbstractItemModel):
             nodes = []
             for file in sorted(os.listdir(parent.path)):
                 file_path = os.path.join(parent.path, file)
-
                 node = Node(file, file_path)
-                if os.path.isdir(file_path):
-                    node.is_dir = True
-
                 nodes.append(node)
 
             self.insertNodes(0, nodes, index)
@@ -69,7 +65,7 @@ class FileSystemTreeModel(QAbstractItemModel):
         def hasChildren(self, index):
             node = self.getNode(index)
 
-            if node.is_dir:
+            if node.is_dir and not node.is_traversed:
                 return True
 
             return super(FileSystemTreeModel, self).hasChildren(index)
