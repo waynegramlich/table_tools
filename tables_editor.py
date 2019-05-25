@@ -52,8 +52,7 @@ from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
                                QTreeView, QFileSystemModel,
                                QTreeWidget, QTreeWidgetItem,
                                QWidget)
-from PySide2.QtCore import (QDir, QFile, QItemSelectionModel, Qt)
-
+from PySide2.QtCore import (QAbstractItemModel, QDir, QFile, QItemSelectionModel, Qt)
 
 class ComboEdit:
     """ A *ComboEdit* object repesents the GUI controls for manuipulating a combo box widget.
@@ -1957,9 +1956,23 @@ class TablesEditor(QMainWindow):
         schema_tree = mw.schema_tree
         if isinstance(schema_tree, QTreeView):
             print("*****************************************************")
-            path = "/home/wayne/public_html/project/digikey_tables"
-            tables_editor.model = model = QFileSystemModel()
-            model.setRootPath((QDir.rootPath()))
+            path = "/home/wayne/public_html/projects/digikey_tables"
+
+            if False:
+                file_system_model = QFileSystemModel()
+                assert isinstance(file_system_model, QFileSystemModel)
+                assert isinstance(file_system_model, QAbstractItemModel)
+                file_system_model.setRootPath((QDir.rootPath()))
+                model = file_system_model    
+            else:
+                tree_object_model = TreeObjectModel()
+                assert isinstance(tree_object_model, TreeObjectModel)
+                assert isinstance(tree_object_model, QAbstractItemModel)
+                model = tree_object_model
+
+            tables_editor.model = model
+
+            print("module=", model)
             schema_tree.setModel(model)
             schema_tree.setRootIndex(model.index(path))
             schema_tree.setSortingEnabled(True)
@@ -4652,7 +4665,6 @@ def main():
     # tables_editor = TablesEditor(xsd_root, schema)
     # tables_editor.run()
 
-
 if __name__ == "__main__":
     main()
 
@@ -4680,3 +4692,4 @@ if __name__ == "__main__":
 
 # PySide2 TableView Video: https://www.youtube.com/watch?v=4PkPezdpO90
 # Associatied repo: https://github.com/vfxpipeline/filebrowser
+

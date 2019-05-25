@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ############################################################################
 ##
@@ -23,10 +23,7 @@
 ##
 ############################################################################
 
-from PySide import QtCore, QtGui
-
-import simpletreemodel_rc
-
+from PySide2 import QtCore, QtGui, QtWidgets
 
 class TreeItem(object):
     def __init__(self, data, parent=None):
@@ -178,14 +175,54 @@ if __name__ == '__main__':
 
     import sys
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
-    f = QtCore.QFile(':/default.txt')
-    f.open(QtCore.QIODevice.ReadOnly)
-    model = TreeModel(str(f.readAll()))
-    f.close()
+    text = (
+      "Getting Started\t\t\t\tHow to familiarize yourself with Qt Designer\n"
+      "    Launching Designer\t\t\tRunning the Qt Designer application\n"
+      "    The User Interface\t\t\tHow to interact with Qt Designer\n"
+      "\n"
+      "Designing a Component\t\t\tCreating a GUI for your application\n"
+      "    Creating a Dialog\t\t\tHow to create a dialog\n"
+      "    Composing the Dialog\t\tPutting widgets into the dialog example\n"
+      "    Creating a Layout\t\t\tArranging widgets on a form\n"
+      "    Signal and Slot Connections\t\tMaking widget communicate with each other\n"
+      "\n"
+      "Using a Component in Your Application\tGenerating code from forms\n"
+      "    The Direct Approach\t\t\tUsing a form without any adjustments\n"
+      "    The Single Inheritance Approach\tSubclassing a form's base class\n"
+      "    The Multiple Inheritance Approach\tSubclassing the form itself\n"
+      "    Automatic Connections\t\tConnecting widgets using a naming scheme\n"
+      "        A Dialog Without Auto-Connect\tHow to connect widgets without a naming scheme\n"
+      "        A Dialog With Auto-Connect\tUsing automatic connections\n"
+      "\n"
+      "Form Editing Mode\t\t\tHow to edit a form in Qt Designer\n"
+      "    Managing Forms\t\t\tLoading and saving forms\n"
+      "    Editing a Form\t\t\tBasic editing techniques\n"
+      "    The Property Editor\t\t\tChanging widget properties\n"
+      "    The Object Inspector\t\tExamining the hierarchy of objects on a form\n"
+      "    Layouts\t\t\t\tObjects that arrange widgets on a form\n"
+      "        Applying and Breaking Layouts\tManaging widgets in layouts\n"
+      "        Horizontal and Vertical Layouts\tStandard row and column layouts\n"
+      "        The Grid Layout\t\t\tArranging widgets in a matrix\n"
+      "    Previewing Forms\t\t\tChecking that the design works\n"
+      "\n"
+      "Using Containers\t\t\tHow to group widgets together\n"
+      "    General Features\t\t\tCommon container features\n"
+      "    Frames\t\t\t\tQFrame\n"
+      "    Group Boxes\t\t\t\tQGroupBox\n"
+      "    Stacked Widgets\t\t\tQStackedWidget\n"
+      "    Tab Widgets\t\t\t\tQTabWidget\n"
+      "    Toolbox Widgets\t\t\tQToolBox\n"
+      "\n"
+      "Connection Editing Mode\t\t\tConnecting widgets together with signals and slots\n"
+      "    Connecting Objects\t\t\tMaking connections in Qt Designer\n"
+      "     Editing Connections\t\t\tChanging existing connections\n"
+    )
 
-    view = QtGui.QTreeView()
+    model = TreeModel(text)
+    
+    view = QtWidgets.QTreeView()
     view.setModel(model)
     view.setWindowTitle("Simple Tree Model")
     view.show()

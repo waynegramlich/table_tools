@@ -3,25 +3,22 @@
 from PySide2 import QtWidgets
 from PySide2 import QtGui
 from PySide2 import QtCore
-from PySide2.QtWidgets import (QApplication, )
+from PySide2.QtWidgets import (QApplication, QTreeView)
 from PySide2.QtUiTools import (QUiLoader, )
 from PySide2.QtCore import (QDir, QFile)
 import os
 
 class MyFileBrowser():
-    def __init__(self, application, main_window, maya=False):
+    def __init__(self, application, main_window):
         assert isinstance(application, QApplication)
         assert isinstance(main_window, QtWidgets.QMainWindow)
-        super(MyFileBrowser, self).__init__()
+        #super(MyFileBrowser, self).__init__()
         #self.setupUi(self)
         treeView = main_window.treeView
+        assert isinstance(treeView, QTreeView)
         self.treeView = treeView
-        self.maya = maya
-        self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.treeView.customContextMenuRequested.connect(self.context_menu)
-        self.populate()
-
-    def populate(self):
+        #self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        #self.treeView.customContextMenuRequested.connect(self.context_menu)
         #path = r"C:\Users\HP\Desktop\MyProject"
         path = "/home/wayne/public_html/projects/digikey_tables"
         self.model = QtWidgets.QFileSystemModel()
