@@ -9,9 +9,9 @@ class FileSystemTreeModel(QAbstractItemModel):
 
         FLAG_DEFAULT = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-        def __init__(self, root, path='/'):
+        def __init__(self, root_node, path='/'):
             # Verify argument types:
-            assert isinstance(root, Node)
+            assert isinstance(root_node, Node)
             assert isinstance(path, str)
 
             # Initialize the parent *QAbstraceItemModel*:
@@ -19,14 +19,14 @@ class FileSystemTreeModel(QAbstractItemModel):
 
             # Stuff *root* into *model* (i.e. *self*):
             model = self
-            model.root = root
+            model.root_node = root_node
             model.path = path
 
             # generate root node children
-            for file in os.listdir(path):
+            for file in sorted(os.listdir(path)):
                 file_path = os.path.join(path, file)
 
-                node = Node(file, file_path, parent=model.root)
+                node = Node(file, file_path, parent=root_node)
                 if os.path.isdir(file_path):
                     node.is_dir = True
 
@@ -35,7 +35,7 @@ class FileSystemTreeModel(QAbstractItemModel):
             if index.isValid():
                 return index.internalPointer()
             else:
-                return self.root
+                return self.root_node
 
         # check if the note has data that has not been loaded yet
         def canFetchMore(self, index):
@@ -52,7 +52,7 @@ class FileSystemTreeModel(QAbstractItemModel):
             parent = self.getNode(index)
 
             nodes = []
-            for file in os.listdir(parent.path):
+            for file in sorted(os.listdir(parent.path)):
                 file_path = os.path.join(parent.path, file)
 
                 node = Node(file, file_path)
@@ -88,7 +88,7 @@ class FileSystemTreeModel(QAbstractItemModel):
             node = self.getNode(index)
 
             parent = node.parent
-            if parent == self.root:
+            if parent == self.root_node:
                 return QModelIndex()
 
             return self.createIndex(parent.row(), 0, parent)
@@ -104,7 +104,7 @@ class FileSystemTreeModel(QAbstractItemModel):
             return self.createIndex(row, column, child)
 
         def headerData(self, section, orientation, role):
-            return self.root.name
+            return self.root_node.name
 
         def data(self, index, role):
             if not index.isValid():

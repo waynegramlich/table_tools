@@ -10,8 +10,8 @@ from model import FileSystemTreeModel
 
 app = QApplication(sys.argv)
 
-model = FileSystemTreeModel(Node('Filename'), path='/')
-
+model = FileSystemTreeModel(Node('Filename'),
+                            path='/home/wayne/public_html/projects/digikey_tables')
 
 tree = QTreeView()
 tree.setModel(model)
