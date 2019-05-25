@@ -11,7 +11,7 @@ from model import FileSystemTreeModel
 app = QApplication(sys.argv)
 
 path="/home/wayne/public_html/projects/digikey_tables"
-model = FileSystemTreeModel(Node("Root", path), path=path)
+model = FileSystemTreeModel(Node("Root", path), path)
 
 tree = QTreeView()
 tree.setModel(model)

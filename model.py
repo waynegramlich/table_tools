@@ -11,13 +11,11 @@ class FileSystemTreeModel(QAbstractItemModel):
 
         def __init__(self, root_node, path):
             # Verify argument types:
-            assert isinstance(root_node, Node)
+            assert isinstance(root_node, Node) and root_node.is_dir
             assert isinstance(path, str)
 
             # Initialize the parent *QAbstraceItemModel*:
             super(FileSystemTreeModel, self).__init__()
-
-            assert root_node.is_dir
 
             # Stuff *root* into *model* (i.e. *self*):
             model = self
@@ -33,24 +31,32 @@ class FileSystemTreeModel(QAbstractItemModel):
 
         # takes a model index and returns the related Python node
         def getNode(self, index):
-            if index.isValid():
-                return index.internalPointer()
-            else:
-                return self.root_node
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
+
+            model = self
+            node = index.internalPointer() if index.isValid() else model.root_node
+            assert isinstance(node, Node)
+            return node
 
         # check if the note has data that has not been loaded yet
         def canFetchMore(self, index):
-            node = self.getNode(index)
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
 
-            if node.is_dir and not node.is_traversed:
-                return True
-
-            return False
+            model = self
+            node = model.getNode(index)
+            can_fetch_more = node.is_dir and not node.is_traversed
+            return can_fetch_more
 
         # called if canFetchMore returns True, then dynamically inserts nodes required for
         # directory contents
         def fetchMore(self, index):
-            parent = self.getNode(index)
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
+
+            model = self
+            parent = model.getNode(index)
 
             nodes = []
             for file in sorted(os.listdir(parent.path)):
@@ -58,65 +64,92 @@ class FileSystemTreeModel(QAbstractItemModel):
                 node = Node(file, file_path)
                 nodes.append(node)
 
-            self.insertNodes(0, nodes, index)
+            model.insertNodes(0, nodes, index)
             parent.is_traversed = True
 
         # returns True for directory nodes so that Qt knows to check if there is more to load
         def hasChildren(self, index):
-            node = self.getNode(index)
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
 
-            if node.is_dir and not node.is_traversed:
-                return True
+            model = self
+            node = model.getNode(index)
+            has_children = ((node.is_dir and not node.is_traversed) or
+              super(FileSystemTreeModel, model).hasChildren(index))
+            return has_children
 
-            return super(FileSystemTreeModel, self).hasChildren(index)
-
-        # should return 0 if there is data to fetch (handled implicitly by check length of child list)
+        # Return 0 if there is data to fetch (handled implicitly by check length of child list)
         def rowCount(self, parent):
-            node = self.getNode(parent)
+            # Verify argument types:
+            assert isinstance(parent, QModelIndex)
+            model = self
+            node = model.getNode(parent)
             return node.child_count()
 
         def columnCount(self, parent):
+            # Verify argument types:
+            assert isinstance(parent, QModelIndex)
             return 1
 
         def flags(self, index):
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
             return FileSystemTreeModel.FLAG_DEFAULT
 
         def parent(self, index):
-            node = self.getNode(index)
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
+
+            model = self
+            node = model.getNode(index)
 
             parent = node.parent
-            if parent == self.root_node:
-                return QModelIndex()
-
-            return self.createIndex(parent.row(), 0, parent)
+            index = (QModelIndex() if parent == model.root_node else
+                     model.createIndex(parent.row(), 0, parent))
+            assert isinstance(index, QModelIndex)
+            return index
 
         def index(self, row, column, parent):
-            node = self.getNode(parent)
+            # Verify argument types:
+            assert isinstance(row, int)
+            assert isinstance(column, int)
+            assert isinstance(parent, QModelIndex)
 
+            model = self
+            node = model.getNode(parent)
             child = node.child(row)
-
-            if not child:
-                return QModelIndex()
-
-            return self.createIndex(row, column, child)
+            index = QModelIndex() if child is None else model.createIndex(row, column, child)
+            assert isinstance(index, QModelIndex)
+            return index
 
         def headerData(self, section, orientation, role):
+            assert isinstance(section, int)
+            assert isinstance(orientation, Qt.Orientation)
+            assert isinstance(role, int)
             return self.root_node.name
 
         def data(self, index, role):
-            if not index.isValid():
-                return None
+            # Verify argument types:
+            assert isinstance(index, QModelIndex)
+            assert isinstance(role, int)
 
-            node = index.internalPointer()
-
-            if role == Qt.DisplayRole:
-                return node.name
-
-            else:
-                return None
+            name = None
+            if index.isValid():
+                node = index.internalPointer()
+                if role == Qt.DisplayRole:
+                    name = node.name
+            assert isinstance(name, str) or name is None
+            return name
 
         def insertNodes(self, position, nodes, parent=QModelIndex()):
-            node = self.getNode(parent)
+            assert isinstance(position, int)
+            assert isinstance(nodes, list)
+            assert isinstance(parent, QModelIndex)
+            for node in nodes:
+                assert isinstance(node, Node)
+
+            model = self
+            node = model.getNode(parent)
 
             self.beginInsertRows(parent, position, position + len(nodes) - 1)
 
