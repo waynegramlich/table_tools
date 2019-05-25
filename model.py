@@ -9,7 +9,7 @@ class FileSystemTreeModel(QAbstractItemModel):
 
         FLAG_DEFAULT = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-        def __init__(self, root_node, path='/'):
+        def __init__(self, root_node, path):
             # Verify argument types:
             assert isinstance(root_node, Node)
             assert isinstance(path, str)
@@ -22,8 +22,9 @@ class FileSystemTreeModel(QAbstractItemModel):
             model.root_node = root_node
             model.path = path
 
-            # generate root node children
-            for file in sorted(os.listdir(path)):
+            # Populate the 
+            file_names = sorted(os.listdir(path))
+            for file in file_names:
                 file_path = os.path.join(path, file)
 
                 node = Node(file, file_path, parent=root_node)
@@ -123,7 +124,7 @@ class FileSystemTreeModel(QAbstractItemModel):
 
             self.beginInsertRows(parent, position, position + len(nodes) - 1)
 
-            for child in nodes:
+            for child in reversed(nodes):
                 success = node.insert_child(position, child)
 
             self.endInsertRows()
