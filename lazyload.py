@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 import sys
 
-from PyQt4.QtGui import QApplication, QTreeView
+from PySide2.QtWidgets import QApplication, QTreeView
 
 from node import Node
 from model import FileSystemTreeModel

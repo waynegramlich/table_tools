@@ -1,6 +1,6 @@
 import os
 
-from PyQt4.QtCore import Qt, QModelIndex, QAbstractItemModel
+from PySide2.QtCore import Qt, QModelIndex, QAbstractItemModel
 
 from node import Node
 

@@ -29,7 +29,11 @@ class Node(object):
 
         def child(self, row):
             # Probably should be `return self.children[row]` with error checking:
-            return self.children
+            assert isinstance(row, int)
+            node = self
+            children = node.children
+            assert 0 <= row < len(children)
+            return children[row]
 
         def child_count(self):
             return len(self.children)
