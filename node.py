@@ -1,13 +1,21 @@
+import os
+
 class Node(object):
 
-        def __init__(self, name, path=None, parent=None):
+        def __init__(self, name, path, parent=None):
+            # Verify argument types:
+            assert isinstance(name, str)
+            assert isinstance(path, str)
+            assert isinstance(parent, Node) or parent is None
+
             super(Node, self).__init__()
 
+            node = self
             self.name = name
             self.children = []
             self.parent = parent
 
-            self.is_dir = False
+            self.is_dir = os.path.isdir(path)
             self.path = path
             self.is_traversed = False
 
