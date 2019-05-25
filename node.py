@@ -32,8 +32,8 @@ class Node(object):
             assert isinstance(row, int)
             node = self
             children = node.children
-            assert 0 <= row < len(children)
-            return children[row]
+            result = children[row] if 0 <= row < len(children) else None
+            return result
 
         def child_count(self):
             return len(self.children)

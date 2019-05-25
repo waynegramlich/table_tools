@@ -9,18 +9,24 @@ class FileSystemTreeModel(QAbstractItemModel):
 
         FLAG_DEFAULT = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-        def __init__(self, root, path='/', parent=None):
+        def __init__(self, root, path='/'):
+            # Verify argument types:
+            assert isinstance(root, Node)
+            assert isinstance(path, str)
+
+            # Initialize the parent *QAbstraceItemModel*:
             super(FileSystemTreeModel, self).__init__()
 
-            self.root = root
-            self.parent = parent
-            self.path = path
+            # Stuff *root* into *model* (i.e. *self*):
+            model = self
+            model.root = root
+            model.path = path
 
             # generate root node children
             for file in os.listdir(path):
                 file_path = os.path.join(path, file)
 
-                node = Node(file, file_path, parent=self.root)
+                node = Node(file, file_path, parent=model.root)
                 if os.path.isdir(file_path):
                     node.is_dir = True
 
