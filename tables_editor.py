@@ -1958,7 +1958,7 @@ class TablesEditor(QMainWindow):
             print("*****************************************************")
             path = "/home/wayne/public_html/projects/digikey_tables"
 
-            if False:
+            if True:
                 file_system_model = QFileSystemModel()
                 assert isinstance(file_system_model, QFileSystemModel)
                 assert isinstance(file_system_model, QAbstractItemModel)

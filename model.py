@@ -19,8 +19,9 @@ class FileSystemTreeModel(QAbstractItemModel):
 
             # Stuff *root* into *model* (i.e. *self*):
             model = self
-            model.root_node = root_node
+            model.headers = {0: "Name", 1: "Type"}
             model.path = path
+            model.root_node = root_node
 
             # Populate the top level of *root_node*:
             file_names = sorted(os.listdir(path))
@@ -89,7 +90,7 @@ class FileSystemTreeModel(QAbstractItemModel):
         def columnCount(self, parent):
             # Verify argument types:
             assert isinstance(parent, QModelIndex)
-            return 1
+            return 2
 
         def flags(self, index):
             # Verify argument types:
@@ -126,20 +127,28 @@ class FileSystemTreeModel(QAbstractItemModel):
             assert isinstance(section, int)
             assert isinstance(orientation, Qt.Orientation)
             assert isinstance(role, int)
-            return self.root_node.name
+
+            model = self
+            if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+                return model.headers[section]
+            return None
 
         def data(self, index, role):
             # Verify argument types:
             assert isinstance(index, QModelIndex)
             assert isinstance(role, int)
 
-            name = None
+            column = index.column()
+            value = None
             if index.isValid():
                 node = index.internalPointer()
                 if role == Qt.DisplayRole:
-                    name = node.name
-            assert isinstance(name, str) or name is None
-            return name
+                    if column == 0:
+                        value = node.name
+                    elif column == 1:
+                        value = "D" if node.is_dir else "T"
+            assert isinstance(value, str) or value is None
+            return value
 
         def insertNodes(self, position, nodes, parent=QModelIndex()):
             assert isinstance(position, int)
