@@ -9,7 +9,7 @@
 #   * All code comments are written in [Markdown](https://en.wikipedia.org/wiki/Markdown).
 #   * Code is organized into blocks are preceeded by comment that explains the code block.
 #   * For methods, a comment of the form `# CLASS_NAME.METHOD_NAME():` is before each method
-#     definition.
+#     definition as an aid for editor searching.
 # * Class/Function standards:
 #   * Indentation levels are multiples of 4 spaces and continuation lines have 2 more spaces.
 #   * All classes are listed alphabetically.
@@ -983,23 +983,26 @@ class Filter:
             print("{0}<=Filter.xml_lines_append()".format(tracing))
 
 
-class Node(object):
+class Node:
     """ Represents a single *Node* in a *QTreeView* tree. """
 
+    # Node.__init__():
     def __init__(self, name, path, parent=None):
         # Verify argument types:
         assert isinstance(name, str)
         assert isinstance(path, str)
         assert isinstance(parent, Node) or parent is None
 
-        # Initilize the parent type of *node* (i.e. *self*):
-        node = self
-        super(Node, self).__init__()
+        #print("=>Node.__init__(*, '{0}', '...', '{2}')".
+        #  format(name, path, "None" if parent is None else parent.name))
+        # Initilize the super class:
+        super().__init__()
 
         is_dir = os.path.isdir(path)
         is_traversed = not is_dir or is_dir and len(list(os.listdir(path))) == 0
 
         # Load up *node* (i.e. *self*):
+        node = self
         node.children = []
         node.name = name
         node.is_dir = is_dir
@@ -1011,15 +1014,68 @@ class Node(object):
         if parent is not None:
             parent.add_child(node)
 
+        #print("<=Node.__init__(*, '{0}', '...', '{2}')".
+        #  format(name, path, "None" if parent is None else parent.name))
+
+    # Node.add_child_count():
     def add_child(self, child):
         # Verify argument types:
         assert isinstance(child, Node)
 
         # Append *child* to the *node* (i.e. *self*) children list:
         node = self
+        #print("=>Node.add_child('{0}', '{1}') =>{2}".
+        #  format(node.name, child.name, len(node.children)))
         node.children.append(child)
         child.parent = node
+        #print("<=Node.add_child('{0}', '{1}') =>{2}".
+        #  format(node.name, child.name, len(node.children)))
 
+    # Node.child_count():
+    def child(self, row):
+        # Verify argument types:
+        assert isinstance(row, int)
+
+        node = self
+        children = node.children
+        result = children[row] if 0 <= row < len(children) else None
+        return result
+
+    # Node.child_count():
+    def child_count(self):
+        node = self
+        return len(node.children)
+
+    # Node.csv_read_and_process():
+    def csv_read_and_process(self, csv_directory, tracing=None):
+        # Verify argument types:
+        assert isinstance(csv_directory, str)
+        assert False, \
+          "Node sub-class '{0}' does not implement csv_read_and_process".format(type(self))
+
+    # Node.flle_name2title():
+    def file_name2title(self, file_name):
+        assert isinstance(file_name, str)
+
+        node = self
+        characters = list()
+        index = 0
+        file_name_size = len(file_name)
+        while index < file_name_size:
+            character = file_name[index]
+            if character == '_':
+                character = ' '
+                index += 1
+            elif character == '%':
+                character = chr(int(file_name[index+1:index+3], 16))
+                index += 3
+            else:
+                index += 1
+            characters.append(character)
+        title = "".join(characters)
+        return title
+
+    # Node.insert_child():
     def insert_child(self, position, child):
         # Verify argument types:
         assert isinstance(position, int)
@@ -1033,24 +1089,92 @@ class Node(object):
             child.parent = node
         return inserted
 
-    def child(self, row):
+    # Node.remove():
+    def remove(self, remove_node):
         # Verify argument types:
-        assert isinstance(row, int)
-
+        
         node = self
         children = node.children
-        result = children[row] if 0 <= row < len(children) else None
-        return result
+        for child_index, child_node in enumerate(children):
+            if child_node is remove_node:
+                del children[child_index]
+                remove_node.parent = None
+                break
+        else:
+            assert False, ("Node '{0}' not in '{1}' remove failed".
+                           format(remove_node.name, node.name))
 
-    def child_count(self):
+    # Node.title_get():
+    def title_get(self):
+        table = self
+        title = table.name
+        #print("Node.title='{0}'".format(title))
+        return title
+
+    # Node.title2file_name():
+    def title2file_name(self, title):
+        assert isinstance(title, str)
+    
         node = self
-        return len(node.children)
+        
+        characters = list()
+        space = ' '
+        ok_characters = "-,:.%+"
+        translate_characters = "!\"#$&'()*/;<=>?[]\\_`{|}~"
+        for character in title:
+            if character in translate_characters:
+                character = "%{0:02x}".format(ord(character))
+            elif character == ' ':
+                character = '_'
+            characters.append(character)
+        file_name = "".join(characters)
 
+        # Set to *True* to a little debugging:
+        if False:
+            converted_title = node.file_name2title(file_name)
+            assert title == converted_title, "'{0}' '{1}' '{2}'".format(title,
+              file_name, converted_title)
+        return file_name
+
+    # Node.row():
     def row(self):
         node = self
         parent = node.parent
         result = 0 if parent is None else parent.children.index(node)
         return result
+
+class Directory(Node):
+    # Directory.__init__():
+    def __init__(self, name, path, title, parent=None):
+        # Verify argument types:
+        assert isinstance(name, str)
+        assert isinstance(path, str)
+        assert isinstance(title, str)
+        assert isinstance(parent, Node) or parent is None
+
+        #print("=>Directory.__init__(*, '{0}', '...', '{2}')".
+        #  format(name, path, "None" if parent is None else parent.name))
+
+        # Initlialize the *Node* super class:
+        super().__init__(name, path, parent)
+        directory = self
+        directory.title = title
+
+        #print("<=Directory.__init__(*, '{0}', '...', '{2}')".
+        #  format(name, path, "None" if parent is None else parent.name))
+
+    # Directory.append():
+    def append(self, node):
+        assert isinstance(node, Node)
+        directory = self
+        directory.children.append(node)
+
+    # Directory.title_get():
+    def title_get(self):
+        directory = self
+        title = directory.title
+        #print("Directory.title='{0}'".format(title))
+        return title
 
 class Parameter:
 
@@ -1532,7 +1656,8 @@ class SearchComment(Comment):
         xml_lines.append('{0}</SearchComment>'.format(indent))
 
 
-class Table:
+class Table(Node):
+
     # Table.__init__()
     def __init__(self, **arguments_table):
         # Verify argument types:
@@ -1541,32 +1666,50 @@ class Table:
         assert isinstance(file_name, str)
         is_table_tree = "table_tree" in arguments_table
         if is_table_tree:
-            assert len(arguments_table) == 3
+            #assert len(arguments_table) == 3, arguments_table
             assert ("table_tree" in arguments_table and
                     isinstance(arguments_table["table_tree"], etree._Element))
         else:
-            # This code also winds up pull out *name
-            assert len(arguments_table) == 5
-            # Verify that *comments* is present and has correct type:
+            # This code also winds up pulling out *name*
+            #print("len(arguments_table)={0}".format(len(arguments_table)))
+            assert len(arguments_table) == 7, \
+              "arguments_table_size={0}".format(arguments_table)
+            # 1: Verify that *comments* is present and has correct type: !
             assert "comments" in arguments_table
             comments = arguments_table["comments"]
             assert isinstance(comments, list)
             for comment in comments:
                 assert isinstance(comment, TableComment)
-            # Verify that *csv_file_name* is present and has correct type:
-            assert "csv_file_name" in arguments_table
-            csv_file_name = arguments_table["csv_file_name"]
-            assert isinstance(csv_file_name, str)
-            # Verify that *name* is present and has correct type:
+            # 2: Verify that *csv_file_name* is present and has correct type: !
+            assert "csv_base_file_name" in arguments_table
+            csv_base_file_name = arguments_table["csv_base_file_name"]
+            assert isinstance(csv_base_file_name, str)
+            # 3: Verify that *name* is present and has correct type: !
             assert "name" in arguments_table
             name = arguments_table["name"]
             assert isinstance(name, str)
-            # Verify that *parameters* is present and has correct type:
+            # 4: Verify that *parameters* is present and has correct type: !
             assert "parameters" in arguments_table
             parameters = arguments_table["parameters"]
+            # 5: Verify that *path* present and has the correct type: !
+            assert "path" in arguments_table
+            path = arguments_table["path"]
             assert isinstance(parameters, list)
             for parameter in parameters:
                 assert isinstance(parameter, Parameter)
+            # 6: Verify that the parent is specified:
+            assert "parent" in arguments_table
+            parent = arguments_table["parent"]
+
+        # Perform any requested *tracing*:
+        tracing = arguments_table["tracing"] if "tracing" in arguments_table else None
+        if tracing:
+            print("{0}=>Table.__init__(*)".format(tracing))
+
+        base = None
+        id = -1
+        title = None
+        items = -1
 
         # Dispatch on *is_table_tree*:
         if is_table_tree:
@@ -1582,6 +1725,9 @@ class Table:
             # FIXME: Temporary kludge:
             assert "csv_file_name" in attributes_table
             csv_file_name = attributes_table["csv_file_name"]
+
+            if "title" in attributes_table:
+                title = attributes_table["title"]
 
             # Ensure that we have exactly two elements:
             table_tree_elements = list(table_tree)
@@ -1602,21 +1748,52 @@ class Table:
             for parameter_tree in parameters_tree:
                 parameter = Parameter(parameter_tree=parameter_tree)
                 parameters.append(parameter)
+            path = ""
+            parent = None
+            csv_base_file_name = None
         else:
             # Otherwise just dircectly grab *name*, *comments*, and *parameters*
             # from *arguments_table*:
             comments = arguments_table["comments"]
-            csv_file_name = arguments_table["csv_file_name"]
+            csv_base_file_name = arguments_table["csv_base_file_name"]
             name = arguments_table["name"]
             parameters = arguments_table["parameters"]
+            if "base" in arguments_table:
+                base = arguments_table["base"]
+            if "id" in arguments_table:
+                id = arguments_table["id"]
+            if "title" in arguments_table:
+                title = arguments_table["title"]
+                print("TITLE='{0}'".format(title))
+            if "items" in arguments_table:
+                items = arguments_table["items"]
+
+        xml_suffix_index = file_name.find(".xml")
+        assert xml_suffix_index + 4 >= len(file_name), "file_name='{0}'".format(file_name)
+
+        #print("=>Table.__init__(...)")
+        super().__init__(name, path, parent=parent)
+
+        #assert csv_base_file_name.find("lvdt-transducers") < 0
 
         # Load up *table* (i.e. *self*):
         table = self
+        table.base = base
         table.comments = comments
+        table.csv_base_file_name = csv_base_file_name
         table.file_name = file_name
-        table.csv_file_name = csv_file_name
+        table.id = id
+        table.items = items
+        table.import_column_triples = None
+        table.import_headers = None
+        table.import_rows = None
         table.name = name
         table.parameters = parameters
+        table.title = title
+
+        # Wrap up any requested *tracing*:
+        if tracing:
+            print("{0}=>Table.__init__(*)".format(tracing))
 
     # Table.__equ__():
     def __eq__(self, table2):
@@ -1639,6 +1816,187 @@ class Table:
         # print("all_equal={0}".format(all_equal))
 
         return all_equal
+
+    def bind_parameters_from_imports(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("{0}=>Tables.bind_parameters_from_imports()".format(tracing))
+
+        # Update *current_table* an *parameters* from *tables_editor*:
+        table = self
+        parameters = table.parameters
+        headers = table.import_headers
+        column_triples = table.import_column_triples
+        for column_index, triples in enumerate(column_triples):
+            header = headers[column_index]
+            # Replace '&' with '+' so that we don't choke the evenutaly .xml file with
+            # an  XML entity (i.e. 'Rock & Roll' = > 'Rock + Roll'.  Entities are always
+            # "&name;".
+            header = header.replace('&', '+')
+            header =  header.replace('<', '[')
+            header =  header.replace('>', ']')
+
+            if len(triples) >= 1:
+                # We only care about the first *triple* in *triples*:
+                triple = triples[0]
+                count, name, value = triple
+
+                # See if an existing *parameter* matches *name* (not likely):
+                for parameter_index, parameter in enumerate(parameters):
+                    if parameter.csv == name:
+                        # This *parameter* already exists, so we done:
+                        break
+                else:
+                    # This is no preexisting *parameter* so we have to create one:
+
+                    # Create *scrunched_name* from *header*:
+                    scrunched_characters = list()
+                    in_word = False
+                    for character in header:
+                        if character.isalnum():
+                            if not in_word:
+                                character = character.upper()
+                            scrunched_characters.append(character)
+                            in_word = True
+                        else:
+                            in_word = False
+                    scrunched_name = "".join(scrunched_characters)
+
+                    # Create *parameter* and append to *parameters*:
+                    comments = [ParameterComment(language="EN",
+                                long_heading=scrunched_name, lines=list())]
+                    parameter = Parameter(name=scrunched_name, type=name, csv=header,
+                                          csv_index=column_index, comments=comments)
+                    parameters.append(parameter)
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}<=Tables.bind_parameters_from_imports()".format(tracing))
+
+    # Table.csv_read_and_process():
+    def csv_read_and_process(self, csv_directory, tracing=None):
+        # Verify argument types:
+        assert isinstance(csv_directory, str)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        table = self
+        csv_base_file_name = table.csv_base_file_name
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing:
+            print("{0}=>Table.csv_read_process('{1}'):'{2}'".
+              format(tracing, csv_directory, csv_base_file_name))
+
+        # Grab *parameters* from *table* (i.e. *self*):
+        parameters = table.parameters
+        assert parameters is not None
+
+        # Open *csv_file_name* read in both *rows* and *headers*:
+        csv_file_name = csv_directory + "/" + csv_base_file_name + ".csv"
+        rows = None
+        headers = None
+        if not os.path.isfile(csv_file_name):
+            print("csv_directory='{0}' csv_base_file_name='{1}'".
+              format(csv_directory, csv_base_file_name))
+        with open(csv_file_name, newline="") as csv_file:
+            # Read in *csv_file* using *csv_reader*:
+            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+            rows = list()
+            for row_index, row in enumerate(csv_reader):
+                if row_index == 0:
+                    headers = row
+                else:
+                    rows.append(row)
+
+        # Create *column_tables* which is used to process the following *row*'s:
+        column_tables = [dict() for header in headers]
+        for row in rows:
+            # Build up a count of each of the different data values in for a given column
+            # in *column_table*:
+            for column_index, value in enumerate(row):
+                column_table = column_tables[column_index]
+                if value in column_table:
+                    # We have seen *value* before, so increment its count:
+                    column_table[value] += 1
+                else:
+                    # This is the first time we seen *value*, so insert it into
+                    # *column_table* as the first one:
+                    column_table[value] = 1
+
+        # Now *column_tables* has a list of tables (i.e. *dict*'s) where it entry
+        # has a count of the number of times that value occured in the column.
+
+        # Now sweep through *column_tables* and build *column_triples*:
+        re_table = TablesEditor.re_table_get()
+        column_triples = list()
+        for column_index, column_table in enumerate(column_tables):
+            # FIXME: Does *column_list* really need to be sorted???!!!!
+            # Create *column_list* from *column_table* such that the most common value in the
+            # columns comes first and the least commone one comes last:
+            column_list = sorted(list(column_table.items()),
+                                 key=lambda pair: (pair[1], pair[0]), reverse=True)
+
+            # Build up *matches* which is the regular expressions that match best:
+            regex_table = dict()
+            regex_table["String"] = list()
+            total_count = 0
+            for value, count in column_list:
+                # print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
+                total_count += count
+                match_count = 0
+                for regex_name, regex in re_table.items():
+                    if not regex.match(value) is None:
+                        if regex_name in regex_table:
+                            regex_table[regex_name].append((value, count))
+                        else:
+                            regex_table[regex_name] = [(value, count)]
+
+                        match_count += 1
+                if match_count == 0:
+                    regex_table["String"].append((value, count))
+            #assert total_count == len(rows), \
+            #  "total_count={0} len_rows={1}".format(total_count, len(rows))
+
+            # if tracing is not None:
+            #    print("{0}Column[{1}]: regex_table={2}".
+            #      format(tracing, column_index, regex_table))
+
+            # Now construct the *triples* list such containing of tuples that have
+            # three values -- *total_count*, *regex_name*, and *value* where,
+            # * *total_count*: is the number column values that the regular expression matched,
+            # * *regex_name*: is the name of the regular expression, and
+            # * *value*: is an example value that matches the regular expression.
+            triples = list()
+            for regex_name, pair_list in regex_table.items():
+                total_count = 0
+                value = ""
+                for pair in pair_list:
+                    value, count = pair
+                    total_count += count
+                triple = (total_count, regex_name, value)
+                triples.append(triple)
+
+            # Sort *triples* such that the regular expression that maches the most entries comes
+            # first the least matches are at the end.  Tack *triples* onto *column_triples* list:
+            triples.sort(reverse=True)
+            column_triples.append(triples)
+
+        # Save some values into *tables_editor* for the update routine:
+        table.import_column_triples = column_triples
+        table.import_headers = headers
+        table.import_rows = rows
+
+        table.bind_parameters_from_imports(tracing=next_tracing)
+        table.save(tracing=None)
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}<=Table.csv_read_process('{1}'):'{2}'".
+              format(tracing, csv_directory, csv_base_file_name))
 
     # Table.header_labels_get():
     def header_labels_get(self):
@@ -1670,7 +2028,7 @@ class Table:
             print("{0}=>Table.save('{1}')".format(tracing, table.name))
 
         # Write out *table* (i.e. *self*) to *file_name*:
-        output_file_name = "/tmp/" + table.file_name
+        output_file_name = table.file_name
         xml_text = table.to_xml_string()
         with open(output_file_name, "w") as output_file:
             output_file.write(xml_text)
@@ -1678,6 +2036,15 @@ class Table:
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}=>Table.save('{1}')".format(tracing, table.name))
+
+    # Table.title_get():
+    def title_get(self):
+        table = self
+        title = table.title
+        if title is None:
+            title = table.name
+        #print("Table.title='{0}'".format(title))
+        return title
 
     # Table.to_xml_string():
     def to_xml_string(self):
@@ -1697,8 +2064,15 @@ class Table:
 
         # Start appending the `<Table...>` element:
         table = self
-        xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}">'.
-                         format(indent, table.name, table.csv_file_name))
+        title = table.title
+        title_text = "" if title is None else ' title="{0}"'.format(title)
+        
+        # Do not let reserved XML characters get into *title_text*:
+        title_text = title_text.replace('&', '+')
+        title_text = title_text.replace('<', '[')
+        title_text = title_text.replace('>', ']')
+        xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}.csv"{3}>'.
+                         format(indent, table.name, table.csv_base_file_name, title_text))
 
         # Append the `<TableComments>` element:
         xml_lines.append('{0}  <TableComments>'.format(indent))
@@ -1771,30 +2145,6 @@ class TablesEditor(QMainWindow):
         next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}=>TablesEditor.__init__(...)".format(tracing))
-
-        # Create some regular expressions and stuff the into *re_list*:
-        si_units_re_text = Units.si_units_re_text_get()
-        float_re_text = "-?([0-9]+\\.[0-9]*|\\.[0-9]+)"
-        white_space_text = "[ \t]*"
-        integer_re_text = "-?[0-9]+"
-        integer_re = re.compile(integer_re_text + "$")
-        float_re = re.compile(float_re_text + "$")
-        url_re = re.compile("(https?://)|(//).*$")
-        empty_re = re.compile("-?$")
-        funits_re = re.compile(float_re_text + white_space_text + si_units_re_text + "$")
-        iunits_re = re.compile(integer_re_text + white_space_text + si_units_re_text + "$")
-        range_re = re.compile("[^~]+~[^~]+$")
-        list_re = re.compile("([^,]+,)+[^,]+$")
-        re_list = [
-          ["Empty", empty_re],
-          ["Float", float_re],
-          ["FUnits", funits_re],
-          ["Integer", integer_re],
-          ["IUnits", iunits_re],
-          ["List", list_re],
-          ["Range", range_re],
-          ["URL", url_re],
-        ]
 
         # Create the *application* first:
         application = QApplication(sys.argv)
@@ -1869,7 +2219,7 @@ class TablesEditor(QMainWindow):
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.main_window = main_window
         tables_editor.original_tables = copy.deepcopy(tables)
-        tables_editor.re_list = re_list
+        tables_editor.re_table = TablesEditor.re_table_get()
         tables_editor.searches = list()
         tables_editor.tab_unload = None
         tables_editor.tables = tables
@@ -2002,8 +2352,8 @@ class TablesEditor(QMainWindow):
         mw.filters_down.clicked.connect(tables_editor.filters_down_button_clicked)
         mw.filters_up.clicked.connect(tables_editor.filters_up_button_clicked)
         mw.import_csv_file_line.textChanged.connect(tables_editor.import_csv_file_line_changed)
-        mw.import_read.clicked.connect(tables_editor.import_read_button_clicked)
-        mw.import_bind.clicked.connect(tables_editor.import_bind_button_clicked)
+        #mw.import_read.clicked.connect(tables_editor.import_read_button_clicked)
+        #mw.import_bind.clicked.connect(tables_editor.import_bind_button_clicked)
         mw.parameters_csv_line.textChanged.connect(tables_editor.parameter_csv_changed)
         mw.parameters_default_line.textChanged.connect(tables_editor.parameter_default_changed)
         mw.parameters_long_line.textChanged.connect(tables_editor.parameter_long_changed)
@@ -2017,9 +2367,9 @@ class TablesEditor(QMainWindow):
 
         mw.import_csv_file_line.setText("download.csv")
 
-        file_names = glob.glob("../digikey_tables/**", recursive=True)
-        file_names.sort()
-        print("file_names=", file_names)
+        #file_names = glob.glob("../digikey_tables/**", recursive=True)
+        #file_names.sort()
+        #print("file_names=", file_names)
 
         # Temporary *schema_tree* widget experimentation here:
         schema_tree = mw.schema_tree
@@ -2036,9 +2386,9 @@ class TablesEditor(QMainWindow):
             else:
                 path="/home/wayne/public_html/projects/digikey_tables"
                 #path="/tmp/digikey"
-                root_node = Node("Root", path)
-                assert root_node.is_dir
-                model = TreeModel(root_node, path)
+                root_directory = Directory("Root", path, "Root")
+                assert root_directory.is_dir
+                model = TreeModel(root_directory, path)
 
                 #tree_object_model = TreeModel()
                 #assert isinstance(tree_object_model, TreeObjectModel)
@@ -2912,127 +3262,11 @@ class TablesEditor(QMainWindow):
         if trace_signals:
             print("<=TablesEditor.import_bind_button_clicked()")
 
-    # TablesEditor.import_button_clicked():
-    def import_read_button_clicked(self):
-        # Perform any requested signal tracing:
-        tables_editor = self
-        trace_signals = tables_editor.trace_signals
-        next_tracing = "" if trace_signals else None
-        if trace_signals:
-            print("=>TablesEditor.import_read_button_clicked()")
-
-        # Update *current_table* and *parameters* from *tables_editor*:
-        tables_editor.current_update(tracing=next_tracing)
-        current_table = tables_editor.current_table
-        assert current_table is not None
-        parameters = current_table.parameters
-        assert parameters is not None
-
-        # Read the *csv_file_name* from the *import_csv_file_line* widget:
-        main_window = tables_editor.main_window
-        import_csv_file_line = main_window.import_csv_file_line
-        csv_file_name = import_csv_file_line.text()
-
-        # Open *csv_file_name* read in both *rows* and *headers*:
-        rows = None
-        headers = None
-        with open(csv_file_name, newline="") as csv_file:
-            # Read in *csv_file* using *csv_reader*:
-            csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
-            rows = list()
-            for row_index, row in enumerate(csv_reader):
-                if row_index == 0:
-                    headers = row
-                else:
-                    rows.append(row)
-
-        # Create *column_tables* which is used to process the following *row*'s:
-        column_tables = [dict() for header in headers]
-        for row in rows:
-            # Build up a count of each of the different data values in for a given column
-            # in *column_table*:
-            for column_index, value in enumerate(row):
-                column_table = column_tables[column_index]
-                if value in column_table:
-                    # We have seen *value* before, so increment its count:
-                    column_table[value] += 1
-                else:
-                    # This is the first time we seen *value*, so insert it into
-                    # *column_table* as the first one:
-                    column_table[value] = 1
-
-        # Now *column_tables* has a list of tables (i.e. *dict*'s) where it entry
-        # has a count of the number of times that value occured in the column.
-
-        # Now sweep through *column_tables* and build *column_triples*:
-        re_list = tables_editor.re_list
-        column_triples = list()
-        for column_index, column_table in enumerate(column_tables):
-            # FIXME: Does *column_list* really need to be sorted???!!!!
-            # Create *column_list* from *column_table* such that the most common value in the
-            # columns comes first and the least commone one comes last:
-            column_list = sorted(list(column_table.items()),
-                                 key=lambda pair: (pair[1], pair[0]), reverse=True)
-
-            # Build up *matches* which is the regular expressions that match best:
-            regex_table = dict()
-            regex_table["String"] = list()
-            total_count = 0
-            for value, count in column_list:
-                # print("Column[{0}]:'{1}': {2} ".format(column_index, value, count))
-                total_count += count
-                match_count = 0
-                for regex_name, regex in re_list:
-                    if not regex.match(value) is None:
-                        if regex_name in regex_table:
-                            regex_table[regex_name].append((value, count))
-                        else:
-                            regex_table[regex_name] = [(value, count)]
-
-                        match_count += 1
-                if match_count == 0:
-                    regex_table["String"].append((value, count))
-            assert total_count == len(rows)
-
-            # if tracing is not None:
-            #    print("{0}Column[{1}]: regex_table={2}".
-            #      format(tracing, column_index, regex_table))
-
-            # Now construct the *triples* list such containing of tuples that have
-            # three values -- *total_count*, *regex_name*, and *value* where,
-            # * *total_count*: is the number column values that the regular expression matched,
-            # * *regex_name*: is the name of the regular expression, and
-            # * *value*: is an example value that matches the regular expression.
-            triples = list()
-            for regex_name, pair_list in regex_table.items():
-                total_count = 0
-                value = ""
-                for pair in pair_list:
-                    value, count = pair
-                    total_count += count
-                triple = (total_count, regex_name, value)
-                triples.append(triple)
-
-            # Sort *triples* such that the regular expression that maches the most entries comes
-            # first the least matches are at the end.  Tack *triples* onto *column_triples* list:
-            triples.sort(reverse=True)
-            column_triples.append(triples)
-
-        # Save some values into *tables_editor* for the update routine:
-        tables_editor.import_column_triples = column_triples
-        tables_editor.import_headers = headers
-        tables_editor.import_rows = rows
-
-        # Force an update:
-        tables_editor.update(tracing=next_tracing)
-
-        # Wrap up any requested signal tracing:
-        if trace_signals:
-            print("<=TablesEditor.import_read_button_clicked()\n")
-        tables_editor.in_signal = False
-
     # TablesEditor.import_file_line_changed():
-    def import_csv_file_line_changed(self):
+    def import_csv_file_line_changed(self, text):
+        # Verify argument types:
+        assert isinstance(text, str)
+
         tables_editor = self
         in_signal = tables_editor.in_signal
         if not in_signal:
@@ -3042,7 +3276,7 @@ class TablesEditor(QMainWindow):
             trace_signals = tables_editor.trace_signals
             next_tracing = "" if trace_signals else None
             if trace_signals:
-                print("=>TablesEditor.import_csv_file_line_changed()")
+                print("=>TablesEditor.import_csv_file_line_changed('{0}')".format(text))
 
             # Make sure *current_table* is up-to-date:
             tables_editor.current_update(tracing=next_tracing)
@@ -3052,7 +3286,8 @@ class TablesEditor(QMainWindow):
             if current_table is not None:
                 main_window = tables_editor.main_window
                 import_csv_file_line = main_window.import_csv_file_line
-                csv_file_name = import_csv_file_line.text()
+                xxx = import_csv_file_line.text()
+                print("xxx='{0}' text='{1}'".format(xxx, text))
                 current_table.csv_file_name = csv_file_name
 
             # Force an update:
@@ -3060,7 +3295,7 @@ class TablesEditor(QMainWindow):
 
             # Wrap up any requested signal tracing:
             if trace_signals:
-                print("<=TablesEditor.import_csv_file_line_changed()\n")
+                print("<=TablesEditor.import_csv_file_line_changed('{0}')\n".format(text))
             tables_editor.in_signal = False
 
     # TablesEditor.import_update():
@@ -3086,10 +3321,10 @@ class TablesEditor(QMainWindow):
         import_table = main_window.import_table
 
         # Update the *import_csv_file_name* widget:
-        csv_file_name = "" if current_table is None else current_table.csv_file_name
-        previous_csv_file_name = import_csv_file_line.text()
-        if previous_csv_file_name != csv_file_name:
-            import_csv_file_line.setText(csv_file_name)
+        csv_base_file_name = "" if current_table is None else current_table.csv_base_file_name
+        previous_csv_base_file_name = import_csv_file_line.text()
+        if previous_csv_base_file_name != csv_base_file_name:
+            import_csv_file_line.setText(csv_base_file_name)
 
         # Load up *import_table*:
         headers = tables_editor.import_headers
@@ -3133,11 +3368,11 @@ class TablesEditor(QMainWindow):
                     # parameter.type = type
 
         if tracing is not None:
-            print("{0}csv_file_name='{1}' previous='{2}'".
-                  format(tracing, csv_file_name, previous_csv_file_name))
+            print("{0}csv_base_file_name='{1}' previous='{2}'".
+                  format(tracing, csv_base_file_name, previous_csv_base_file_name))
 
         # Enable/Disable *import_read* button widget depending upon whether *csv_file_name* exists:
-        import_read.setEnabled(os.path.isfile(csv_file_name))
+        import_read.setEnabled(os.path.isfile(csv_base_file_name))
         import_bind.setEnabled(tables_editor.import_headers is not None)
 
         # Wrap up any requested *tracing*:
@@ -3646,6 +3881,34 @@ class TablesEditor(QMainWindow):
         if tracing is not None:
             print("{0}<=TablesEditor.results_update()".format(tracing))
 
+    # TablesEditor.re_table_get():
+    @staticmethod
+    def re_table_get():
+        # Create some regular expressions and stuff the into *re_table*:
+        si_units_re_text = Units.si_units_re_text_get()
+        float_re_text = "-?([0-9]+\\.[0-9]*|\\.[0-9]+)"
+        white_space_text = "[ \t]*"
+        integer_re_text = "-?[0-9]+"
+        integer_re = re.compile(integer_re_text + "$")
+        float_re = re.compile(float_re_text + "$")
+        url_re = re.compile("(https?://)|(//).*$")
+        empty_re = re.compile("-?$")
+        funits_re = re.compile(float_re_text + white_space_text + si_units_re_text + "$")
+        iunits_re = re.compile(integer_re_text + white_space_text + si_units_re_text + "$")
+        range_re = re.compile("[^~]+~[^~]+$")
+        list_re = re.compile("([^,]+,)+[^,]+$")
+        re_table = {
+          "Empty": empty_re,
+          "Float": float_re,
+          "FUnits": funits_re,
+          "Integer": integer_re,
+          "IUnits": iunits_re,
+          "List": list_re,
+          "Range": range_re,
+          "URL": url_re,
+        }
+        return re_table
+
     # TablesEditor.run():
     def run(self):
         # Show the *window* and exit when done:
@@ -4083,8 +4346,8 @@ class TablesEditor(QMainWindow):
 
         file_name = "{0}.xml".format(name)
         table_comment = TableComment(language="EN", lines=list())
-        table = Table(file_name=file_name,
-                      name=name, comments=[table_comment], parameters=list(), csv_file_name="")
+        table = Table(file_name=file_name, name=name, path="",
+          comments=[table_comment], parameters=list(), csv_base_file_name="", parent=None)
 
         # Wrap up any requested *tracing* and return table:
         if tracing is not None:
@@ -4280,29 +4543,32 @@ class TreeModel(QAbstractItemModel):
 
     FLAG_DEFAULT = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def __init__(self, root_node, path):
+    # TreeModel.__init__():
+    def __init__(self, root_directory, path):
         # Verify argument types:
-        assert isinstance(root_node, Node)
-        assert root_node.is_dir
+        assert isinstance(root_directory, Directory)
+        assert root_directory.is_dir
         assert isinstance(path, str)
 
         # Initialize the parent *QAbstraceItemModel*:
-        super(TreeModel, self).__init__()
+        super().__init__()
 
         # Stuff *root* into *model* (i.e. *self*):
         model = self
-        model.headers = {0: "Name", 1: "Type"}
+        model.headers = {0: "Type", 1: "Name"}
         model.path = path
-        model.root_node = root_node
+        model.root_node = root_directory
 
         # Populate the top level of *root_node*:
         file_names = sorted(os.listdir(path))
         for file in file_names:
             file_path = os.path.join(path, file)
-            node = Node(file, file_path, parent=root_node)
-        root_node.is_traversed = True
+            title = root_directory.file_name2title(file)
+            sub_directory = Directory(file, file_path, title, parent=root_directory)
+        root_directory.is_traversed = True
 
     # takes a model index and returns the related Python node
+    # TreeModel.getNode():
     def getNode(self, index):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
@@ -4313,6 +4579,7 @@ class TreeModel(QAbstractItemModel):
         return node
 
     # check if the note has data that has not been loaded yet
+    # TreeModel.canFetchMore():
     def canFetchMore(self, index):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
@@ -4324,23 +4591,45 @@ class TreeModel(QAbstractItemModel):
 
     # called if canFetchMore returns True, then dynamically inserts nodes required for
     # directory contents
+    # TreeModel.fetchMore():
     def fetchMore(self, index):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
 
         model = self
-        parent = model.getNode(index)
+        parent_node = model.getNode(index)
 
         nodes = []
-        for file in sorted(os.listdir(parent.path)):
-            file_path = os.path.join(parent.path, file)
-            node = Node(file, file_path)
+        for file in sorted(os.listdir(parent_node.path)):
+            file_path = os.path.join(parent_node.path, file)
+            if file_path.endswith(".xml"):
+                with open(file_path) as table_read_file:
+                    table_input_text = table_read_file.read()
+                try:
+                    table_tree = etree.fromstring(table_input_text)
+                except:
+                    print("***********************************************************************")
+                    print("file_path='{0}'".format(file_path))
+                    assert False
+                table = Table(file_name=file_path, table_tree=table_tree,
+                              csv_base_file_name=file_path[:-4])
+                #print("table_input_text")
+                #print(table_input_text)
+                #print("table='{0}'".format(type(table)))
+                #print("table.title='{0}'".format(table.title))
+                # Fix make sure *table* is in *tables*:
+                #tables.append(table)
+                node = table
+            elif os.path.isdir(file_path):
+                title = parent_node.file_name2title(file)
+                node = Directory(file, file_path, title)
             nodes.append(node)
 
         model.insertNodes(0, nodes, index)
-        parent.is_traversed = True
+        parent_node.is_traversed = True
 
     # returns True for directory nodes so that Qt knows to check if there is more to load
+    # TreeModel.hasChildren():
     def hasChildren(self, index):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
@@ -4348,10 +4637,11 @@ class TreeModel(QAbstractItemModel):
         model = self
         node = model.getNode(index)
         has_children = ((node.is_dir and not node.is_traversed) or
-          super(TreeModel, model).hasChildren(index))
+          super().hasChildren(index))
         return has_children
 
     # Return 0 if there is data to fetch (handled implicitly by check length of child list)
+    # TreeModel.rowCount():
     def rowCount(self, parent):
         # Verify argument types:
         assert isinstance(parent, QModelIndex)
@@ -4359,16 +4649,19 @@ class TreeModel(QAbstractItemModel):
         node = model.getNode(parent)
         return node.child_count()
 
+    # TreeModel.columnCount():
     def columnCount(self, parent):
         # Verify argument types:
         assert isinstance(parent, QModelIndex)
         return 2
 
+    # TreeModel.flags():
     def flags(self, index):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
         return TreeModel.FLAG_DEFAULT
 
+    # TreeModel.parent():
     def parent(self, index):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
@@ -4382,6 +4675,7 @@ class TreeModel(QAbstractItemModel):
         assert isinstance(index, QModelIndex)
         return index
 
+    # TreeModel.index():
     def index(self, row, column, parent):
         # Verify argument types:
         assert isinstance(row, int)
@@ -4395,6 +4689,7 @@ class TreeModel(QAbstractItemModel):
         assert isinstance(index, QModelIndex)
         return index
 
+    # TreeModel.headerData():
     def headerData(self, section, orientation, role):
         assert isinstance(section, int)
         assert isinstance(orientation, Qt.Orientation)
@@ -4405,6 +4700,7 @@ class TreeModel(QAbstractItemModel):
             return model.headers[section]
         return None
 
+    # TreeModel.data():
     def data(self, index, role):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
@@ -4416,12 +4712,13 @@ class TreeModel(QAbstractItemModel):
             node = index.internalPointer()
             if role == Qt.DisplayRole:
                 if column == 0:
-                    value = node.name
-                elif column == 1:
                     value = "D" if node.is_dir else "T"
+                elif column == 1:
+                    value = node.title_get()
         assert isinstance(value, str) or value is None
         return value
 
+    # TreeModel.insertNodes():
     def insertNodes(self, position, nodes, parent=QModelIndex()):
         assert isinstance(position, int)
         assert isinstance(nodes, list)
