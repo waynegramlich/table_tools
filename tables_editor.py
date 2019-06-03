@@ -39,7 +39,6 @@
 import re
 import csv
 import os
-import glob
 import sys
 # import xmlschema
 import lxml.etree as etree
@@ -50,9 +49,10 @@ from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
                                QPlainTextEdit, QPushButton,
                                QTableWidget, QTableWidgetItem,
                                QTreeView, QFileSystemModel,
-                               QTreeWidget, QTreeWidgetItem,
+                               # QTreeWidget, QTreeWidgetItem,
                                QWidget)
 from PySide2.QtCore import (QAbstractItemModel, QDir, QFile, QItemSelectionModel, QModelIndex, Qt)
+
 
 class ComboEdit:
     """ A *ComboEdit* object repesents the GUI controls for manuipulating a combo box widget.
@@ -993,7 +993,7 @@ class Node:
         assert isinstance(path, str)
         assert isinstance(parent, Node) or parent is None
 
-        #print("=>Node.__init__(*, '{0}', '...', '{2}')".
+        # print("=>Node.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
         # Initilize the super class:
         super().__init__()
@@ -1014,7 +1014,7 @@ class Node:
         if parent is not None:
             parent.add_child(node)
 
-        #print("<=Node.__init__(*, '{0}', '...', '{2}')".
+        # print("<=Node.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
     # Node.add_child_count():
@@ -1024,11 +1024,11 @@ class Node:
 
         # Append *child* to the *node* (i.e. *self*) children list:
         node = self
-        #print("=>Node.add_child('{0}', '{1}') =>{2}".
+        # print("=>Node.add_child('{0}', '{1}') =>{2}".
         #  format(node.name, child.name, len(node.children)))
         node.children.append(child)
         child.parent = node
-        #print("<=Node.add_child('{0}', '{1}') =>{2}".
+        # print("<=Node.add_child('{0}', '{1}') =>{2}".
         #  format(node.name, child.name, len(node.children)))
 
     # Node.child_count():
@@ -1050,28 +1050,34 @@ class Node:
     def csv_read_and_process(self, csv_directory, tracing=None):
         # Verify argument types:
         assert isinstance(csv_directory, str)
-        assert False, \
-          "Node sub-class '{0}' does not implement csv_read_and_process".format(type(self))
+        assert False, ("Node sub-class '{0}' does not implement csv_read_and_process".
+                       format(type(self)))
 
     # Node.flle_name2title():
     def file_name2title(self, file_name):
+        # Verify argument types:
         assert isinstance(file_name, str)
 
-        node = self
+        # Decode *file_name* into a list of *characters*:
         characters = list()
         index = 0
         file_name_size = len(file_name)
         while index < file_name_size:
             character = file_name[index]
             if character == '_':
+                # Underscores are always translated to spaces:
                 character = ' '
                 index += 1
             elif character == '%':
+                # `%XX` is converted into a single *character*:
                 character = chr(int(file_name[index+1:index+3], 16))
                 index += 3
             else:
+                # Everything else just taken as is:
                 index += 1
             characters.append(character)
+
+        # Join *characters* back into a single *title* string:
         title = "".join(characters)
         return title
 
@@ -1080,7 +1086,7 @@ class Node:
         # Verify argument types:
         assert isinstance(position, int)
         assert isinstance(child, Node)
-    
+
         node = self
         children = node.children
         inserted = 0 <= position <= len(children)
@@ -1092,7 +1098,8 @@ class Node:
     # Node.remove():
     def remove(self, remove_node):
         # Verify argument types:
-        
+        assert isinstance(remove_node, Node)
+
         node = self
         children = node.children
         for child_index, child_node in enumerate(children):
@@ -1108,18 +1115,17 @@ class Node:
     def title_get(self):
         table = self
         title = table.name
-        #print("Node.title='{0}'".format(title))
+        # print("Node.title='{0}'".format(title))
         return title
 
     # Node.title2file_name():
     def title2file_name(self, title):
+        # Verify argument types:
         assert isinstance(title, str)
-    
+
         node = self
-        
         characters = list()
-        space = ' '
-        ok_characters = "-,:.%+"
+        # ok_characters = "-,:.%+"
         translate_characters = "!\"#$&'()*/;<=>?[]\\_`{|}~"
         for character in title:
             if character in translate_characters:
@@ -1132,8 +1138,8 @@ class Node:
         # Set to *True* to a little debugging:
         if False:
             converted_title = node.file_name2title(file_name)
-            assert title == converted_title, "'{0}' '{1}' '{2}'".format(title,
-              file_name, converted_title)
+            assert title == converted_title, ("'{0}' '{1}' '{2}'".
+                                              format(title, file_name, converted_title))
         return file_name
 
     # Node.row():
@@ -1142,6 +1148,7 @@ class Node:
         parent = node.parent
         result = 0 if parent is None else parent.children.index(node)
         return result
+
 
 class Directory(Node):
     # Directory.__init__():
@@ -1152,7 +1159,7 @@ class Directory(Node):
         assert isinstance(title, str)
         assert isinstance(parent, Node) or parent is None
 
-        #print("=>Directory.__init__(*, '{0}', '...', '{2}')".
+        # print("=>Directory.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
         # Initlialize the *Node* super class:
@@ -1160,7 +1167,7 @@ class Directory(Node):
         directory = self
         directory.title = title
 
-        #print("<=Directory.__init__(*, '{0}', '...', '{2}')".
+        # print("<=Directory.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
     # Directory.append():
@@ -1173,8 +1180,9 @@ class Directory(Node):
     def title_get(self):
         directory = self
         title = directory.title
-        #print("Directory.title='{0}'".format(title))
+        # print("Directory.title='{0}'".format(title))
         return title
+
 
 class Parameter:
 
@@ -1666,12 +1674,12 @@ class Table(Node):
         assert isinstance(file_name, str)
         is_table_tree = "table_tree" in arguments_table
         if is_table_tree:
-            #assert len(arguments_table) == 3, arguments_table
+            # assert len(arguments_table) == 3, arguments_table
             assert ("table_tree" in arguments_table and
                     isinstance(arguments_table["table_tree"], etree._Element))
         else:
             # This code also winds up pulling out *name*
-            #print("len(arguments_table)={0}".format(len(arguments_table)))
+            # print("len(arguments_table)={0}".format(len(arguments_table)))
             assert len(arguments_table) == 7, \
               "arguments_table_size={0}".format(arguments_table)
             # 1: Verify that *comments* is present and has correct type: !
@@ -1723,8 +1731,8 @@ class Table(Node):
             name = attributes_table["name"]
 
             # FIXME: Temporary kludge:
-            assert "csv_file_name" in attributes_table
-            csv_file_name = attributes_table["csv_file_name"]
+            # assert "csv_file_name" in attributes_table
+            # csv_file_name = attributes_table["csv_file_name"]
 
             if "title" in attributes_table:
                 title = attributes_table["title"]
@@ -1771,10 +1779,10 @@ class Table(Node):
         xml_suffix_index = file_name.find(".xml")
         assert xml_suffix_index + 4 >= len(file_name), "file_name='{0}'".format(file_name)
 
-        #print("=>Table.__init__(...)")
+        # print("=>Table.__init__(...)")
         super().__init__(name, path, parent=parent)
 
-        #assert csv_base_file_name.find("lvdt-transducers") < 0
+        # assert csv_base_file_name.find("lvdt-transducers") < 0
 
         # Load up *table* (i.e. *self*):
         table = self
@@ -1822,7 +1830,7 @@ class Table(Node):
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
+        # next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}=>Tables.bind_parameters_from_imports()".format(tracing))
 
@@ -1837,8 +1845,8 @@ class Table(Node):
             # an  XML entity (i.e. 'Rock & Roll' = > 'Rock + Roll'.  Entities are always
             # "&name;".
             header = header.replace('&', '+')
-            header =  header.replace('<', '[')
-            header =  header.replace('>', ']')
+            header = header.replace('<', '[')
+            header = header.replace('>', ']')
 
             if len(triples) >= 1:
                 # We only care about the first *triple* in *triples*:
@@ -1889,7 +1897,7 @@ class Table(Node):
         next_tracing = None if tracing is None else tracing + " "
         if tracing:
             print("{0}=>Table.csv_read_process('{1}'):'{2}'".
-              format(tracing, csv_directory, csv_base_file_name))
+                  format(tracing, csv_directory, csv_base_file_name))
 
         # Grab *parameters* from *table* (i.e. *self*):
         parameters = table.parameters
@@ -1901,7 +1909,7 @@ class Table(Node):
         headers = None
         if not os.path.isfile(csv_file_name):
             print("csv_directory='{0}' csv_base_file_name='{1}'".
-              format(csv_directory, csv_base_file_name))
+                  format(csv_directory, csv_base_file_name))
         with open(csv_file_name, newline="") as csv_file:
             # Read in *csv_file* using *csv_reader*:
             csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
@@ -1958,7 +1966,7 @@ class Table(Node):
                         match_count += 1
                 if match_count == 0:
                     regex_table["String"].append((value, count))
-            #assert total_count == len(rows), \
+            # assert total_count == len(rows), \
             #  "total_count={0} len_rows={1}".format(total_count, len(rows))
 
             # if tracing is not None:
@@ -1996,7 +2004,7 @@ class Table(Node):
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=Table.csv_read_process('{1}'):'{2}'".
-              format(tracing, csv_directory, csv_base_file_name))
+                  format(tracing, csv_directory, csv_base_file_name))
 
     # Table.header_labels_get():
     def header_labels_get(self):
@@ -2043,7 +2051,7 @@ class Table(Node):
         title = table.title
         if title is None:
             title = table.name
-        #print("Table.title='{0}'".format(title))
+        # print("Table.title='{0}'".format(title))
         return title
 
     # Table.to_xml_string():
@@ -2066,7 +2074,7 @@ class Table(Node):
         table = self
         title = table.title
         title_text = "" if title is None else ' title="{0}"'.format(title)
-        
+
         # Do not let reserved XML characters get into *title_text*:
         title_text = title_text.replace('&', '+')
         title_text = title_text.replace('<', '[')
@@ -2352,8 +2360,8 @@ class TablesEditor(QMainWindow):
         mw.filters_down.clicked.connect(tables_editor.filters_down_button_clicked)
         mw.filters_up.clicked.connect(tables_editor.filters_up_button_clicked)
         mw.import_csv_file_line.textChanged.connect(tables_editor.import_csv_file_line_changed)
-        #mw.import_read.clicked.connect(tables_editor.import_read_button_clicked)
-        #mw.import_bind.clicked.connect(tables_editor.import_bind_button_clicked)
+        # mw.import_read.clicked.connect(tables_editor.import_read_button_clicked)
+        # mw.import_bind.clicked.connect(tables_editor.import_bind_button_clicked)
         mw.parameters_csv_line.textChanged.connect(tables_editor.parameter_csv_changed)
         mw.parameters_default_line.textChanged.connect(tables_editor.parameter_default_changed)
         mw.parameters_long_line.textChanged.connect(tables_editor.parameter_long_changed)
@@ -2367,9 +2375,9 @@ class TablesEditor(QMainWindow):
 
         mw.import_csv_file_line.setText("download.csv")
 
-        #file_names = glob.glob("../digikey_tables/**", recursive=True)
-        #file_names.sort()
-        #print("file_names=", file_names)
+        # file_names = glob.glob("../digikey_tables/**", recursive=True)
+        # file_names.sort()
+        # print("file_names=", file_names)
 
         # Temporary *schema_tree* widget experimentation here:
         schema_tree = mw.schema_tree
@@ -2382,67 +2390,67 @@ class TablesEditor(QMainWindow):
                 assert isinstance(file_system_model, QFileSystemModel)
                 assert isinstance(file_system_model, QAbstractItemModel)
                 file_system_model.setRootPath((QDir.rootPath()))
-                model = file_system_model    
+                model = file_system_model
             else:
-                path="/home/wayne/public_html/projects/digikey_tables"
-                #path="/tmp/digikey"
+                path = "/home/wayne/public_html/projects/digikey_tables"
+                # path = "/tmp/digikey"
                 root_directory = Directory("Root", path, "Root")
                 assert root_directory.is_dir
                 model = TreeModel(root_directory, path)
 
-                #tree_object_model = TreeModel()
-                #assert isinstance(tree_object_model, TreeObjectModel)
-                #assert isinstance(tree_object_model, QAbstractItemModel)
-                #model = tree_object_model
+                # tree_object_model = TreeModel()
+                # assert isinstance(tree_object_model, TreeObjectModel)
+                # assert isinstance(tree_object_model, QAbstractItemModel)
+                # model = tree_object_model
             tables_editor.model = model
 
             print("module=", model)
             schema_tree.setModel(model)
-            #schema_tree.setRootIndex(model.index(path))
+            # schema_tree.setRootIndex(model.index(path))
             schema_tree.setSortingEnabled(True)
-        elif isinstance(schema_tree, QTreeWidget):
-            schema_tree.setColumnCount(2)
-            schema_tree.setHeaderLabels(["Tree", "Type"])
+        # elif isinstance(schema_tree, QTreeWidget):
+        #    schema_tree.setColumnCount(2)
+        #    schema_tree.setHeaderLabels(["Tree", "Type"])
 
-            # Intialize the root of the tree for *tables_root*:
-            root_table_item_pairs = dict()
-            root_item = QTreeWidgetItem(schema_tree, ["Root", "R"])
-            root_table_item_pair = (dict(), root_item)
-            root_table_item_pairs["Root"] = root_table_item_pair
+        #    # Intialize the root of the tree for *tables_root*:
+        #    root_table_item_pairs = dict()
+        #    root_item = QTreeWidgetItem(schema_tree, ["Root", "R"])
+        #    root_table_item_pair = (dict(), root_item)
+        #    root_table_item_pairs["Root"] = root_table_item_pair
 
-            # Now flush out the rest of the *schema_tree* by sweeping through *file_names*:
-            for file_name_index, file_name in enumerate(file_names):
-                # print("File_Name[{0}]:'{1}'".format(file_name_index, file_name))
+        #    # Now flush out the rest of the *schema_tree* by sweeping through *file_names*:
+        #    for file_name_index, file_name in enumerate(file_names):
+        #        # print("File_Name[{0}]:'{1}'".format(file_name_index, file_name))
 
-                # FIXME: Fixup *file_name*!!!:
-                assert file_name[:17] == "../digikey_tables"
-                file_name = "Root" + file_name[17:]
+        #        # FIXME: Fixup *file_name*!!!:
+        #        assert file_name[:17] == "../digikey_tables"
+        #        file_name = "Root" + file_name[17:]
 
-                # Now construct the tree for *tables_root*:
-                current_table_item_pair = root_table_item_pair
-                sub_names = file_name.split('/')
-                for sub_name_index, sub_name in enumerate(sub_names[1:]):
-                    # Skip any empty *sub_name*:
-                    # print("  Sub_Name[{0}]:'{1}'".format(sub_name_index, sub_name))
-                    if sub_name != "":
-                        # Unpack *current_table_item_pair*:
-                        current_table, current_item = current_table_item_pair
+        #        # Now construct the tree for *tables_root*:
+        #        current_table_item_pair = root_table_item_pair
+        #        sub_names = file_name.split('/')
+        #        for sub_name_index, sub_name in enumerate(sub_names[1:]):
+        #            # Skip any empty *sub_name*:
+        #            # print("  Sub_Name[{0}]:'{1}'".format(sub_name_index, sub_name))
+        #            if sub_name != "":
+        #                # Unpack *current_table_item_pair*:
+        #                current_table, current_item = current_table_item_pair
 
-                        # Figure out if we have already done this *sub_name* before:
-                        if sub_name in current_table:
-                            # Yes, we have already done this *sub_name*:
-                            next_table_item_pair = current_table[sub_name]
-                        else:
-                            # No, this is the first time we have seen this *sub_name*; create new
-                            # *next_table_item_pair* and stuff it into *current_table*:
-                            type = "T" if sub_name.endswith("_Table.xml") else "D"
-                            next_item = QTreeWidgetItem(current_item, [sub_name, type])
-                            next_table = dict()
-                            next_table_item_pair = (next_table, next_item)
-                            current_table[sub_name] = next_table_item_pair
+        #                # Figure out if we have already done this *sub_name* before:
+        #                if sub_name in current_table:
+        #                    # Yes, we have already done this *sub_name*:
+        #                    next_table_item_pair = current_table[sub_name]
+        #                else:
+        #                    # No, this is the first time we have seen this *sub_name*; create new
+        #                    # *next_table_item_pair* and stuff it into *current_table*:
+        #                    type = "T" if sub_name.endswith("_Table.xml") else "D"
+        #                    next_item = QTreeWidgetItem(current_item, [sub_name, type])
+        #                    next_table = dict()
+        #                    next_table_item_pair = (next_table, next_item)
+        #                    current_table[sub_name] = next_table_item_pair
 
-                        # Update *current_item_pair* to point to the next level down:
-                        current_table_item_pair = next_table_item_pair
+        #                # Update *current_item_pair* to point to the next level down:
+        #                current_table_item_pair = next_table_item_pair
 
         # root_item = QTreeWidgetItem(tables_root, [ "Root", "R" ])
         # directory1_item = QTreeWidgetItem(root_item, [ "Dir1", "D" ])
@@ -3274,24 +3282,24 @@ class TablesEditor(QMainWindow):
 
             # Perform any requested signal tracing:
             trace_signals = tables_editor.trace_signals
-            next_tracing = "" if trace_signals else None
+            # next_tracing = "" if trace_signals else None
             if trace_signals:
                 print("=>TablesEditor.import_csv_file_line_changed('{0}')".format(text))
 
             # Make sure *current_table* is up-to-date:
-            tables_editor.current_update(tracing=next_tracing)
-            current_table = tables_editor.current_table
+            # tables_editor.current_update(tracing=next_tracing)
+            # current_table = tables_editor.current_table
 
             # Read *csv_file_name* out of the *import_csv_file_line* widget and stuff into *table*:
-            if current_table is not None:
-                main_window = tables_editor.main_window
-                import_csv_file_line = main_window.import_csv_file_line
-                xxx = import_csv_file_line.text()
-                print("xxx='{0}' text='{1}'".format(xxx, text))
-                current_table.csv_file_name = csv_file_name
+            # if current_table is not None:
+            #     main_window = tables_editor.main_window
+            #     import_csv_file_line = main_window.import_csv_file_line
+            #     xxx = import_csv_file_line.text()
+            #     print("xxx='{0}' text='{1}'".format(xxx, text))
+            #    current_table.csv_file_name = csv_file_name
 
             # Force an update:
-            tables_editor.update(tracing=next_tracing)
+            # tables_editor.update(tracing=next_tracing)
 
             # Wrap up any requested signal tracing:
             if trace_signals:
@@ -4346,8 +4354,8 @@ class TablesEditor(QMainWindow):
 
         file_name = "{0}.xml".format(name)
         table_comment = TableComment(language="EN", lines=list())
-        table = Table(file_name=file_name, name=name, path="",
-          comments=[table_comment], parameters=list(), csv_base_file_name="", parent=None)
+        table = Table(file_name=file_name, name=name, path="", comments=[table_comment],
+                      parameters=list(), csv_base_file_name="", parent=None)
 
         # Wrap up any requested *tracing* and return table:
         if tracing is not None:
@@ -4564,7 +4572,7 @@ class TreeModel(QAbstractItemModel):
         for file in file_names:
             file_path = os.path.join(path, file)
             title = root_directory.file_name2title(file)
-            sub_directory = Directory(file, file_path, title, parent=root_directory)
+            Directory(file, file_path, title, parent=root_directory)
         root_directory.is_traversed = True
 
     # takes a model index and returns the related Python node
@@ -4605,20 +4613,15 @@ class TreeModel(QAbstractItemModel):
             if file_path.endswith(".xml"):
                 with open(file_path) as table_read_file:
                     table_input_text = table_read_file.read()
-                try:
                     table_tree = etree.fromstring(table_input_text)
-                except:
-                    print("***********************************************************************")
-                    print("file_path='{0}'".format(file_path))
-                    assert False
                 table = Table(file_name=file_path, table_tree=table_tree,
                               csv_base_file_name=file_path[:-4])
-                #print("table_input_text")
-                #print(table_input_text)
-                #print("table='{0}'".format(type(table)))
-                #print("table.title='{0}'".format(table.title))
+                # print("table_input_text")
+                # print(table_input_text)
+                # print("table='{0}'".format(type(table)))
+                # print("table.title='{0}'".format(table.title))
                 # Fix make sure *table* is in *tables*:
-                #tables.append(table)
+                # tables.append(table)
                 node = table
             elif os.path.isdir(file_path):
                 title = parent_node.file_name2title(file)
@@ -4636,8 +4639,7 @@ class TreeModel(QAbstractItemModel):
 
         model = self
         node = model.getNode(index)
-        has_children = ((node.is_dir and not node.is_traversed) or
-          super().hasChildren(index))
+        has_children = ((node.is_dir and not node.is_traversed) or super().hasChildren(index))
         return has_children
 
     # Return 0 if there is data to fetch (handled implicitly by check length of child list)
@@ -4732,11 +4734,12 @@ class TreeModel(QAbstractItemModel):
         self.beginInsertRows(parent, position, position + len(nodes) - 1)
 
         for child in reversed(nodes):
-            success = node.insert_child(position, child)
+            node.insert_child(position, child)
 
         self.endInsertRows()
 
         return True
+
 
 class Units:
     def __init__(self):
@@ -5201,9 +5204,9 @@ def main():
     # tables_editor = TablesEditor(xsd_root, schema)
     # tables_editor.run()
 
+
 if __name__ == "__main__":
     main()
-
 
 # https://stackoverflow.com/questions/5226091/checkboxes-in-a-combobox-using-pyqt?rq=1
 # https://stackoverflow.com/questions/24961383/how-to-see-the-value-of-pyside-qtcore-qt-itemflag
@@ -5228,4 +5231,3 @@ if __name__ == "__main__":
 
 # PySide2 TableView Video: https://www.youtube.com/watch?v=4PkPezdpO90
 # Associatied repo: https://github.com/vfxpipeline/filebrowser
-
