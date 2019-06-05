@@ -30,7 +30,6 @@ import subprocess
 import time
 import tables_editor as te
 
-
 class Digikey:
     # Digikey.__init__():
     def __init__(self):
@@ -603,7 +602,9 @@ class DigikeyTable(te.Table):
         assert path.find(".xml") < 0, "path='{0}'".format(path)
         file_name = path + "/" + base + ".xml"
         # print("=>DigikeyTable.__init__(base='{0}', path='{1}')".format(base, path))
-        super().__init__(file_name=file_name, comments=list(), name=base,
+        
+        comments = [ te.TableComment(language="EN", lines=[]) ]
+        super().__init__(file_name=file_name, comments=comments, name=base,
                          csv_base_file_name=csv_base_file_name, parameters=list(),
                          path=path, parent=parent)
 

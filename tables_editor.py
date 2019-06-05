@@ -548,6 +548,26 @@ class ComboEdit:
                 print("<=ComboEditor.line_edit_changed('{0}')\n".format(text))
             tables_editor.in_signal = False
 
+    # ComboEdit.item_append():
+    def item_append(self, new_item, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("{0}=>ComboEdit.item_append(*)".format(tracing))
+
+        # Append *item* to *items* and make it current for *combo_edit* (i.e. *self*):
+        combo_edit = self
+        items = combo_edit.items
+        items.append(new_item)
+        combo_edit.current_item_set(new_item, tracing=next_tracing)
+        
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}<=ComboEdit.item_append(*)".format(tracing))
+
     # ComboEdit.new_button_clicked():
     def new_button_clicked(self):
         # Perform any tracing requested by *combo_edit* (i.e. *self*):
@@ -569,8 +589,7 @@ class ComboEdit:
         new_item_name = line_edit.text()
         # print("new_item_name='{0}'".format(new_item_name))
         new_item = new_item_function(new_item_name, tracing=next_tracing)
-        items.append(new_item)
-        combo_edit.current_item_set(new_item, tracing=next_tracing)
+        combo_edit.item_append(new_item)
 
         # Update the GUI:
         tables_editor.update(tracing=next_tracing)
@@ -1046,6 +1065,15 @@ class Node:
         node = self
         return len(node.children)
 
+    # Node.clicked():
+    def clicked(self, tables_editor, tracing=None):
+        # Verify argument types:
+        assert isinstance(tables_editor, TablesEditor)
+        assert isinstance(tracing, str) or tracing is None
+
+        node = self
+        assert False, "Node.clicked() needs to be overridden for type ('{0}')".format(type(node))
+
     # Node.csv_read_and_process():
     def csv_read_and_process(self, csv_directory, tracing=None):
         # Verify argument types:
@@ -1162,6 +1190,11 @@ class Directory(Node):
         # print("=>Directory.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
+        slash_index = path.rfind('/')
+        if slash_index >= 0:
+            assert not path[slash_index+1:].startswith("."), \
+              "Directory starts with . '{0}'".format(path)
+
         # Initlialize the *Node* super class:
         super().__init__(name, path, parent)
         directory = self
@@ -1175,6 +1208,20 @@ class Directory(Node):
         assert isinstance(node, Node)
         directory = self
         directory.children.append(node)
+
+    # Directory.clicked():
+    def clicked(self, tables_editor, tracing=None):
+        # Verify argument types:
+        assert isinstance(tables_editor, TablesEditor)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Preform any requested *tracing*:
+        if tracing is not None:
+            print("{0}=>Directory.clicked()".format(tracing))
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}<=Directory.clicked()".format(tracing))
 
     # Directory.title_get():
     def title_get(self):
@@ -1686,8 +1733,14 @@ class Table(Node):
             assert "comments" in arguments_table
             comments = arguments_table["comments"]
             assert isinstance(comments, list)
+            assert len(comments) >= 1, "We must have at least one comment"
+            english_comment_found = False
             for comment in comments:
                 assert isinstance(comment, TableComment)
+                if comment.language == "EN":
+                    english_comment_found = True
+            assert english_comment_found, "We must have an english comment."
+                
             # 2: Verify that *csv_file_name* is present and has correct type: !
             assert "csv_base_file_name" in arguments_table
             csv_base_file_name = arguments_table["csv_base_file_name"]
@@ -1884,6 +1937,45 @@ class Table(Node):
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=Tables.bind_parameters_from_imports()".format(tracing))
+
+    # Table.clicked():
+    def clicked(self, tables_editor, tracing=None):
+        # Verify argument types:
+        assert isinstance(tables_editor, TablesEditor)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Preform any requested *tracing*:
+        if tracing is not None:
+            print("{0}=>Table.clicked()".format(tracing))
+
+        # Sweep through *tables* to see if *table* (i.e. *self*) is in it:
+        tables = tables_editor.tables
+        table = self
+        for sub_table in tables:
+            if table is sub_table:
+                # We found a match, so we are done searching:
+                break
+        else:
+            # Nope, *table* is not in *tables*, so let's stuff it in:
+            if tracing is not None:
+                print("{0}Before len(tables)={1}".format(tracing, len(tables)))
+            tables_editor.tables_combo_edit.item_append(table)
+            if tracing is not None:
+                print("{0}After len(tables)={1}".format(tracing, len(tables)))
+
+        # Force whatever is visible to be updated:
+        tables_editor.update(tracing=tracing)
+
+        # Make *table* the current one:
+        tables_editor.current_table = table
+        tables_editor.current_parameter = None
+        tables_editor.current_enumeration = None
+        tables_editor.current_comment = None
+        tables_editor.current_search = None
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}<=Table.clicked()".format(tracing))
 
     # Table.csv_read_and_process():
     def csv_read_and_process(self, csv_directory, tracing=None):
@@ -2374,6 +2466,8 @@ class TablesEditor(QMainWindow):
         mw.root_tabs.currentChanged.connect(tables_editor.tab_changed)
 
         mw.import_csv_file_line.setText("download.csv")
+
+        mw.schema_tree.clicked.connect(tables_editor.schema_tree_clicked)
 
         # file_names = glob.glob("../digikey_tables/**", recursive=True)
         # file_names.sort()
@@ -3959,6 +4053,34 @@ class TablesEditor(QMainWindow):
         if trace_signals:
             print("<=TablesEditor.save_button_clicked()\n")
 
+    # TablesEditor.schema_tree_clicked():
+    def schema_tree_clicked(self, model_index):
+        # Verify argument types:
+        assert isinstance(model_index, QModelIndex)
+
+        # Perform any requested signal tracing:
+        tables_editor = self
+        tracing = "" if tables_editor.trace_signals else None
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("=>TablesEditor.schema_tree_clicked()")
+
+            row = model_index.row()
+            column = model_index.column()
+            data = model_index.data()
+            #parent = model_index.parent()
+            model = model_index.model()
+            node = model.getNode(model_index)
+            node.clicked(tables_editor, tracing=next_tracing)
+
+            if tracing is not None:
+                print("{0}row={1} column={2} model={3} node={4}".
+                      format(tracing, row, column, type(model), type(node)))
+
+        # Wrap up any requested signal tracing:
+        if tracing is not None:
+            print("<=TablesEditor.schema_tree_clicked()\n")
+
     # TablesEditor.schema_update():
     def schema_update(self, tracing=None):
         # Verify argument types:
@@ -4572,7 +4694,12 @@ class TreeModel(QAbstractItemModel):
         for file in file_names:
             file_path = os.path.join(path, file)
             title = root_directory.file_name2title(file)
-            Directory(file, file_path, title, parent=root_directory)
+            slash_index = file_path.rfind('/')
+            dot_directory = False if slash_index < 0 else file_path[slash_index+1:].startswith('.')
+            # print("path='{0} slash_index={1} dot_directory={2}".
+            #       format(path, slash_index, dot_directory))
+            if os.path.isdir(file_path) and not dot_directory:
+                Directory(file, file_path, title, parent=root_directory)
         root_directory.is_traversed = True
 
     # takes a model index and returns the related Python node
@@ -4610,6 +4737,7 @@ class TreeModel(QAbstractItemModel):
         nodes = []
         for file in sorted(os.listdir(parent_node.path)):
             file_path = os.path.join(parent_node.path, file)
+            node = None
             if file_path.endswith(".xml"):
                 with open(file_path) as table_read_file:
                     table_input_text = table_read_file.read()
@@ -4623,10 +4751,11 @@ class TreeModel(QAbstractItemModel):
                 # Fix make sure *table* is in *tables*:
                 # tables.append(table)
                 node = table
-            elif os.path.isdir(file_path):
+            elif os.path.isdir(file_path) and not file_path.startswith("."):
                 title = parent_node.file_name2title(file)
                 node = Directory(file, file_path, title)
-            nodes.append(node)
+            if node is not None:
+                nodes.append(node)
 
         model.insertNodes(0, nodes, index)
         parent_node.is_traversed = True
@@ -5231,3 +5360,12 @@ if __name__ == "__main__":
 
 # PySide2 TableView Video: https://www.youtube.com/watch?v=4PkPezdpO90
 # Associatied repo: https://github.com/vfxpipeline/filebrowser
+
+# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60
+# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&sf=0&FV=ffe0003c&quantity=&ColumnSort=0&page=1&stock=1&pageSize=25  # In Stock
+# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&sf=0&FV=ffe0003c&quantity=&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=25 # + ROHS
+# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&pv69=453&pv69=1146&pv69=1319&pv69=1351&sf=1&FV=ffe0003c&quantity=&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=25 # + Surface Mount
+# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&pv16=5&sf=1&FV=ffe0003c%2C114047a%2C1140527%2C1140547%2C11401c5&quantity=&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=25 # + 0603
+
+# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?FV=1f140000%2Cffe0003c%2C400005&quantity=0&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=500
+
