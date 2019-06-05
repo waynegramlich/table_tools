@@ -26,8 +26,8 @@
      <verstretch>1</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QGridLayout" name="gridLayout_9" columnstretch="1,0">
-    <item row="0" column="1">
+   <layout class="QGridLayout" name="gridLayout_9" columnstretch="1">
+    <item row="0" column="0">
      <widget class="QTabWidget" name="root_tabs">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -36,7 +36,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="schema_tab">
        <property name="enabled">
@@ -69,8 +69,18 @@
         <item row="0" column="0" colspan="2">
          <widget class="QTabWidget" name="schema_tabs">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
+          <widget class="QWidget" name="collections_tab">
+           <attribute name="title">
+            <string>Collections</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_11">
+            <item row="0" column="0">
+             <widget class="QTreeView" name="schema_tree"/>
+            </item>
+           </layout>
+          </widget>
           <widget class="QWidget" name="tables_tab">
            <attribute name="title">
             <string>Tables</string>
@@ -757,16 +767,6 @@
         </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QTreeView" name="schema_tree">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>1</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
      </widget>
     </item>
    </layout>

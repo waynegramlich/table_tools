@@ -4096,12 +4096,14 @@ class TablesEditor(QMainWindow):
         schema_tabs = main_window.schema_tabs
         schema_tabs_index = schema_tabs.currentIndex()
         if schema_tabs_index == 0:
-            tables_editor.tables_update(tracing=next_tracing)
+            pass
         elif schema_tabs_index == 1:
-            tables_editor.import_update(tracing=next_tracing)
+            tables_editor.tables_update(tracing=next_tracing)
         elif schema_tabs_index == 2:
-            tables_editor.parameters_update(tracing=next_tracing)
+            tables_editor.import_update(tracing=next_tracing)
         elif schema_tabs_index == 3:
+            tables_editor.parameters_update(tracing=next_tracing)
+        elif schema_tabs_index == 4:
             tables_editor.enumerations_update(tracing=next_tracing)
         else:
             assert False
