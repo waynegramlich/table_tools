@@ -2478,15 +2478,15 @@ class TablesEditor(QMainWindow):
 
         mw.import_csv_file_line.setText("download.csv")
 
-        mw.schema_tree.clicked.connect(tables_editor.schema_tree_clicked)
+        mw.collections_tree.clicked.connect(tables_editor.collections_tree_clicked)
 
         # file_names = glob.glob("../digikey_tables/**", recursive=True)
         # file_names.sort()
         # print("file_names=", file_names)
 
-        # Temporary *schema_tree* widget experimentation here:
-        schema_tree = mw.schema_tree
-        if isinstance(schema_tree, QTreeView):
+        # Temporary *collections_tree* widget experimentation here:
+        collections_tree = mw.collections_tree
+        if isinstance(collections_tree, QTreeView):
             print("*****************************************************")
             path = "/home/wayne/public_html/projects/digikey_tables"
 
@@ -2510,20 +2510,20 @@ class TablesEditor(QMainWindow):
             tables_editor.model = model
 
             print("module=", model)
-            schema_tree.setModel(model)
-            # schema_tree.setRootIndex(model.index(path))
-            schema_tree.setSortingEnabled(True)
-        # elif isinstance(schema_tree, QTreeWidget):
-        #    schema_tree.setColumnCount(2)
-        #    schema_tree.setHeaderLabels(["Tree", "Type"])
+            collections_tree.setModel(model)
+            # collections_tree.setRootIndex(model.index(path))
+            collections_tree.setSortingEnabled(True)
+        # elif isinstance(collections_tree, QTreeWidget):
+        #    collections_tree.setColumnCount(2)
+        #    collections_tree.setHeaderLabels(["Tree", "Type"])
 
         #    # Intialize the root of the tree for *tables_root*:
         #    root_table_item_pairs = dict()
-        #    root_item = QTreeWidgetItem(schema_tree, ["Root", "R"])
+        #    root_item = QTreeWidgetItem(collections_tree, ["Root", "R"])
         #    root_table_item_pair = (dict(), root_item)
         #    root_table_item_pairs["Root"] = root_table_item_pair
 
-        #    # Now flush out the rest of the *schema_tree* by sweeping through *file_names*:
+        #    # Now flush out the rest of the *collections_tree* by sweeping through *file_names*:
         #    for file_name_index, file_name in enumerate(file_names):
         #        # print("File_Name[{0}]:'{1}'".format(file_name_index, file_name))
 
@@ -4071,8 +4071,8 @@ class TablesEditor(QMainWindow):
         if trace_signals:
             print("<=TablesEditor.save_button_clicked()\n")
 
-    # TablesEditor.schema_tree_clicked():
-    def schema_tree_clicked(self, model_index):
+    # TablesEditor.collections_tree_clicked():
+    def collections_tree_clicked(self, model_index):
         # Verify argument types:
         assert isinstance(model_index, QModelIndex)
 
@@ -4081,7 +4081,7 @@ class TablesEditor(QMainWindow):
         tracing = "" if tables_editor.trace_signals else None
         next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
-            print("=>TablesEditor.schema_tree_clicked()")
+            print("=>TablesEditor.collections_tree_clicked()")
 
             row = model_index.row()
             column = model_index.column()
@@ -4097,7 +4097,7 @@ class TablesEditor(QMainWindow):
 
         # Wrap up any requested signal tracing:
         if tracing is not None:
-            print("<=TablesEditor.schema_tree_clicked()\n")
+            print("<=TablesEditor.collections_tree_clicked()\n")
 
     # TablesEditor.schema_update():
     def schema_update(self, tracing=None):
@@ -4582,8 +4582,10 @@ class TablesEditor(QMainWindow):
         root_tabs = main_window.root_tabs
         root_tabs_index = root_tabs.currentIndex()
         if root_tabs_index == 0:
-            tables_editor.schema_update(tracing=next_tracing)
+            pass
         elif root_tabs_index == 1:
+            tables_editor.schema_update(tracing=next_tracing)
+        elif root_tabs_index == 2:
             tables_editor.find_update(tracing=next_tracing)
         else:
             assert False, "Illegal tab index: {0}".format(root_tabs_index)

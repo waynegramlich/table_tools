@@ -38,6 +38,16 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
+      <widget class="QWidget" name="collections_tab">
+       <attribute name="title">
+        <string>Collections</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_12">
+        <item row="0" column="0">
+         <widget class="QTreeView" name="collections_tree"/>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="schema_tab">
        <property name="enabled">
         <bool>true</bool>
@@ -69,9 +79,9 @@
         <item row="0" column="0" colspan="2">
          <widget class="QTabWidget" name="schema_tabs">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
-          <widget class="QWidget" name="collections_tab">
+          <widget class="QWidget" name="old_collections_tab">
            <attribute name="title">
             <string>Collections</string>
            </attribute>
