@@ -60,7 +60,7 @@ class Digikey:
         digikey.root_directory_reorganize(root_directory)
         # root_directory.show("")
         digikey.directories_create(root_directory)
-        root_directory.csv_read_and_process(digikey.csvs_directory)
+        root_directory.csv_read_and_process(digikey.csvs_directory, bind=True)
 
     # Digikey.directories_create():
     def directories_create(self, directory):
@@ -380,7 +380,7 @@ class DigikeyDirectory(te.Directory):
             sub_node.csvs_download(csvs_directory)
 
     # DigikeyDirectory.csv_read_and_process():
-    def csv_read_and_process(self, csv_directory, tracing=None):
+    def csv_read_and_process(self, csv_directory, bind=False, tracing=None):
         # Verify argument types:
         assert isinstance(csv_directory, str)
         assert isinstance(tracing, str) or tracing is None
@@ -395,7 +395,7 @@ class DigikeyDirectory(te.Directory):
         digikey_directory = self
         for sub_node in digikey_directory.children:
             assert isinstance(sub_node, te.Node)
-            sub_node.csv_read_and_process(csv_directory, tracing=next_tracing)
+            sub_node.csv_read_and_process(csv_directory, bind=bind, tracing=next_tracing)
 
         # Wrap up any requested *tracing*:
         next_tracing = None if tracing is None else tracing + " "
@@ -598,14 +598,14 @@ class DigikeyTable(te.Table):
         assert isinstance(parent, te.Node) or parent is None
 
         # Initialize the parent *te.Table* class:
-        csv_base_file_name = base
+        csv_file_name = base + ".csv"
         assert path.find(".xml") < 0, "path='{0}'".format(path)
         file_name = path + "/" + base + ".xml"
         # print("=>DigikeyTable.__init__(base='{0}', path='{1}')".format(base, path))
         
         comments = [ te.TableComment(language="EN", lines=[]) ]
         super().__init__(file_name=file_name, comments=comments, name=base,
-                         csv_base_file_name=csv_base_file_name, parameters=list(),
+                         csv_file_name=csv_file_name, parameters=list(),
                          path=path, parent=parent)
 
         # Stuff values into *digikey_table*:

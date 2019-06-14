@@ -1075,7 +1075,7 @@ class Node:
         assert False, "Node.clicked() needs to be overridden for type ('{0}')".format(type(node))
 
     # Node.csv_read_and_process():
-    def csv_read_and_process(self, csv_directory, tracing=None):
+    def csv_read_and_process(self, csv_directory, bind=False, tracing=None):
         # Verify argument types:
         assert isinstance(csv_directory, str)
         assert False, ("Node sub-class '{0}' does not implement csv_read_and_process".
@@ -1741,18 +1741,19 @@ class Table(Node):
                     english_comment_found = True
             assert english_comment_found, "We must have an english comment."
                 
-            # 2: Verify that *csv_file_name* is present and has correct type: !
-            assert "csv_base_file_name" in arguments_table
-            csv_base_file_name = arguments_table["csv_base_file_name"]
-            assert isinstance(csv_base_file_name, str)
-            # 3: Verify that *name* is present and has correct type: !
+            # 2: Verify that *csv_file_name* is present and has correct type:
+            assert "csv_file_name" in arguments_table
+            csv_file_name = arguments_table["csv_file_name"]
+            assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv")
+            assert isinstance(csv_file_name, str)
+            # 3: Verify that *name* is present and has correct type:
             assert "name" in arguments_table
             name = arguments_table["name"]
             assert isinstance(name, str)
-            # 4: Verify that *parameters* is present and has correct type: !
+            # 4: Verify that *parameters* is present and has correct type:
             assert "parameters" in arguments_table
             parameters = arguments_table["parameters"]
-            # 5: Verify that *path* present and has the correct type: !
+            # 5: Verify that *path* present and has the correct type:
             assert "path" in arguments_table
             path = arguments_table["path"]
             assert isinstance(parameters, list)
@@ -1783,12 +1784,11 @@ class Table(Node):
             assert "name" in attributes_table
             name = attributes_table["name"]
 
-            # FIXME: Temporary kludge:
-            # assert "csv_file_name" in attributes_table
-            # csv_file_name = attributes_table["csv_file_name"]
-
-            if "title" in attributes_table:
-                title = attributes_table["title"]
+            # Grab *csv_file_name* and *title* from *attributes_table*:
+            csv_file_name = attributes_table["csv_file_name"]
+            assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
+              "csv_file_name='{0}'".format(csv_file_name)
+            title = attributes_table["title"]
 
             # Ensure that we have exactly two elements:
             table_tree_elements = list(table_tree)
@@ -1811,12 +1811,13 @@ class Table(Node):
                 parameters.append(parameter)
             path = ""
             parent = None
-            csv_base_file_name = None
         else:
             # Otherwise just dircectly grab *name*, *comments*, and *parameters*
             # from *arguments_table*:
             comments = arguments_table["comments"]
-            csv_base_file_name = arguments_table["csv_base_file_name"]
+            csv_file_name = arguments_table["csv_file_name"]
+            assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
+              "csv_file_name='{0}'".format(csv_file_name)
             name = arguments_table["name"]
             parameters = arguments_table["parameters"]
             if "base" in arguments_table:
@@ -1832,16 +1833,17 @@ class Table(Node):
         xml_suffix_index = file_name.find(".xml")
         assert xml_suffix_index + 4 >= len(file_name), "file_name='{0}'".format(file_name)
 
+        assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
+          "csv_file_name='{0}'".format(csv_file_name)
+
         # print("=>Table.__init__(...)")
         super().__init__(name, path, parent=parent)
-
-        # assert csv_base_file_name.find("lvdt-transducers") < 0
 
         # Load up *table* (i.e. *self*):
         table = self
         table.base = base
         table.comments = comments
-        table.csv_base_file_name = csv_base_file_name
+        table.csv_file_name = csv_file_name
         table.file_name = file_name
         table.id = id
         table.items = items
@@ -1978,31 +1980,38 @@ class Table(Node):
             print("{0}<=Table.clicked()".format(tracing))
 
     # Table.csv_read_and_process():
-    def csv_read_and_process(self, csv_directory, tracing=None):
+    def csv_read_and_process(self, csv_directory, bind=False, tracing=None):
         # Verify argument types:
         assert isinstance(csv_directory, str)
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
         table = self
-        csv_base_file_name = table.csv_base_file_name
         next_tracing = None if tracing is None else tracing + " "
         if tracing:
-            print("{0}=>Table.csv_read_process('{1}'):'{2}'".
-                  format(tracing, csv_directory, csv_base_file_name))
+            print("{0}=>Table.csv_read_process('{1}', bind={2})".
+              format(tracing, csv_directory, bind))
 
         # Grab *parameters* from *table* (i.e. *self*):
         parameters = table.parameters
         assert parameters is not None
 
         # Open *csv_file_name* read in both *rows* and *headers*:
-        csv_file_name = csv_directory + "/" + csv_base_file_name + ".csv"
+        csv_file_name = table.csv_file_name
+        assert isinstance(csv_file_name, str)
+        assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
+          "csv_file_name='{0}'".format(csv_file_name)
+        full_csv_file_name = csv_directory + "/" + csv_file_name
+        if tracing is not None:
+            print("{0}csv_file_name='{1}', full_csv_file_name='{2}'".
+              format(tracing, csv_file_name, full_csv_file_name))
+
         rows = None
         headers = None
-        if not os.path.isfile(csv_file_name):
-            print("csv_directory='{0}' csv_base_file_name='{1}'".
-                  format(csv_directory, csv_base_file_name))
-        with open(csv_file_name, newline="") as csv_file:
+        if not os.path.isfile(full_csv_file_name):
+            print("csv_directory='{0}' csv_file_name='{1}'".
+                  format(csv_directory, csv_file_name))
+        with open(full_csv_file_name, newline="") as csv_file:
             # Read in *csv_file* using *csv_reader*:
             csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
             rows = list()
@@ -2089,14 +2098,18 @@ class Table(Node):
         table.import_column_triples = column_triples
         table.import_headers = headers
         table.import_rows = rows
+        assert isinstance(column_triples, list)
+        assert isinstance(headers, list)
+        assert isinstance(rows, list)
 
-        table.bind_parameters_from_imports(tracing=next_tracing)
+        if bind:
+            table.bind_parameters_from_imports(tracing=next_tracing)
         table.save(tracing=None)
 
         # Wrap up any requested *tracing*:
         if tracing is not None:
-            print("{0}<=Table.csv_read_process('{1}'):'{2}'".
-                  format(tracing, csv_directory, csv_base_file_name))
+            print("{0}<=Table.csv_read_process('{1}', bind={2})".
+              format(tracing, csv_directory, bind))
 
     # Table.header_labels_get():
     def header_labels_get(self):
@@ -2171,8 +2184,9 @@ class Table(Node):
         title_text = title_text.replace('&', '+')
         title_text = title_text.replace('<', '[')
         title_text = title_text.replace('>', ']')
-        xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}.csv"{3}>'.
-                         format(indent, table.name, table.csv_base_file_name, title_text))
+    
+        xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}"{3}>'.
+                         format(indent, table.name, table.csv_file_name, title_text))
 
         # Append the `<TableComments>` element:
         xml_lines.append('{0}  <TableComments>'.format(indent))
@@ -2313,9 +2327,6 @@ class TablesEditor(QMainWindow):
         tables_editor.current_table = current_table
         tables_editor.current_tables = tables
         tables_editor.in_signal = True
-        tables_editor.import_column_triples = None
-        tables_editor.import_headers = None
-        tables_editor.import_rows = None
         tables_editor.languages = ["English", "Spanish", "Chinese"]
         tables_editor.main_window = main_window
         tables_editor.original_tables = copy.deepcopy(tables)
@@ -3406,76 +3417,83 @@ class TablesEditor(QMainWindow):
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
-        # next_tracing = None if tracing is None else tracing + " "
+        next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}=>TabledsEditor.import_update".format(tracing))
 
-        # Make sure *current_table* is up to date:
-        tables_editor = self
-        tables_editor.current_update()
-        current_table = tables_editor.current_table
-
-        # Grab some widgets from *tables_editor*:
-        main_window = tables_editor.main_window
-        import_bind = main_window.import_bind
-        import_csv_file_line = main_window.import_csv_file_line
-        import_read = main_window.import_read
-        import_table = main_window.import_table
-
-        # Update the *import_csv_file_name* widget:
-        csv_base_file_name = "" if current_table is None else current_table.csv_base_file_name
-        previous_csv_base_file_name = import_csv_file_line.text()
-        if previous_csv_base_file_name != csv_base_file_name:
-            import_csv_file_line.setText(csv_base_file_name)
-
-        # Load up *import_table*:
-        headers = tables_editor.import_headers
-        # rows = tables_editor.import_rows
-        column_triples = tables_editor.import_column_triples
-        import_table.clearContents()
-        if headers is not None and column_triples is not None:
+            # Make sure *current_table* is up to date:
+            tables_editor = self
+            tables_editor.current_update()
+            current_table = tables_editor.current_table
+    
+            # The [import] tab does not do anything if there is no *current_table*:
             if tracing is not None:
-                print("{0}Have column_triples".format(tracing))
-            import_table.setRowCount(len(headers))
-            import_table.setColumnCount(6)
-            # Fill in the left size row headers for *import_table*:
-            import_table.setVerticalHeaderLabels(headers)
+                print("{0}current_table='{1}'".format(tracing, current_table.name))
+            if current_table is not None:
+                # Grab some widgets from *tables_editor*:
+                main_window = tables_editor.main_window
+                import_bind = main_window.import_bind
+                import_csv_file_line = main_window.import_csv_file_line
+                import_read = main_window.import_read
+                import_table = main_window.import_table
 
-            assert len(column_triples) == len(headers)
-            for column_index, triples in enumerate(column_triples):
-                for triple_index, triple in enumerate(triples):
-                    assert len(triple) == 3
-                    count, name, value = triple
+                # Update the *import_csv_file_name* widget:
+                csv_file_name = current_table.csv_file_name
+                #if tracing is not None:
+                #    print("{0}csv_file_name='{1}'".format(tracing, csv_file_name))
+                current_table.csv_read_and_process(
+                  "/home/wayne/public_html/projects/digikey_csvs", tracing=next_tracing)
 
-                    if count >= 1:
-                        item = QTableWidgetItem("{0} x {1} '{2}'".
-                                                format(count, name, value))
-                        import_table.setItem(column_index, triple_index, item)
+                # Load up *import_table*:
+                headers = current_table.import_headers
+                rows = current_table.import_rows
+                column_triples = current_table.import_column_triples
+                #if not tracing is None:
+                #    print("{0}headers={1} rows={2} column_triples={3}".
+                #      format(tracing, headers, rows, column_triples))
 
-                    # print("Column[{0}]: '{1}':{2} => {3}".
-                    #  format(column_index, value, count, matches))
-
-                    # print("Column[{0}]: {1}".format(column_index, column_table))
-                    # print("Column[{0}]: {1}".format(column_index, column_list))
-
-                    # assert column_index < len(parameters)
-                    # parameter = parameters[column_index]
-                    # type = "String"
-                    # if len(matches) >= 1:
-                    #    match = matches[0]
-                    #    if match == "Integer":
-                    #        type = "Integer"
-                    #    elif match == "Float":
-                    #        type = "Float"
-                    # parameter.type = type
-
-        if tracing is not None:
-            print("{0}csv_base_file_name='{1}' previous='{2}'".
-                  format(tracing, csv_base_file_name, previous_csv_base_file_name))
-
-        # Enable/Disable *import_read* button widget depending upon whether *csv_file_name* exists:
-        import_read.setEnabled(os.path.isfile(csv_base_file_name))
-        import_bind.setEnabled(tables_editor.import_headers is not None)
+                import_table.clearContents()
+                if headers is not None and column_triples is not None:
+                    if tracing is not None:
+                        print("{0}Have column_triples".format(tracing))
+                    import_table.setRowCount(len(headers))
+                    import_table.setColumnCount(6)
+                    # Fill in the left size row headers for *import_table*:
+                    import_table.setVerticalHeaderLabels(headers)
+    
+                    assert len(column_triples) == len(headers)
+                    for column_index, triples in enumerate(column_triples):
+                        for triple_index, triple in enumerate(triples):
+                            assert len(triple) == 3
+                            count, name, value = triple
+    
+                            if count >= 1:
+                                item = QTableWidgetItem("{0} x {1} '{2}'".
+                                                        format(count, name, value))
+                                import_table.setItem(column_index, triple_index, item)
+    
+                            # print("Column[{0}]: '{1}':{2} => {3}".
+                            #  format(column_index, value, count, matches))
+    
+                            # print("Column[{0}]: {1}".format(column_index, column_table))
+                            # print("Column[{0}]: {1}".format(column_index, column_list))
+    
+                            # assert column_index < len(parameters)
+                            # parameter = parameters[column_index]
+                            # type = "String"
+                            # if len(matches) >= 1:
+                            #    match = matches[0]
+                            #    if match == "Integer":
+                            #        type = "Integer"
+                            #    elif match == "Float":
+                            #        type = "Float"
+                            # parameter.type = type
+    
+            # Enable/Disable *import_read* button widget depending upon whether *csv_file_name*
+            # exists:
+            import_read.setEnabled(
+              csv_file_name is not None and os.path.isfile(csv_file_name))
+            import_bind.setEnabled(current_table.import_headers is not None)
 
         # Wrap up any requested *tracing*:
         if tracing is not None:
@@ -4479,7 +4497,7 @@ class TablesEditor(QMainWindow):
         file_name = "{0}.xml".format(name)
         table_comment = TableComment(language="EN", lines=list())
         table = Table(file_name=file_name, name=name, path="", comments=[table_comment],
-                      parameters=list(), csv_base_file_name="", parent=None)
+                      parameters=list(), csv_file_name="", parent=None)
 
         # Wrap up any requested *tracing* and return table:
         if tracing is not None:
@@ -4744,8 +4762,7 @@ class TreeModel(QAbstractItemModel):
                 with open(file_path) as table_read_file:
                     table_input_text = table_read_file.read()
                     table_tree = etree.fromstring(table_input_text)
-                table = Table(file_name=file_path, table_tree=table_tree,
-                              csv_base_file_name=file_path[:-4])
+                table = Table(file_name=file_path, table_tree=table_tree)
                 # print("table_input_text")
                 # print(table_input_text)
                 # print("table='{0}'".format(type(table)))
