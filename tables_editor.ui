@@ -36,7 +36,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="collections_tab">
        <attribute name="title">
@@ -79,7 +79,7 @@
         <item row="0" column="0" colspan="2">
          <widget class="QTabWidget" name="schema_tabs">
           <property name="currentIndex">
-           <number>2</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tables_tab">
            <attribute name="title">
@@ -170,37 +170,6 @@
             </item>
             <item row="7" column="0" colspan="4">
              <widget class="QPlainTextEdit" name="tables_comment_text"/>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="import_tab">
-           <attribute name="title">
-            <string>Import</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_3">
-            <item row="0" column="0">
-             <widget class="QPushButton" name="import_read">
-              <property name="text">
-               <string>Read</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QLineEdit" name="import_csv_file_line">
-              <property name="placeholderText">
-               <string>download.csv</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0" colspan="3">
-             <widget class="QTableWidget" name="import_table"/>
-            </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="import_bind">
-              <property name="text">
-               <string>Bind</string>
-              </property>
-             </widget>
             </item>
            </layout>
           </widget>

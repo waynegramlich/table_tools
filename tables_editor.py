@@ -2463,9 +2463,6 @@ class TablesEditor(QMainWindow):
         mw.find_tabs.currentChanged.connect(tables_editor.tab_changed)
         mw.filters_down.clicked.connect(tables_editor.filters_down_button_clicked)
         mw.filters_up.clicked.connect(tables_editor.filters_up_button_clicked)
-        mw.import_csv_file_line.textChanged.connect(tables_editor.import_csv_file_line_changed)
-        # mw.import_read.clicked.connect(tables_editor.import_read_button_clicked)
-        # mw.import_bind.clicked.connect(tables_editor.import_bind_button_clicked)
         mw.parameters_csv_line.textChanged.connect(tables_editor.parameter_csv_changed)
         mw.parameters_default_line.textChanged.connect(tables_editor.parameter_default_changed)
         mw.parameters_long_line.textChanged.connect(tables_editor.parameter_long_changed)
@@ -2476,8 +2473,6 @@ class TablesEditor(QMainWindow):
         mw.searches_save.clicked.connect(tables_editor.searches_save_button_clicked)
         mw.searches_table_combo.currentTextChanged.connect(tables_editor.searches_table_changed)
         mw.root_tabs.currentChanged.connect(tables_editor.tab_changed)
-
-        mw.import_csv_file_line.setText("download.csv")
 
         mw.collections_tree.clicked.connect(tables_editor.collections_tree_clicked)
 
@@ -4119,10 +4114,8 @@ class TablesEditor(QMainWindow):
         if schema_tabs_index == 0:
             tables_editor.tables_update(tracing=next_tracing)
         elif schema_tabs_index == 1:
-            tables_editor.import_update(tracing=next_tracing)
-        elif schema_tabs_index == 2:
             tables_editor.parameters_edit_update(tracing=next_tracing)
-        elif schema_tabs_index == 3:
+        elif schema_tabs_index == 2:
             tables_editor.enumerations_update(tracing=next_tracing)
         else:
             assert False
