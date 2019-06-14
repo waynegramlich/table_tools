@@ -79,18 +79,8 @@
         <item row="0" column="0" colspan="2">
          <widget class="QTabWidget" name="schema_tabs">
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
-          <widget class="QWidget" name="old_collections_tab">
-           <attribute name="title">
-            <string>Collections</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_11">
-            <item row="0" column="0">
-             <widget class="QTreeView" name="schema_tree"/>
-            </item>
-           </layout>
-          </widget>
           <widget class="QWidget" name="tables_tab">
            <attribute name="title">
             <string>Tables</string>
@@ -214,7 +204,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="parameters_tab">
+          <widget class="QWidget" name="old_parameters_tab">
            <attribute name="title">
             <string>Parameters</string>
            </attribute>
@@ -604,6 +594,16 @@
            </layout>
           </widget>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="parameters_tab">
+       <attribute name="title">
+        <string>Params</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_11">
+        <item row="0" column="0">
+         <widget class="QTableWidget" name="parameters_table"/>
         </item>
        </layout>
       </widget>

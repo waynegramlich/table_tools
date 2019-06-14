@@ -447,8 +447,9 @@ class ComboEdit:
                 # print("new is not allowed")
         # print("no_name_conflict={0}".format(no_name_conflict))
 
-        # If *current_attribute* *is_a_valid_attribute* we can enable most of the attribute widgets.
-        # The first, next, previous, and last buttons depend upon the *current_attribute_index*:
+        # If *current_attribute* *is_a_valid_attribute* we can enable most of the attribute
+        # widgets.  The first, next, previous, and last buttons depend upon the
+        # *current_attribute_index*:
         combo_box.setEnabled(is_a_valid_item)
         delete_button.setEnabled(is_a_valid_item)
         first_button.setEnabled(is_a_valid_item and current_item_index > 0)
@@ -3411,94 +3412,6 @@ class TablesEditor(QMainWindow):
                 print("<=TablesEditor.import_csv_file_line_changed('{0}')\n".format(text))
             tables_editor.in_signal = False
 
-    # TablesEditor.import_update():
-    def import_update(self, tracing=None):
-        # Verify argument types:
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if tracing is not None:
-            print("{0}=>TabledsEditor.import_update".format(tracing))
-
-            # Make sure *current_table* is up to date:
-            tables_editor = self
-            tables_editor.current_update()
-            current_table = tables_editor.current_table
-    
-            # The [import] tab does not do anything if there is no *current_table*:
-            if tracing is not None:
-                print("{0}current_table='{1}'".format(tracing, current_table.name))
-            if current_table is not None:
-                # Grab some widgets from *tables_editor*:
-                main_window = tables_editor.main_window
-                import_bind = main_window.import_bind
-                import_csv_file_line = main_window.import_csv_file_line
-                import_read = main_window.import_read
-                import_table = main_window.import_table
-
-                # Update the *import_csv_file_name* widget:
-                csv_file_name = current_table.csv_file_name
-                #if tracing is not None:
-                #    print("{0}csv_file_name='{1}'".format(tracing, csv_file_name))
-                current_table.csv_read_and_process(
-                  "/home/wayne/public_html/projects/digikey_csvs", tracing=next_tracing)
-
-                # Load up *import_table*:
-                headers = current_table.import_headers
-                rows = current_table.import_rows
-                column_triples = current_table.import_column_triples
-                #if not tracing is None:
-                #    print("{0}headers={1} rows={2} column_triples={3}".
-                #      format(tracing, headers, rows, column_triples))
-
-                import_table.clearContents()
-                if headers is not None and column_triples is not None:
-                    if tracing is not None:
-                        print("{0}Have column_triples".format(tracing))
-                    import_table.setRowCount(len(headers))
-                    import_table.setColumnCount(6)
-                    # Fill in the left size row headers for *import_table*:
-                    import_table.setVerticalHeaderLabels(headers)
-    
-                    assert len(column_triples) == len(headers)
-                    for column_index, triples in enumerate(column_triples):
-                        for triple_index, triple in enumerate(triples):
-                            assert len(triple) == 3
-                            count, name, value = triple
-    
-                            if count >= 1:
-                                item = QTableWidgetItem("{0} x {1} '{2}'".
-                                                        format(count, name, value))
-                                import_table.setItem(column_index, triple_index, item)
-    
-                            # print("Column[{0}]: '{1}':{2} => {3}".
-                            #  format(column_index, value, count, matches))
-    
-                            # print("Column[{0}]: {1}".format(column_index, column_table))
-                            # print("Column[{0}]: {1}".format(column_index, column_list))
-    
-                            # assert column_index < len(parameters)
-                            # parameter = parameters[column_index]
-                            # type = "String"
-                            # if len(matches) >= 1:
-                            #    match = matches[0]
-                            #    if match == "Integer":
-                            #        type = "Integer"
-                            #    elif match == "Float":
-                            #        type = "Float"
-                            # parameter.type = type
-    
-            # Enable/Disable *import_read* button widget depending upon whether *csv_file_name*
-            # exists:
-            import_read.setEnabled(
-              csv_file_name is not None and os.path.isfile(csv_file_name))
-            import_bind.setEnabled(current_table.import_headers is not None)
-
-        # Wrap up any requested *tracing*:
-        if tracing is not None:
-            print("{0}<=TabledsEditor.import_update".format(tracing))
-
     # TablesEditor.parameter_default_changed():
     def parameter_csv_changed(self, new_csv):
         # Verify argument types:
@@ -3652,6 +3565,120 @@ class TablesEditor(QMainWindow):
             if trace_signals:
                 print("<=TablesEditor.parameter_long_changed('{0}')\n".format(new_long_heading))
             tables_editor.in_signal = False
+
+    # TablesEditor.parameters_edit_update():
+    def parameters_edit_update(self, parameter=None, tracing=None):
+        # Verify argument types:
+        assert isinstance(parameter, Parameter) or parameter is None
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested tracing from *tables_editor* (i.e. *self*):
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("{0}=>TablesEditor.parameters_edit_update('{1}')".
+                  format(tracing, "None" if parameter is None else parameter.name))
+
+        # Make sure that the *current_table*, *current_parameter*, and *current_enumeration*
+        # in *tables_editor* are valid:
+        tables_editor = self
+
+        tables_editor.current_update(tracing=next_tracing)
+        current_table = tables_editor.current_table
+        current_parameter = tables_editor.current_parameter
+        parameter = current_parameter
+
+        # Initialize all fields to an "empty" value:
+        csv = ""
+        is_valid_parameter = False
+        default = ""
+        optional = False
+        type = ""
+
+        # If we have a valid *parameter*, copy the field values out:
+        if parameter is not None:
+            # Grab some values from *parameter*:
+            csv = parameter.csv
+            is_valid_parameter = True
+            default = parameter.default
+            optional = parameter.optional
+            type = parameter.type
+            # print("type='{0}' optional={1}".format(type, optional))
+        if tracing is not None:
+            print("{0}Parameter.name='{1}' csv='{2}'".
+                  format(tracing, "None" if parameter is None else parameter.name, csv))
+
+        # Grab some widgets from *main_window*:
+        main_window = tables_editor.main_window
+        csv_line = main_window.parameters_csv_line
+        default_line = main_window.parameters_default_line
+        optional_check = main_window.parameters_optional_check
+        table_name = main_window.parameters_table_name
+        type_combo = main_window.parameters_type_combo
+
+        # The top-level update routine should have already called *TablesEditor*.*current_update*
+        # to enusure that *current_table* is up-to-date:
+        current_table = tables_editor.current_table
+        table_name.setText("" if current_table is None else current_table.name)
+
+        # Set the *csv_line* widget:
+        previous_csv = csv_line.text()
+        if previous_csv != csv:
+            csv_line.setText(csv)
+            if tracing is not None:
+                print("{0}Set csv to '{1}'".format(tracing, csv))
+
+        # Stuff the values in to the *type_combo* widget:
+        type_combo_size = type_combo.count()
+        assert type_combo_size >= 1
+        type_lower = type.lower()
+        match_index = 0
+        for type_index in range(type_combo_size):
+            type_text = type_combo.itemText(type_index)
+            if type_text.lower() == type_lower:
+                match_index = type_index
+                break
+        type_combo.setCurrentIndex(match_index)
+
+        default_line.setText(default)
+        optional_check.setChecked(optional)
+
+        # Enable/disable the parameter widgets:
+        type_combo.setEnabled(is_valid_parameter)
+        default_line.setEnabled(is_valid_parameter)
+        optional_check.setEnabled(is_valid_parameter)
+
+        # Update the *comments* (if they exist):
+        if parameter is not None:
+            comments = parameter.comments
+            # Kludge for now, select the first comment
+            assert len(comments) >= 1
+            comment = comments[0]
+            assert isinstance(comment, ParameterComment)
+
+            # Update the headings:
+            tables_editor.parameters_long_set(comment.long_heading, tracing=next_tracing)
+            tables_editor.parameters_short_set(comment.short_heading, tracing=next_tracing)
+
+            previous_csv = csv_line.text()
+            if csv != previous_csv:
+                csv_line.setText(csv)
+
+            # Deal with comment text edit area:
+            tables_editor.current_comment = comment
+            lines = comment.lines
+            text = '\n'.join(lines)
+
+            tables_editor.comment_text_set(text, tracing=next_tracing)
+
+        # Changing the *parameter* can change the enumeration combo box, so update it as well:
+        # tables_editor.enumeration_update()
+
+        # Update the *tables_combo_edit*:
+        tables_editor.parameters_combo_edit.gui_update(tracing=next_tracing)
+
+        if tracing is not None:
+            print("{0}<=TablesEditor.parameters_edit_update('{1}')".
+                  format(tracing, "None" if parameter is None else parameter.name))
 
     # TablesEditor.parameters_long_set():
     def parameters_long_set(self, new_long_heading, tracing=None):
@@ -3816,118 +3843,94 @@ class TablesEditor(QMainWindow):
             tables_editor.in_signal = False
 
     # TablesEditor.parameters_update():
-    def parameters_update(self, parameter=None, tracing=None):
+    def parameters_update(self, tracing=None):
         # Verify argument types:
-        assert isinstance(parameter, Parameter) or parameter is None
         assert isinstance(tracing, str) or tracing is None
 
-        # Perform any requested tracing from *tables_editor* (i.e. *self*):
+        # Perform any requested *tracing*:
         next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
-            print("{0}=>TablesEditor.parameters_update('{1}')".
-                  format(tracing, "None" if parameter is None else parameter.name))
+            print("{0}=>TabledsEditor.parameters_update".format(tracing))
 
-        # Make sure that the *current_table*, *current_parameter*, and *current_enumeration*
-        # in *tables_editor* are valid:
-        tables_editor = self
+            # Make sure *current_table* is up to date:
+            tables_editor = self
+            tables_editor.current_update()
+            current_table = tables_editor.current_table
+    
+            # The [import] tab does not do anything if there is no *current_table*:
+            if current_table is not None:
+                # Do some *tracing* if requested:
+                if tracing is not None:
+                    print("{0}current_table='{1}'".format(tracing, current_table.name))
 
-        tables_editor.current_update(tracing=next_tracing)
-        current_table = tables_editor.current_table
-        current_parameter = tables_editor.current_parameter
-        parameter = current_parameter
+                # Grab some widgets from *tables_editor*:
+                main_window = tables_editor.main_window
+                #import_bind = main_window.import_bind
+                #import_csv_file_line = main_window.import_csv_file_line
+                #import_read = main_window.import_read
+                parameters_table = main_window.parameters_table
 
-        # Initialize all fields to an "empty" value:
-        csv = ""
-        is_valid_parameter = False
-        default = ""
-        optional = False
-        type = ""
+                # Update the *import_csv_file_name* widget:
+                csv_file_name = current_table.csv_file_name
+                #if tracing is not None:
+                #    print("{0}csv_file_name='{1}'".format(tracing, csv_file_name))
+                current_table.csv_read_and_process(
+                  "/home/wayne/public_html/projects/digikey_csvs", tracing=next_tracing)
 
-        # If we have a valid *parameter*, copy the field values out:
-        if parameter is not None:
-            # Grab some values from *parameter*:
-            csv = parameter.csv
-            is_valid_parameter = True
-            default = parameter.default
-            optional = parameter.optional
-            type = parameter.type
-            # print("type='{0}' optional={1}".format(type, optional))
+                # Load up *import_table*:
+                headers = current_table.import_headers
+                rows = current_table.import_rows
+                column_triples = current_table.import_column_triples
+                #if not tracing is None:
+                #    print("{0}headers={1} rows={2} column_triples={3}".
+                #      format(tracing, headers, rows, column_triples))
+
+                parameters_table.clearContents()
+                if headers is not None and column_triples is not None:
+                    if tracing is not None:
+                        print("{0}Have column_triples".format(tracing))
+                    parameters_table.setRowCount(len(headers))
+                    parameters_table.setColumnCount(6)
+                    # Fill in the left size row headers for *parameters_table*:
+                    parameters_table.setVerticalHeaderLabels(headers)
+    
+                    assert len(column_triples) == len(headers)
+                    for column_index, triples in enumerate(column_triples):
+                        for triple_index, triple in enumerate(triples):
+                            assert len(triple) == 3
+                            count, name, value = triple
+    
+                            if count >= 1:
+                                item = QTableWidgetItem("{0} x {1} '{2}'".
+                                                        format(count, name, value))
+                                parameters_table.setItem(column_index, triple_index, item)
+    
+                            # print("Column[{0}]: '{1}':{2} => {3}".
+                            #  format(column_index, value, count, matches))
+    
+                            # print("Column[{0}]: {1}".format(column_index, column_table))
+                            # print("Column[{0}]: {1}".format(column_index, column_list))
+    
+                            # assert column_index < len(parameters)
+                            # parameter = parameters[column_index]
+                            # type = "String"
+                            # if len(matches) >= 1:
+                            #    match = matches[0]
+                            #    if match == "Integer":
+                            #        type = "Integer"
+                            #    elif match == "Float":
+                            #        type = "Float"
+                            # parameter.type = type
+    
+            # Enable/Disable *import_read* button widget depending upon whether *csv_file_name*
+            # exists:
+            #import_read.setEnabled(
+            #  csv_file_name is not None and os.path.isfile(csv_file_name))
+            #import_bind.setEnabled(current_table.import_headers is not None)
+
+        # Wrap up any requested *tracing*:
         if tracing is not None:
-            print("{0}Parameter.name='{1}' csv='{2}'".
-                  format(tracing, "None" if parameter is None else parameter.name, csv))
-
-        # Grab some widgets from *main_window*:
-        main_window = tables_editor.main_window
-        csv_line = main_window.parameters_csv_line
-        default_line = main_window.parameters_default_line
-        optional_check = main_window.parameters_optional_check
-        table_name = main_window.parameters_table_name
-        type_combo = main_window.parameters_type_combo
-
-        # The top-level update routine should have already called *TablesEditor*.*current_update*
-        # to enusure that *current_table* is up-to-date:
-        current_table = tables_editor.current_table
-        table_name.setText("" if current_table is None else current_table.name)
-
-        # Set the *csv_line* widget:
-        previous_csv = csv_line.text()
-        if previous_csv != csv:
-            csv_line.setText(csv)
-            if tracing is not None:
-                print("{0}Set csv to '{1}'".format(tracing, csv))
-
-        # Stuff the values in to the *type_combo* widget:
-        type_combo_size = type_combo.count()
-        assert type_combo_size >= 1
-        type_lower = type.lower()
-        match_index = 0
-        for type_index in range(type_combo_size):
-            type_text = type_combo.itemText(type_index)
-            if type_text.lower() == type_lower:
-                match_index = type_index
-                break
-        type_combo.setCurrentIndex(match_index)
-
-        default_line.setText(default)
-        optional_check.setChecked(optional)
-
-        # Enable/disable the parameter widgets:
-        type_combo.setEnabled(is_valid_parameter)
-        default_line.setEnabled(is_valid_parameter)
-        optional_check.setEnabled(is_valid_parameter)
-
-        # Update the *comments* (if they exist):
-        if parameter is not None:
-            comments = parameter.comments
-            # Kludge for now, select the first comment
-            assert len(comments) >= 1
-            comment = comments[0]
-            assert isinstance(comment, ParameterComment)
-
-            # Update the headings:
-            tables_editor.parameters_long_set(comment.long_heading, tracing=next_tracing)
-            tables_editor.parameters_short_set(comment.short_heading, tracing=next_tracing)
-
-            previous_csv = csv_line.text()
-            if csv != previous_csv:
-                csv_line.setText(csv)
-
-            # Deal with comment text edit area:
-            tables_editor.current_comment = comment
-            lines = comment.lines
-            text = '\n'.join(lines)
-
-            tables_editor.comment_text_set(text, tracing=next_tracing)
-
-        # Changing the *parameter* can change the enumeration combo box, so update it as well:
-        # tables_editor.enumeration_update()
-
-        # Update the *tables_combo_edit*:
-        tables_editor.parameters_combo_edit.gui_update(tracing=next_tracing)
-
-        if tracing is not None:
-            print("{0}<=TablesEditor.parameters_update('{1}')".
-                  format(tracing, "None" if parameter is None else parameter.name))
+            print("{0}<=TabledsEditor.parameters_update".format(tracing))
 
     # TablesEditor.quit_button_clicked():
     def quit_button_clicked(self):
@@ -4114,14 +4117,12 @@ class TablesEditor(QMainWindow):
         schema_tabs = main_window.schema_tabs
         schema_tabs_index = schema_tabs.currentIndex()
         if schema_tabs_index == 0:
-            pass
-        elif schema_tabs_index == 1:
             tables_editor.tables_update(tracing=next_tracing)
-        elif schema_tabs_index == 2:
+        elif schema_tabs_index == 1:
             tables_editor.import_update(tracing=next_tracing)
+        elif schema_tabs_index == 2:
+            tables_editor.parameters_edit_update(tracing=next_tracing)
         elif schema_tabs_index == 3:
-            tables_editor.parameters_update(tracing=next_tracing)
-        elif schema_tabs_index == 4:
             tables_editor.enumerations_update(tracing=next_tracing)
         else:
             assert False
@@ -4586,6 +4587,8 @@ class TablesEditor(QMainWindow):
         elif root_tabs_index == 1:
             tables_editor.schema_update(tracing=next_tracing)
         elif root_tabs_index == 2:
+            tables_editor.parameters_update(tracing=next_tracing)
+        elif root_tabs_index == 3:
             tables_editor.find_update(tracing=next_tracing)
         else:
             assert False, "Illegal tab index: {0}".format(root_tabs_index)
