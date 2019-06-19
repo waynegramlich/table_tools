@@ -40,6 +40,8 @@ import re
 import csv
 import os
 import sys
+import pyperclip
+import webbrowser
 # import xmlschema
 import lxml.etree as etree
 import copy  # Is this used any more?
@@ -52,7 +54,6 @@ from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
                                # QTreeWidget, QTreeWidgetItem,
                                QWidget)
 from PySide2.QtCore import (QAbstractItemModel, QDir, QFile, QItemSelectionModel, QModelIndex, Qt)
-
 
 class ComboEdit:
     """ A *ComboEdit* object repesents the GUI controls for manuipulating a combo box widget.
@@ -1020,11 +1021,15 @@ class Node:
         # Initilize the super class:
         super().__init__()
 
-        is_dir = os.path.isdir(path)
-        is_traversed = not is_dir or is_dir and len(list(os.listdir(path))) == 0
+        node = self
+        if isinstance(node, Table):
+            is_dir = True
+            is_traversed = False
+        else:
+            is_dir = os.path.isdir(path)
+            is_traversed = not is_dir or is_dir and len(list(os.listdir(path))) == 0
 
         # Load up *node* (i.e. *self*):
-        node = self
         node.children = []
         node.name = name
         node.is_dir = is_dir
@@ -1179,7 +1184,6 @@ class Node:
         parent = node.parent
         result = 0 if parent is None else parent.children.index(node)
         return result
-
 
 class Directory(Node):
     # Directory.__init__():
@@ -1476,7 +1480,7 @@ class ParameterComment(Comment):
         xml_lines.append('        </ParameterComment>')
 
 
-class Search:
+class Search(Node):
 
     # Search.__init__():
     def __init__(self, **arguments_table):
@@ -1557,6 +1561,8 @@ class Search:
 
         # Load arguments into *search* (i.e. *self*):
         search = self
+        path = ""
+        super().__init__(name, path)
         search.comments = comments
         search.filters = filters
         search.name = name
@@ -1565,6 +1571,29 @@ class Search:
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=Search(*):name={1}".format(tracing, name))
+
+    # Search.clicked()
+    def clicked(self, tables_editor, tracing=None):
+        # Verify argument types:
+        assert isinstance(tables_editor, TablesEditor)
+        assert isinstance(tracing, str) or tracing is None
+
+        # Preform any requested *tracing*:
+        if tracing is not None:
+            print("{0}=>Search.clicked()".format(tracing))
+
+        search = self
+        table = search.parent
+        assert isinstance(table, Table)
+        url = table.url
+        assert isinstance(url, str)
+        #if tracing is not None:
+        #    print("{0}url='{1}' table.name='{2}'".format(tracing, url, table.name))
+        webbrowser.open(url, new=0, autoraise=True)
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}<=Search.clicked()".format(tracing))
 
     # Search.filters_refresh()
     def filters_refresh(self, tracing=None):
@@ -2113,6 +2142,12 @@ class Table(Node):
         if tracing is not None:
             print("{0}<=Table.csv_read_process('{1}', bind={2})".
               format(tracing, csv_directory, bind))
+
+    # Table.hasChildren():
+    def hasChildren(self, index):
+        # Override *Node.hasChildren*():
+        print("<=>Table.hasChildren()")
+        return True
 
     # Table.header_labels_get():
     def header_labels_get(self):
@@ -4753,28 +4788,33 @@ class TreeModel(QAbstractItemModel):
 
         model = self
         parent_node = model.getNode(index)
-
         nodes = []
-        for file in sorted(os.listdir(parent_node.path)):
-            file_path = os.path.join(parent_node.path, file)
-            node = None
-            if file_path.endswith(".xml"):
-                with open(file_path) as table_read_file:
-                    table_input_text = table_read_file.read()
-                    table_tree = etree.fromstring(table_input_text)
-                table = Table(file_name=file_path, table_tree=table_tree)
-                # print("table_input_text")
-                # print(table_input_text)
-                # print("table='{0}'".format(type(table)))
-                # print("table.title='{0}'".format(table.title))
-                # Fix make sure *table* is in *tables*:
-                # tables.append(table)
-                node = table
-            elif os.path.isdir(file_path) and not file_path.startswith("."):
-                title = parent_node.file_name2title(file)
-                node = Directory(file, file_path, title)
-            if node is not None:
-                nodes.append(node)
+        if isinstance(parent_node, Table):
+            comment = SearchComment(language="EN", lines=list()) 
+            comments = [ comment ]
+            all_search = Search(name="@ALL", comments=comments, table=parent_node)
+            nodes.append(all_search)
+        else:
+            for file in sorted(os.listdir(parent_node.path)):
+                file_path = os.path.join(parent_node.path, file)
+                node = None
+                if file_path.endswith(".xml"):
+                    with open(file_path) as table_read_file:
+                        table_input_text = table_read_file.read()
+                        table_tree = etree.fromstring(table_input_text)
+                    table = Table(file_name=file_path, table_tree=table_tree)
+                    # print("table_input_text")
+                    # print(table_input_text)
+                    # print("table='{0}'".format(type(table)))
+                    # print("table.title='{0}'".format(table.title))
+                    # Fix make sure *table* is in *tables*:
+                    # tables.append(table)
+                    node = table
+                elif os.path.isdir(file_path) and not file_path.startswith("."):
+                    title = parent_node.file_name2title(file)
+                    node = Directory(file, file_path, title)
+                if node is not None:
+                    nodes.append(node)
 
         model.insertNodes(0, nodes, index)
         parent_node.is_traversed = True
@@ -4820,7 +4860,7 @@ class TreeModel(QAbstractItemModel):
         node = model.getNode(index)
 
         parent = node.parent
-        index = (QModelIndex() if parent == model.root_node else
+        index = (QModelIndex() if parent is model.root_node else
                  model.createIndex(parent.row(), 0, parent))
         assert isinstance(index, QModelIndex)
         return index
@@ -4862,7 +4902,14 @@ class TreeModel(QAbstractItemModel):
             node = index.internalPointer()
             if role == Qt.DisplayRole:
                 if column == 0:
-                    value = "D" if node.is_dir else "T"
+                    if isinstance(node, Search):
+                        value = "S"
+                    elif isinstance(node, Table):
+                        value = "T"
+                    elif isinstance(node, Directory):
+                        value = "D"
+                    else:
+                        value = "?"
                 elif column == 1:
                     value = node.title_get()
         assert isinstance(value, str) or value is None

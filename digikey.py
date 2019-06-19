@@ -285,7 +285,9 @@ class Digikey:
                 else:
                     matches = list()
                     hrefs_table[href] = matches
-                url = "https://www.digikey.com/" + href
+                url = "https://www.digikey.com/products/en/" + href
+                if base.startswith("capacitors"):
+                    print("url='{0}'".format(url))
                 match = (base, id, a_contents_text, li_contents_text, url)
                 matches.append(match)
 
