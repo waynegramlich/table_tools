@@ -151,7 +151,7 @@ class ComboEdit:
                 # *widget* is a *QPushButton* and generat a callback for each click:
                 widget.clicked.connect(partial(callback, combo_edit))
             elif isinstance(widget, QPlainTextEdit):
-                # *widget* is a *QPushButton* and generat a callback for each click:
+                # *widget* is a *QPushButton* and generate a callback for each click:
                 widget.textChanged.connect(partial(callback, combo_edit))
                 widget.cursorPositionChanged.connect(
                                                     partial(ComboEdit.position_changed, combo_edit))
@@ -395,7 +395,8 @@ class ComboEdit:
         # *ComboEdit.combo_box_changed()* callbacks.  The *combo_box_being_updated* attribute
         # is set to *True* in *combo_edit* so that these spurious callbacks can be ignored.
         combo_edit.combo_box_being_updated = True
-        # print("combo_edit.combo_box_being_updated={0}".format(combo_edit.combo_box_being_updated))
+        # print("combo_edit.combo_box_being_updated={0}".
+        #  format(combo_edit.combo_box_being_updated))
 
         # Empty out *combo_box* and then refill it from *items*:
         combo_box.clear()
@@ -410,6 +411,7 @@ class ComboEdit:
                 current_item_index = index
                 if tracing is not None:
                     print("{0}match".format(tracing))
+                break
         assert not is_a_valid_item or current_item_index >= 0
         # print("current_item_index={0}".format(current_item_index))
         # print("items_size={0}".format(items_size))
@@ -1728,7 +1730,7 @@ class Table(Node):
         else:
             # This code also winds up pulling out *name*
             # print("len(arguments_table)={0}".format(len(arguments_table)))
-            assert len(arguments_table) == 7, \
+            assert len(arguments_table) == 8, \
               "arguments_table_size={0}".format(arguments_table)
             # 1: Verify that *comments* is present and has correct type: !
             assert "comments" in arguments_table
@@ -1745,7 +1747,6 @@ class Table(Node):
             # 2: Verify that *csv_file_name* is present and has correct type:
             assert "csv_file_name" in arguments_table
             csv_file_name = arguments_table["csv_file_name"]
-            assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv")
             assert isinstance(csv_file_name, str)
             # 3: Verify that *name* is present and has correct type:
             assert "name" in arguments_table
@@ -1763,6 +1764,9 @@ class Table(Node):
             # 6: Verify that the parent is specified:
             assert "parent" in arguments_table
             parent = arguments_table["parent"]
+            # 7: Verify that the *full_ref* is specified:
+            assert "url" in arguments_table
+            url = arguments_table["url"]
 
         # Perform any requested *tracing*:
         tracing = arguments_table["tracing"] if "tracing" in arguments_table else None
@@ -1787,9 +1791,10 @@ class Table(Node):
 
             # Grab *csv_file_name* and *title* from *attributes_table*:
             csv_file_name = attributes_table["csv_file_name"]
-            assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
-              "csv_file_name='{0}'".format(csv_file_name)
             title = attributes_table["title"]
+
+            # Extract *url*:
+            url = attributes_table["url"]
 
             # Ensure that we have exactly two elements:
             table_tree_elements = list(table_tree)
@@ -1817,8 +1822,6 @@ class Table(Node):
             # from *arguments_table*:
             comments = arguments_table["comments"]
             csv_file_name = arguments_table["csv_file_name"]
-            assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
-              "csv_file_name='{0}'".format(csv_file_name)
             name = arguments_table["name"]
             parameters = arguments_table["parameters"]
             if "base" in arguments_table:
@@ -1830,14 +1833,14 @@ class Table(Node):
                 print("TITLE='{0}'".format(title))
             if "items" in arguments_table:
                 items = arguments_table["items"]
+            url = None
+            if "url" in arguments_table:
+                url = arguments_table["url"]
 
         xml_suffix_index = file_name.find(".xml")
         assert xml_suffix_index + 4 >= len(file_name), "file_name='{0}'".format(file_name)
 
-        assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
-          "csv_file_name='{0}'".format(csv_file_name)
-
-        # print("=>Table.__init__(...)")
+        # print("=>Node.__init__(...)")
         super().__init__(name, path, parent=parent)
 
         # Load up *table* (i.e. *self*):
@@ -1854,6 +1857,7 @@ class Table(Node):
         table.name = name
         table.parameters = parameters
         table.title = title
+        table.url = url
 
         # Wrap up any requested *tracing*:
         if tracing:
@@ -2000,8 +2004,6 @@ class Table(Node):
         # Open *csv_file_name* read in both *rows* and *headers*:
         csv_file_name = table.csv_file_name
         assert isinstance(csv_file_name, str)
-        assert csv_file_name.endswith(".csv") and not csv_file_name.endswith(".csv.csv"), \
-          "csv_file_name='{0}'".format(csv_file_name)
         full_csv_file_name = csv_directory + "/" + csv_file_name
         if tracing is not None:
             print("{0}csv_file_name='{1}', full_csv_file_name='{2}'".
@@ -2186,8 +2188,8 @@ class Table(Node):
         title_text = title_text.replace('<', '[')
         title_text = title_text.replace('>', ']')
     
-        xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}"{3}>'.
-                         format(indent, table.name, table.csv_file_name, title_text))
+        xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}" url="{3}" {4}>'.format(
+                         indent, table.name, table.csv_file_name, table.url, title_text))
 
         # Append the `<TableComments>` element:
         xml_lines.append('{0}  <TableComments>'.format(indent))

@@ -36,7 +36,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="collections_tab">
        <attribute name="title">
@@ -48,7 +48,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="schema_tab">
+      <widget class="QWidget" name="edit_tab">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -59,7 +59,7 @@
         </sizepolicy>
        </property>
        <attribute name="title">
-        <string>Schemas</string>
+        <string>Edit</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">

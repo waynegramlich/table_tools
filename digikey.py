@@ -117,22 +117,24 @@ class Digikey:
             # and treat that as the *title*.  The number of *items* is taken from the first
             # *li_content* that end with " items)".  We visit *matches* in reverse order to work
             # around an obscure issue that is not worth describing.  If you feeling figuring it
-            # out, please remove the called to `reversed`:
+            # out, please remove the called to `reversed()`:
             title = None
             items = -1
+            url = None
             for match_index, match in enumerate(reversed(sorted(matches))):
                 # Unpack *match*:
-                base, id, a_content, li_content = match
-                # print("  Match[{0}] '{1}' '{2}' {3}".
-                #  format(match_index, href, a_content, li_content))
+                base, id, a_content, li_content, url = match
+                # print("  Match[{0}] '{1}' '{2}' {3}, '{4}'".
+                #  format(match_index, href, a_content, li_content, url))
 
                 # Fill in *title* and *items*:
                 if title is None and not a_content.startswith("See"):
                     title = a_content
-                items_pattern = " items)"
-                if items < 0 and li_content.endswith(" items)"):
-                    open_parenthesis_index = li_content.find('(')
-                    items = int(li_content[open_parenthesis_index+1:-len(items_pattern)])
+                    items_pattern = " items)"
+                    if items < 0 and li_content.endswith(" items)"):
+                        open_parenthesis_index = li_content.find('(')
+                        items = int(li_content[open_parenthesis_index+1:-len(items_pattern)])
+                    break
 
             # Dispatch based on *title* and *items*:
             if title is None:
@@ -153,7 +155,7 @@ class Digikey:
                 path = current_directory.path
                 # print("base='{0}' title='{1} file_name='{2}' path='{3}'".
                 #  format(base, title, file_name, path))
-                DigikeyTable(base, path, title, id, items, parent=current_directory)
+                DigikeyTable(base, path, title, id, items, url, parent=current_directory)
                 # print("len(current_directory)={0}".format(len(current_directory.children)))
 
         # *root_directory* is in its first incarnation and ready for reorganization:
@@ -197,8 +199,9 @@ class Digikey:
         #   * "/*id*": *id* is a decimal number that is 1-to-1 with the *base*.  The *id* is used
         #     by Digikey for specifying were to start.  When the *href* specifies a directory
         #     this is simply not present.
-        #   * "*base*": *base* is a hyphen separeted list of lower case words (i.e.
-        #     "audio-products", "audio_products-speakers", etc.)
+        #   * "*base*": *base* is a hyphen separeted list of words (i.e. "audio-products",
+        #     "audio_products-speakers", etc.)  Note: most of the words are lower case, but
+        #     there are a few that are mixed upper/lower case.
         #   * The prefix "/products/en" is present for each *href* and can be ignored.
         #
         # * *a_content*: *a_content* is the human readable name for the *href* and is typically
@@ -273,16 +276,17 @@ class Digikey:
                                 li_contents_text += li_content.string
                         li_contents_text = li_contents_text.strip()
 
-                # Now stuff *base*, *id*, *a_contents_text* and *li_contents_text* into
-                # *hrefs_table* using *href* as the key.  Since same *href* can occur multiple
-                # times in the *soup* we store everything in a *matches* list containing
-                # *match*  of 4-tuples:
+                # Now stuff *base*, *id*, *a_contents_text*, *li_contents_text*, and *url*
+                # into *hrefs_table* using *href* as the key.  Since same *href* can occur multiple
+                # times in the *soup* we store everything in a the *matches* list containing
+                # a *match* of 5-tuples:
                 if href in hrefs_table:
                     matches = hrefs_table[href]
                 else:
                     matches = list()
                     hrefs_table[href] = matches
-                match = (base, id, a_contents_text, li_contents_text)
+                url = "https://www.digikey.com/" + href
+                match = (base, id, a_contents_text, li_contents_text, url)
                 matches.append(match)
 
         # We are done scraping information out of the the *soup*.  Everything we need is
@@ -543,7 +547,7 @@ class DigikeyDirectory(te.Directory):
                 # Create the new *sub_table*:
                 path = sub_directory_path
                 DigikeyTable(table.base, path, sub_group_title,
-                             table.id, table.items, parent=sub_directory)
+                             table.id, table.items, None, parent=sub_directory)
                 # Note: *DigikeyTable()* automatically appends *sub_table* to the parent
                 # *sub_directory*:
 
@@ -588,13 +592,14 @@ class DigikeyDirectory(te.Directory):
 
 class DigikeyTable(te.Table):
     # DigikeyTable.__init__():
-    def __init__(self, base, path, title, id, items, parent=None):
+    def __init__(self, base, path, title, id, items, url, parent=None):
         # Verify argument types:
         assert isinstance(base, str) or base is None
         assert isinstance(path, str)
         assert isinstance(title, str)
         assert isinstance(id, int)
         assert isinstance(items, int)
+        assert isinstance(url, str) or url is None
         assert isinstance(parent, te.Node) or parent is None
 
         # Initialize the parent *te.Table* class:
@@ -606,7 +611,7 @@ class DigikeyTable(te.Table):
         comments = [ te.TableComment(language="EN", lines=[]) ]
         super().__init__(file_name=file_name, comments=comments, name=base,
                          csv_file_name=csv_file_name, parameters=list(),
-                         path=path, parent=parent)
+                         path=path, parent=parent, url=url)
 
         # Stuff values into *digikey_table*:
         digikey_table = self
@@ -614,6 +619,7 @@ class DigikeyTable(te.Table):
         digikey_table.id = id
         digikey_table.items = items
         digikey_table.title = title
+        digikey_table.url = url
         # print("<=DigikeyTable.__init__(base='{0}', path='{1}')".format(base, path))
 
     # DigikeyTable.csvs_download():
