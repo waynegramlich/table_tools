@@ -1527,8 +1527,10 @@ class Search(Node):
         is_search_tree = "search_tree" in arguments_table
         required_arguments_size = 1 if "tracing" in arguments_table else 0
         if is_search_tree:
+            assert "table" in arguments_table
+            table = arguments_table["table"]
+            assert isinstance(table, Table)
             required_arguments_size += 2
-            assert "tables" in arguments_table
         else:
             required_arguments_size += 4
             assert "name" in arguments_table
@@ -1547,24 +1549,17 @@ class Search(Node):
         # Dispatch on is *is_search_tree*:
         if is_search_tree:
             search_tree = arguments_table["search_tree"]
-            tables = arguments_table["tables"]
-            assert isinstance(tables, list)
-            for table in tables:
-                assert isinstance(table, Table)
+            #searches = arguments_table["searches"]
+            #assert isinstance(searches, list)
+            #for search in searches:
+            #    assert isinstance(search, Search)
+
+            # Get the search *name*:
             attributes_table = search_tree.attrib
             assert "name" in attributes_table
             name = attributes_table["name"]
-
-            assert "table" in attributes_table
-            table_name = attributes_table["table"]
-            match_table = None
-            for table in tables:
-                if table.name == table_name:
-                    match_table = table
-                    break
-            else:
-                assert False, "No table named '{0}'".format(table_name)
-            table = match_table
+            assert "url" in attributes_table, "attributes_table={0}".format(attributes_table)
+            url = attributes_table["url"]
 
             comments = list()
             filters = list()
@@ -1600,6 +1595,10 @@ class Search(Node):
             for comment in comments:
                 assert isinstance(comment, SearchComment)
             filters = list()
+
+        # Make sure *search* is on the *table.searches* list:
+        for prior_search in table.searches:
+            assert prior_search.name != name
 
         # Load arguments into *search* (i.e. *self*):
         search = self
@@ -1766,8 +1765,8 @@ class Search(Node):
         # Start the `<Search...>` element:
         search = self
         table = search.table
-        xml_lines.append('{0}<Search name="{1}" table="{2}">'.
-                         format(indent, search.name, table.name))
+        xml_lines.append('{0}<Search name="{1}" table="{2}" url="{3}">'.
+                         format(indent, search.name, table.name, search.url))
 
         # Append the `<SearchComments>` element:
         xml_lines.append('{0}  <SearchComments>'.format(indent))
@@ -1974,6 +1973,7 @@ class Table(Node):
         table.import_rows = None
         table.name = name
         table.parameters = parameters
+        table.searches = list()
         table.title = title
         table.url = url
 
@@ -4940,12 +4940,28 @@ class TreeModel(QAbstractItemModel):
         parent_node = model.getNode(index)
         nodes = []
         if isinstance(parent_node, Table):
-            comment = SearchComment(language="EN", lines=list()) 
-            comments = [ comment ]
-            all_search = Search(name="@ALL", comments=comments,
-                                table=parent_node, url=parent_node.url, tracing="fetchMore:")
-            if len(nodes) == 0:
-                nodes.append(all_search)
+            table = parent_node
+
+            # Make sure *serach_directory* exists:
+            search_directory = table.search_directory_get()
+            if not os.path.isdir(search_directory):
+                os.makedirs(search_directory)
+            assert os.path.isdir(search_directory)
+
+            for base_name in sorted(os.listdir(search_directory)):
+                if base_name.endswith(".xml"):
+                    search_file_name = os.path.join(search_directory, base_name)
+                    with open(search_file_name) as search_file:
+                        search_xml_text = search_file.read()
+                        search_tree = etree.fromstring(search_xml_text)
+                    search = Search(search_tree=search_tree, table=table)
+                    assert isinstance(search, Search)
+            # Make sure we have the `@ALL` search:
+            if len(table.searches) == 0:
+                comment = SearchComment(language="EN", lines=list()) 
+                comments = [ comment ]
+                all_search = Search(name="@ALL", comments=comments, table=table,
+                                    url=parent_node.url, tracing="fetchMore:")
         else:
             for file_name in sorted(os.listdir(parent_node.path)):
                 file_path = os.path.join(parent_node.path, file_name)
@@ -4964,7 +4980,8 @@ class TreeModel(QAbstractItemModel):
                     node = table
                 elif os.path.isdir(file_path):
                     slash_index = file_path.rfind(file_path)
-                    if file_name[0] != '.' and slash_index >= 0 and file_path[slash_index+1:] != '.':
+                    if file_name[0] != '.' and \
+                      slash_index >= 0 and file_path[slash_index+1:] != '.':
                         title = parent_node.file_name2title(file_name)
                         node = Directory(file_name, file_path, title, parent=parent_node)
                 if node is not None:
