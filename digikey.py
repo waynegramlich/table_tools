@@ -548,8 +548,9 @@ class DigikeyDirectory(te.Directory):
 
                 # Create the new *sub_table*:
                 path = sub_directory_path
+                url = table.url
                 DigikeyTable(table.base, path, sub_group_title,
-                             table.id, table.items, None, parent=sub_directory)
+                             table.id, table.items, url, parent=sub_directory)
                 # Note: *DigikeyTable()* automatically appends *sub_table* to the parent
                 # *sub_directory*:
 
@@ -601,7 +602,7 @@ class DigikeyTable(te.Table):
         assert isinstance(title, str)
         assert isinstance(id, int)
         assert isinstance(items, int)
-        assert isinstance(url, str) or url is None
+        assert isinstance(url, str)
         assert isinstance(parent, te.Node) or parent is None
 
         # Initialize the parent *te.Table* class:

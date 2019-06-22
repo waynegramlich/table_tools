@@ -1491,10 +1491,11 @@ class Search(Node):
             required_arguments_size += 2
             assert "tables" in arguments_table
         else:
-            required_arguments_size += 3
+            required_arguments_size += 4
             assert "name" in arguments_table
             assert "comments" in arguments_table
             assert "table" in arguments_table
+            assert "url" in arguments_table
         assert len(arguments_table) == required_arguments_size
 
         # Perform any requested *tracing*:
@@ -1555,9 +1556,21 @@ class Search(Node):
             assert isinstance(comments, list)
             table = arguments_table["table"]
             assert isinstance(table, Table)
+            url = arguments_table["url"]
+            assert isinstance(url, str)
             for comment in comments:
                 assert isinstance(comment, SearchComment)
             filters = list()
+
+        # Verify that *search_directory* exits:
+        #search_directory = TablesEditor.search_directory_get()
+        #if not os.isdir(search_directory):
+        #    os.mkdir(search_directory)
+
+        # Write *url* out to *search_file_name*:
+        #search_file_name = search_directory + "Digikey." + table.name + ".url"
+        #with open(search_file_name, "w") as search_file:
+        #    search_file.write("{0}\n".foramt(url))
 
         # Load arguments into *search* (i.e. *self*):
         search = self
@@ -1567,6 +1580,7 @@ class Search(Node):
         search.filters = filters
         search.name = name
         search.table = table
+        search.url = url
 
         # Wrap up any requested *tracing*:
         if tracing is not None:
@@ -1587,8 +1601,8 @@ class Search(Node):
         assert isinstance(table, Table)
         url = table.url
         assert isinstance(url, str)
-        #if tracing is not None:
-        #    print("{0}url='{1}' table.name='{2}'".format(tracing, url, table.name))
+        if tracing is not None:
+            print("{0}url='{1}' table.name='{2}'".format(tracing, url, table.name))
         webbrowser.open(url, new=0, autoraise=True)
 
         # Wrap up any requested *tracing*:
@@ -1796,6 +1810,7 @@ class Table(Node):
             # 7: Verify that the *full_ref* is specified:
             assert "url" in arguments_table
             url = arguments_table["url"]
+            assert url is not None
 
         # Perform any requested *tracing*:
         tracing = arguments_table["tracing"] if "tracing" in arguments_table else None
@@ -1871,6 +1886,7 @@ class Table(Node):
 
         # print("=>Node.__init__(...)")
         super().__init__(name, path, parent=parent)
+        assert url is not None
 
         # Load up *table* (i.e. *self*):
         table = self
@@ -2370,6 +2386,7 @@ class TablesEditor(QMainWindow):
         tables_editor.original_tables = copy.deepcopy(tables)
         tables_editor.re_table = TablesEditor.re_table_get()
         tables_editor.searches = list()
+        tables_editor.search_directory = "/home/wayne/public_html/projects/tables_editor/searches"
         tables_editor.tab_unload = None
         tables_editor.tables = tables
         tables_editor.trace_signals = tracing is not None
@@ -4164,6 +4181,10 @@ class TablesEditor(QMainWindow):
         if tracing is not None:
             print("{0}=>TablesEditor.schema_update()".format(tracing))
 
+    @staticmethod
+    def search_directory_get():
+        return "/home/wayne/public_html/projects/searches"
+
     # TablesEditor.searches_comment_get():
     def searches_comment_get(self, search, tracing=None):
         # Verify argument types:
@@ -4792,7 +4813,8 @@ class TreeModel(QAbstractItemModel):
         if isinstance(parent_node, Table):
             comment = SearchComment(language="EN", lines=list()) 
             comments = [ comment ]
-            all_search = Search(name="@ALL", comments=comments, table=parent_node)
+            all_search = Search(name="@ALL", comments=comments,
+                                table=parent_node, url=parent_node.url)
             nodes.append(all_search)
         else:
             for file in sorted(os.listdir(parent_node.path)):
