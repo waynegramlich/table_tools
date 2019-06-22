@@ -1044,7 +1044,7 @@ class Node:
         # print("<=Node.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
-    # Node.add_child_count():
+    # Node.add_child():
     def add_child(self, child):
         # Verify argument types:
         assert isinstance(child, Node)
@@ -1194,7 +1194,7 @@ class Directory(Node):
         assert isinstance(title, str)
         assert isinstance(parent, Node) or parent is None
 
-        # print("=>Directory.__init__(*, '{0}', '...', '{2}')".
+        #print("=>Directory.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
         slash_index = path.rfind('/')
@@ -1207,7 +1207,7 @@ class Directory(Node):
         directory = self
         directory.title = title
 
-        # print("<=Directory.__init__(*, '{0}', '...', '{2}')".
+        #print("<=Directory.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
     # Directory.append():
@@ -1236,6 +1236,34 @@ class Directory(Node):
         title = directory.title
         # print("Directory.title='{0}'".format(title))
         return title
+
+    # Directory.type_letter_get():
+    def type_letter_get(self):
+        assert not isinstance(self, Collection)
+        #print("Directory.type_letter_get():name='{}'".format(self.name))
+        return 'D'
+
+
+class Collection(Directory):
+
+    # Collection.__init__():
+    def __init__(self, name, path, title, directory):
+        # Verify argument types:
+        assert isinstance(name, str)
+        assert isinstance(path, str)
+        assert isinstance(title, str)
+        assert isinstance(directory, str) and os.path.isdir(directory)
+
+        # Intialize the collection:
+        collection = self
+        super().__init__(name, path, title)
+        collection.directory = directory
+        assert collection.type_letter_get() == 'C'
+
+    # Collection.type_leter_get()
+    def type_letter_get(self):
+        #print("Collection.type_letter_get(): name='{0}'".format(self.name))
+        return 'C'
 
 
 class Parameter:
@@ -1677,6 +1705,10 @@ class Search(Node):
         if tracing is not None:
             print("{0}<=Search.table_set('{1}')".
                   format(tracing, "None" if new_table is None else new_table.name))
+
+    # Search.type_letter_get():
+    def type_letter_get(self):
+        return 'S'
 
     # Search.xml_lines_append()
     def xml_lines_append(self, xml_lines, indent, tracing=None):
@@ -2223,6 +2255,10 @@ class Table(Node):
         text = '\n'.join(xml_lines)
         return text
 
+    # Table.type_letter_get():
+    def type_letter_get(self):
+        return 'T'
+
     # Table.xml_lines_append():
     def xml_lines_append(self, xml_lines, indent):
         # Verify argument types:
@@ -2547,11 +2583,23 @@ class TablesEditor(QMainWindow):
                 file_system_model.setRootPath((QDir.rootPath()))
                 model = file_system_model
             else:
-                path = "/home/wayne/public_html/projects/digikey_tables"
                 # path = "/tmp/digikey"
-                root_directory = Directory("Root", path, "Root")
-                assert root_directory.is_dir
-                model = TreeModel(root_directory, path)
+
+                digikey_collection_path = "/home/wayne/public_html/projects/digikey_tables"
+                digikey_collection = Collection("Digi-Key",
+                                                path, "Digi-Key", digikey_collection_path)
+                digikey_collection2 = Collection("Digi-Key2",
+                                                path, "Digi-Key2", digikey_collection_path)
+                assert isinstance(digikey_collection, Collection)
+                assert digikey_collection.type_letter_get() == 'C'
+                
+                #assert digikey_directory.is_dir
+                
+                root_node = Node("Root", "None")
+                root_node.add_child(digikey_collection)
+                root_node.add_child(digikey_collection2)
+
+                model = TreeModel(root_node, "")
 
                 # tree_object_model = TreeModel()
                 # assert isinstance(tree_object_model, TreeObjectModel)
@@ -4752,8 +4800,8 @@ class TreeModel(QAbstractItemModel):
     # TreeModel.__init__():
     def __init__(self, root_directory, path):
         # Verify argument types:
-        assert isinstance(root_directory, Directory)
-        assert root_directory.is_dir
+        assert isinstance(root_directory, Node)
+        #assert root_directory.is_dir
         assert isinstance(path, str)
 
         # Initialize the parent *QAbstraceItemModel*:
@@ -4766,17 +4814,17 @@ class TreeModel(QAbstractItemModel):
         model.root_node = root_directory
 
         # Populate the top level of *root_node*:
-        file_names = sorted(os.listdir(path))
-        for file in file_names:
-            file_path = os.path.join(path, file)
-            title = root_directory.file_name2title(file)
-            slash_index = file_path.rfind('/')
-            dot_directory = False if slash_index < 0 else file_path[slash_index+1:].startswith('.')
-            # print("path='{0} slash_index={1} dot_directory={2}".
-            #       format(path, slash_index, dot_directory))
-            if os.path.isdir(file_path) and not dot_directory:
-                Directory(file, file_path, title, parent=root_directory)
-        root_directory.is_traversed = True
+        #file_names = sorted(os.listdir(path))
+        #for file in file_names:
+        #    file_path = os.path.join(path, file)
+        #    title = root_directory.file_name2title(file)
+        #    slash_index = file_path.rfind('/')
+        #    dot_directory = False if slash_index < 0 else file_path[slash_index+1:].startswith('.')
+        #    # print("path='{0} slash_index={1} dot_directory={2}".
+        #    #       format(path, slash_index, dot_directory))
+        #    if os.path.isdir(file_path) and not dot_directory:
+        #        Directory(file, file_path, title, parent=root_directory)
+        #root_directory.is_traversed = True
 
     # takes a model index and returns the related Python node
     # TreeModel.getNode():
@@ -4817,8 +4865,8 @@ class TreeModel(QAbstractItemModel):
                                 table=parent_node, url=parent_node.url)
             nodes.append(all_search)
         else:
-            for file in sorted(os.listdir(parent_node.path)):
-                file_path = os.path.join(parent_node.path, file)
+            for file_name in sorted(os.listdir(parent_node.path)):
+                file_path = os.path.join(parent_node.path, file_name)
                 node = None
                 if file_path.endswith(".xml"):
                     with open(file_path) as table_read_file:
@@ -4832,9 +4880,11 @@ class TreeModel(QAbstractItemModel):
                     # Fix make sure *table* is in *tables*:
                     # tables.append(table)
                     node = table
-                elif os.path.isdir(file_path) and not file_path.startswith("."):
-                    title = parent_node.file_name2title(file)
-                    node = Directory(file, file_path, title)
+                elif os.path.isdir(file_path):
+                    slash_index = file_path.rfind(file_path)
+                    if file_name[0] != '.' and slash_index >= 0 and file_path[slash_index+1:] != '.':
+                        title = parent_node.file_name2title(file_name)
+                        node = Directory(file_name, file_path, title)
                 if node is not None:
                     nodes.append(node)
 
@@ -4924,14 +4974,7 @@ class TreeModel(QAbstractItemModel):
             node = index.internalPointer()
             if role == Qt.DisplayRole:
                 if column == 0:
-                    if isinstance(node, Search):
-                        value = "S"
-                    elif isinstance(node, Table):
-                        value = "T"
-                    elif isinstance(node, Directory):
-                        value = "D"
-                    else:
-                        value = "?"
+                    value = node.type_letter_get()
                 elif column == 1:
                     value = node.title_get()
         assert isinstance(value, str) or value is None
