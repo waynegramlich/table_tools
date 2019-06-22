@@ -55,6 +55,18 @@ from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
                                QWidget)
 from PySide2.QtCore import (QAbstractItemModel, QDir, QFile, QItemSelectionModel, QModelIndex, Qt)
 
+def name2file_name(name):
+    # Verify argument types:
+    assert isinstance(name, str)
+
+    return name
+
+def file_name2name(file_name):
+    # Verify argument types:
+    assert isinstance(file_name, str)
+
+    return file_name
+
 class ComboEdit:
     """ A *ComboEdit* object repesents the GUI controls for manuipulating a combo box widget.
     """
@@ -1197,10 +1209,9 @@ class Directory(Node):
         #print("=>Directory.__init__(*, '{0}', '...', '{2}')".
         #  format(name, path, "None" if parent is None else parent.name))
 
-        slash_index = path.rfind('/')
-        if slash_index >= 0:
-            assert not path[slash_index+1:].startswith("."), \
-              "Directory starts with . '{0}'".format(path)
+        # Verify that *path* is not Unix `.` or `..`, or `.ANYTHING`:
+        base_name = os.path.basename(path)
+        assert not base_name.startswith('.'), "Directory '{0}' starts with '.'".format(path)
 
         # Initlialize the *Node* super class:
         super().__init__(name, path, parent)
@@ -1529,7 +1540,7 @@ class Search(Node):
         # Perform any requested *tracing*:
         tracing = arguments_table["tracing"] if "tracing" in arguments_table else None
         assert isinstance(tracing, str) or tracing is None
-        # next_tracing = None if tracing is None else tracing + " "
+        next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}=>Search(*)".format(tracing))
 
@@ -1590,29 +1601,23 @@ class Search(Node):
                 assert isinstance(comment, SearchComment)
             filters = list()
 
-        # Verify that *search_directory* exits:
-        #search_directory = TablesEditor.search_directory_get()
-        #if not os.isdir(search_directory):
-        #    os.mkdir(search_directory)
-
-        # Write *url* out to *search_file_name*:
-        #search_file_name = search_directory + "Digikey." + table.name + ".url"
-        #with open(search_file_name, "w") as search_file:
-        #    search_file.write("{0}\n".foramt(url))
-
         # Load arguments into *search* (i.e. *self*):
         search = self
         path = ""
-        super().__init__(name, path)
+        super().__init__(name, path, parent=table)
         search.comments = comments
         search.filters = filters
         search.name = name
         search.table = table
         search.url = url
 
+        # Save *search* into the searches directory:
+        search.save(tracing=next_tracing)
+
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=Search(*):name={1}".format(tracing, name))
+
 
     # Search.clicked()
     def clicked(self, tables_editor, tracing=None):
@@ -1686,6 +1691,42 @@ class Search(Node):
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=Search.filters_refresh()".format(tracing))
+
+    # Search.save():
+    def save(self, tracing=None):
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("{0}=>Search.save()".format(tracing))
+
+        # Grab the *search_directory* associated with *table*:
+        search = self
+        table = search.parent
+        assert isinstance(table, Table)
+        search_directory = table.search_directory_get(tracing=next_tracing)
+
+        # Ensure that the *directory_path* exists:
+        if not os.path.isdir(search_directory):
+            os.makedirs(search_directory)
+        
+        # Compute *search_xml_file_name*:
+        search_name = search.title2file_name(search.name)
+        search_xml_base_name = search_name + ".xml"
+        search_xml_file_name = os.path.join(search_directory, search_xml_base_name)
+
+        # Create the *search_xml_content* from *search*:
+        search_xml_lines = list()
+        search.xml_lines_append(search_xml_lines, "", tracing=next_tracing)
+        search_xml_lines.append("")
+        search_xml_content = "\n".join(search_xml_lines)
+
+        # Write *search_xml_content* out to *search_xml_file_name*:
+        with open(search_xml_file_name, "w") as search_file:
+            search_file.write(search_xml_content)
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}=>Search.save()".format(tracing))
 
     # Search.table_set():
     def table_set(self, new_table, tracing=None):
@@ -2081,7 +2122,7 @@ class Table(Node):
         # Open *csv_file_name* read in both *rows* and *headers*:
         csv_file_name = table.csv_file_name
         assert isinstance(csv_file_name, str)
-        full_csv_file_name = csv_directory + "/" + csv_file_name
+        full_csv_file_name = os.path.join(csv_directory, csv_file_name)
         if tracing is not None:
             print("{0}csv_file_name='{1}', full_csv_file_name='{2}'".
               format(tracing, csv_file_name, full_csv_file_name))
@@ -2235,6 +2276,47 @@ class Table(Node):
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}=>Table.save('{1}')".format(tracing, table.name))
+
+    # Table.search_root_directory_get():
+    def search_directory_get(self, tracing=None):
+        # Verify argument types:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Preform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if not tracing is None:
+            print("{0}=>Table.search_directory_get()".format(tracing))
+
+        # Verify that *search_directory* exits:
+        search_root_directory = TablesEditor.search_root_directory_get()
+        if not os.path.isdir(search_root_directory):
+            os.mkdir(search_root_directory)
+        #if tracing is not None:
+        #    print("{0}search_directory='{1}".format(tracing, search_directory))
+
+        # Compute the *directories* list of directory names that while lead to *search*
+        # (i.e. *self*) XML file:
+        directories = list()
+        search = self
+        node = search
+        while node is not None:
+            node_name = node.name
+            base_name = node.title2file_name(node_name)
+            directories.append(base_name)
+            if tracing is not None:
+                print("{0}directories={1}".format(tracing, directories))
+            node = node.parent
+        directories.reverse()
+        directories = directories[1:]
+
+        # Compute the *directory_path* to span from the *search_root_directory* down the
+        # place where the directory where the *search* XML file will be stored:
+        directory_path = os.path.join(search_root_directory, *directories)
+
+        # Wrap up any requested *tracing*:
+        if not tracing is None:
+            print("{0}<=Table.search_directory_get()=>'{1}'".format(tracing, directory_path))
+        return directory_path
 
     # Table.title_get():
     def title_get(self):
@@ -2583,8 +2665,6 @@ class TablesEditor(QMainWindow):
                 file_system_model.setRootPath((QDir.rootPath()))
                 model = file_system_model
             else:
-                # path = "/tmp/digikey"
-
                 digikey_collection_path = "/home/wayne/public_html/projects/digikey_tables"
                 digikey_collection = Collection("Digi-Key",
                                                 path, "Digi-Key", digikey_collection_path)
@@ -4230,8 +4310,9 @@ class TablesEditor(QMainWindow):
             print("{0}=>TablesEditor.schema_update()".format(tracing))
 
     @staticmethod
-    def search_directory_get():
-        return "/home/wayne/public_html/projects/searches"
+    # TablesEditor.search_root_directory_get():
+    def search_root_directory_get():
+        return "/home/wayne/public_html/projects/table_tools/searches"
 
     # TablesEditor.searches_comment_get():
     def searches_comment_get(self, search, tracing=None):
@@ -4837,7 +4918,7 @@ class TreeModel(QAbstractItemModel):
         assert isinstance(node, Node)
         return node
 
-    # check if the note has data that has not been loaded yet
+    # check if the node has data that has not been loaded yet
     # TreeModel.canFetchMore():
     def canFetchMore(self, index):
         # Verify argument types:
@@ -4862,8 +4943,9 @@ class TreeModel(QAbstractItemModel):
             comment = SearchComment(language="EN", lines=list()) 
             comments = [ comment ]
             all_search = Search(name="@ALL", comments=comments,
-                                table=parent_node, url=parent_node.url)
-            nodes.append(all_search)
+                                table=parent_node, url=parent_node.url, tracing="fetchMore:")
+            if len(nodes) == 0:
+                nodes.append(all_search)
         else:
             for file_name in sorted(os.listdir(parent_node.path)):
                 file_path = os.path.join(parent_node.path, file_name)
@@ -4884,7 +4966,7 @@ class TreeModel(QAbstractItemModel):
                     slash_index = file_path.rfind(file_path)
                     if file_name[0] != '.' and slash_index >= 0 and file_path[slash_index+1:] != '.':
                         title = parent_node.file_name2title(file_name)
-                        node = Directory(file_name, file_path, title)
+                        node = Directory(file_name, file_path, title, parent=parent_node)
                 if node is not None:
                     nodes.append(node)
 
