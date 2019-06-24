@@ -23,6 +23,10 @@
 #
 #       flake8 --max-line-length=100 tables_editor.py | fgrep -v :3:1:
 #
+# Install Notes:
+#
+#       sudo apt-get install xclip xsel
+#
 # Tasks:
 # * Decode Digi-Key parametric search URL's.
 # * Start integration with bom_manager.py
@@ -54,6 +58,62 @@ from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
                                # QTreeWidget, QTreeWidgetItem,
                                QWidget)
 from PySide2.QtCore import (QAbstractItemModel, QDir, QFile, QItemSelectionModel, QModelIndex, Qt)
+
+def text2safe_attribute(text):
+    # Verify argument types:
+    assert isinstance(text, str)
+
+    # Sweep across *text* one *character* at a time performing any neccesary conversions: 
+    new_characters = list()
+    for character in text:
+        new_character = character
+        if character == '&':
+            new_character = "&amp;"
+        elif character == '<':
+            new_character = "&lt;"
+        elif character == '>':
+            new_character = "&gt;"
+        elif character == ';':
+            new_character = "&semi"
+        new_characters.append(new_character)
+    safe_attribute = "".join(new_characters)
+    return safe_attribute
+
+def safe_attribute2text(safe_attribute):
+    # Verify argument types:
+    assert isinstance(safe_attribute, str)
+    
+    # Sweep across *safe_attribute* one *character* at a time performing any neccesary conversions: 
+    #print("safe_attribute='{0}'".format(safe_attribute))
+    new_characters = list()
+    safe_attribute_size = len(safe_attribute)
+    character_index = 0
+    while character_index < safe_attribute_size:
+        #character = safe_attribute[character_index]
+        print("character[{0}]='{1}'".format(character_index, character))
+        new_character = character
+        if character == '&':
+            remainder = safe_attribute[character_index:]
+            #print("remainder='{0}'".format(remainder))
+            if remainder.startswith("&amp;"):
+                new_character = '&'
+                character_index += 5
+            elif remainder.startswith("&lt;"):
+                new_character = '<'
+                character_index += 4
+            elif remainder.startswith("&gt;"):
+                new_character = '>'
+                character_index += 4
+            elif remainder.startswith("&semi;"):
+                new_character = ';'
+                character_index += 6
+            else:
+                assert False, "remainder='{0}'".format(remainder)
+        else:
+            character_index += 1
+        new_characters.append(new_character)
+    text = "".join(new_characters)
+    return text
 
 def name2file_name(name):
     # Verify argument types:
@@ -1163,7 +1223,7 @@ class Node:
     def title_get(self):
         table = self
         title = table.name
-        # print("Node.title='{0}'".format(title))
+        print("Node.title='{0}'".format(title))
         return title
 
     # Node.title2file_name():
@@ -1236,6 +1296,8 @@ class Directory(Node):
         # Preform any requested *tracing*:
         if tracing is not None:
             print("{0}=>Directory.clicked()".format(tracing))
+
+        tables_editor.current_search = None
 
         # Wrap up any requested *tracing*:
         if tracing is not None:
@@ -1532,10 +1594,11 @@ class Search(Node):
             assert isinstance(table, Table)
             required_arguments_size += 2
         else:
-            required_arguments_size += 4
+            required_arguments_size += 5
             assert "name" in arguments_table
             assert "comments" in arguments_table
             assert "table" in arguments_table
+            assert "parent_name" in arguments_table
             assert "url" in arguments_table
         assert len(arguments_table) == required_arguments_size
 
@@ -1558,6 +1621,9 @@ class Search(Node):
             attributes_table = search_tree.attrib
             assert "name" in attributes_table
             name = attributes_table["name"]
+            parent_name = (attributes_table["parent"] if "parent" in attributes_table else "")
+            if tracing is not None:
+                print("name='{0}' parent_name='{1}'".format(name, parent_name))
             assert "url" in attributes_table, "attributes_table={0}".format(attributes_table)
             url = attributes_table["url"]
 
@@ -1592,13 +1658,15 @@ class Search(Node):
             assert isinstance(table, Table)
             url = arguments_table["url"]
             assert isinstance(url, str)
+            parent_name = arguments_table["parent_name"]
+            assert isinstance(parent_name, str)
             for comment in comments:
                 assert isinstance(comment, SearchComment)
             filters = list()
 
-        # Make sure *search* is on the *table.searches* list:
-        for prior_search in table.searches:
-            assert prior_search.name != name
+        # Make sure *search* is on the *table.children* list:
+        #for prior_search in table.children:
+        #    assert prior_search.name != name
 
         # Load arguments into *search* (i.e. *self*):
         search = self
@@ -1606,6 +1674,8 @@ class Search(Node):
         super().__init__(name, path, parent=table)
         search.comments = comments
         search.filters = filters
+        assert isinstance(parent_name, str)
+        search.parent_name = parent_name
         search.name = name
         search.table = table
         search.url = url
@@ -1631,11 +1701,13 @@ class Search(Node):
         search = self
         table = search.parent
         assert isinstance(table, Table)
-        url = table.url
+        url = search.url
         assert isinstance(url, str)
         if tracing is not None:
             print("{0}url='{1}' table.name='{2}'".format(tracing, url, table.name))
         webbrowser.open(url, new=0, autoraise=True)
+
+        tables_editor.current_search = search
 
         # Wrap up any requested *tracing*:
         if tracing is not None:
@@ -1725,7 +1797,7 @@ class Search(Node):
 
         # Wrap up any requested *tracing*:
         if tracing is not None:
-            print("{0}=>Search.save()".format(tracing))
+            print("{0}<=Search.save()".format(tracing))
 
     # Search.table_set():
     def table_set(self, new_table, tracing=None):
@@ -1746,6 +1818,15 @@ class Search(Node):
             print("{0}<=Search.table_set('{1}')".
                   format(tracing, "None" if new_table is None else new_table.name))
 
+    # Search.title_get():
+    def title_get(self):
+        search = self
+        title = search.name
+        parent = search.parent_name
+        final_title = title if parent == "" else "{0} ({1})".format(title, parent)
+        #print("Search.title_get()=>'{0}'".format(final_title))
+        return final_title
+
     # Search.type_letter_get():
     def type_letter_get(self):
         return 'S'
@@ -1765,8 +1846,10 @@ class Search(Node):
         # Start the `<Search...>` element:
         search = self
         table = search.table
-        xml_lines.append('{0}<Search name="{1}" table="{2}" url="{3}">'.
-                         format(indent, search.name, table.name, search.url))
+        parent_name = search.parent_name
+        xml_lines.append('{0}<Search name="{1}" parent="{2}" table="{3}" url="{4}">'.format(
+                         indent, search.name, search.parent_name, table.name,
+                         text2safe_attribute(search.url)))
 
         # Append the `<SearchComments>` element:
         xml_lines.append('{0}  <SearchComments>'.format(indent))
@@ -1973,7 +2056,7 @@ class Table(Node):
         table.import_rows = None
         table.name = name
         table.parameters = parameters
-        table.searches = list()
+        #table.searches = list()
         table.title = title
         table.url = url
 
@@ -2072,6 +2155,8 @@ class Table(Node):
         # Preform any requested *tracing*:
         if tracing is not None:
             print("{0}=>Table.clicked()".format(tracing))
+
+        tables_editor.current_search = None
 
         # Sweep through *tables* to see if *table* (i.e. *self*) is in it:
         tables = tables_editor.tables
@@ -2494,6 +2579,7 @@ class TablesEditor(QMainWindow):
         tables_editor.application = application
         tables_editor.current_comment = None
         tables_editor.current_enumeration = None
+        tables_editor.current_model_index = None
         tables_editor.current_parameter = None
         tables_editor.current_search = None
         tables_editor.current_table = current_table
@@ -2646,6 +2732,9 @@ class TablesEditor(QMainWindow):
         mw.searches_table_combo.currentTextChanged.connect(tables_editor.searches_table_changed)
         mw.root_tabs.currentChanged.connect(tables_editor.tab_changed)
 
+        mw.collections_new_button.clicked.connect(tables_editor.collections_new_button_clicked)
+        mw.collections_new_button.setEnabled(False)
+        mw.collections_new_line.textChanged.connect(tables_editor.collections_new_line_changed)
         mw.collections_tree.clicked.connect(tables_editor.collections_tree_clicked)
 
         # file_names = glob.glob("../digikey_tables/**", recursive=True)
@@ -2993,6 +3082,11 @@ class TablesEditor(QMainWindow):
                 if current_enumeration is None and enumerations_size >= 1:
                     current_enumeration = enumerations[0]
         tables_editor.current_enumeration = current_enumeration
+
+        # Make sure that *current_search* is valid (or *None*):
+        
+        #tables_editor.current_search = current_search
+
         if tracing is not None:
             print("{0}current_enumeration'{1}'".format(
               tracing, "None" if current_enumeration is None else current_enumeration.name))
@@ -3162,8 +3256,6 @@ class TablesEditor(QMainWindow):
         main_window = tables_editor.main_window
         while combo.count() > 0:
             combo.removeItem(0)
-        if tracing is not None:
-            print("{0}Here 1".format(tracing))
 
         # Grab *enumerations* from *current_parameter* (if possible):
         if current_parameter is not None and current_parameter.type.lower() == "enumeration":
@@ -3176,8 +3268,6 @@ class TablesEditor(QMainWindow):
                     print("{0}[{1}]'{2}'".format(tracing, index, enumeration.name))
                 # print("[{0}]'{1}'".format(index, enumeration_name))
                 combo.addItem(enumeration_name, tracing=next_tracing)
-        if tracing is not None:
-            print("{0}Here 2".format(tracing))
 
         # Update the *enumerations_combo_edit*:
         tables_editor.enumerations_combo_edit.gui_update(tracing=next_tracing)
@@ -4251,6 +4341,75 @@ class TablesEditor(QMainWindow):
         if trace_signals:
             print("<=TablesEditor.save_button_clicked()\n")
 
+    # TablesEditor.collections_new_button_clicked():
+    def collections_new_button_clicked(self):
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.collections_new_button_clicked()")
+
+        # Make sure *current_search* exists (this button click should be disabled if not available):
+        current_search = tables_editor.current_search
+        assert current_search is not None
+
+        # Compute the *url* from the *clip_board* and *selection*:
+        clip_board = pyperclip.paste()
+        selection = os.popen("xsel").read()
+        url = None
+        if selection.startswith("http"):
+            url= selection
+        elif clip_board.startswith("http"):
+            url= clip_board
+        if trace_signals:
+            print("clip_board='{0}' selection='{1}' url='{2}'".format(clip_board, selection, url))
+
+        if url is None:
+            print("URL: No valid URL found!")
+        else:
+            # Grab the 
+            main_window = tables_editor.main_window
+            collections_new_line = main_window.collections_new_line
+            new_search_name = collections_new_line.text()
+        
+            table = current_search.table
+            comment = SearchComment(language="EN", lines=list())
+            comments = [ comment ]
+            new_search = Search(name=new_search_name, comments=comments, table=table,
+                                parent_name=current_search.name, url=url, tracing=next_tracing)
+            new_search.save(tracing=next_tracing)
+
+            model_index = tables_editor.current_model_index
+            parent_model_index = model_index.parent()
+            model = tables_editor.model
+            model.insertNodes(0, [ new_search ], parent_model_index)
+
+            tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.collections_new_button_clicked()\n")
+
+    # TablesEditor.collections_new_line_changed():
+    def collections_new_line_changed(self, text):
+        # Verify argument types:
+        assert isinstance(text, str)
+
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>Tables_Editor.collections_new_line_changed('{0}')".format(text))
+
+        # Update the collections tab:
+        tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=Tables_Editor.collections_new_line_changed('{0}')\n".format(text))
+
     # TablesEditor.collections_tree_clicked():
     def collections_tree_clicked(self, model_index):
         # Verify argument types:
@@ -4263,21 +4422,83 @@ class TablesEditor(QMainWindow):
         if tracing is not None:
             print("=>TablesEditor.collections_tree_clicked()")
 
-            row = model_index.row()
-            column = model_index.column()
-            data = model_index.data()
-            #parent = model_index.parent()
-            model = model_index.model()
-            node = model.getNode(model_index)
-            node.clicked(tables_editor, tracing=next_tracing)
+        tables_editor.current_model_index = model_index
+        row = model_index.row()
+        column = model_index.column()
+        data = model_index.data()
+        #parent = model_index.parent()
+        model = model_index.model()
+        node = model.getNode(model_index)
+        node.clicked(tables_editor, tracing=next_tracing)
 
-            if tracing is not None:
-                print("{0}row={1} column={2} model={3} node={4}".
-                      format(tracing, row, column, type(model), type(node)))
+        tables_editor.update(tracing=next_tracing)
+
+        if tracing is not None:
+            print("{0}row={1} column={2} model={3} node={4}".
+                  format(tracing, row, column, type(model), type(node)))
 
         # Wrap up any requested signal tracing:
         if tracing is not None:
             print("<=TablesEditor.collections_tree_clicked()\n")
+
+    # TablesEditor.collections_update():
+    def collections_update(self, tracing=None):
+        # Perform argument testing:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("{0}=>TablesEditor.collections_update()".format(tracing))
+
+        # Grab some widgets from *tables_editor*:
+        tables_editor = self
+        main_window = tables_editor.main_window
+        collections_new_button = main_window.collections_new_button        
+        collections_new_line = main_window.collections_new_line
+
+        # Grab the *current_search* object:
+        current_search = tables_editor.current_search
+        if tracing is not None:
+            print("{0}current_search='{1}'".format(tracing,
+                  "" if current_search is None else current_search.name))
+
+        # Only allow *new_search_name* that are non-empty, printable, have no spaces, and won't
+        # cause problems inside of an XML attribute string (i.e. no '<', '&', or '>'):
+        new_button_enable = True
+        why = "OK"
+        new_search_name = collections_new_line.text()
+        if new_search_name == "" or not new_search_name.isprintable():
+            new_button_enable = False
+            why = "Empty or non-printable"
+        else:
+            for character in new_search_name:
+                if character in ' <&>':
+                    new_button_enable = False
+                    why = "Bad character '{0}'".format(character)
+                    break
+
+        if current_search is None:
+            new_button_enable = False
+            why = "No current search"
+        elif new_button_enable:
+            table = current_search.parent
+            assert isinstance(table, Table)
+            search_directory = table.search_directory_get()
+            assert isinstance(table, Table)
+            new_search_file_name = os.path.join(search_directory, new_search_name + ".xml")
+            if os.path.isfile(new_search_file_name):
+                new_button_enable = False
+                why = "Already exists"
+
+        # Enable/disable the widgets:
+        collections_new_button.setEnabled(new_button_enable)
+        collections_new_line.setEnabled(current_search is not None)
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}new_button_enable={1} why='{2}'".format(tracing, new_button_enable, why))
+            print("{0}<=TablesEditor.collections_update()".format(tracing))
 
     # TablesEditor.schema_update():
     def schema_update(self, tracing=None):
@@ -4763,7 +4984,7 @@ class TablesEditor(QMainWindow):
         root_tabs = main_window.root_tabs
         root_tabs_index = root_tabs.currentIndex()
         if root_tabs_index == 0:
-            pass
+            tables_editor.collections_update(tracing=next_tracing)
         elif root_tabs_index == 1:
             tables_editor.schema_update(tracing=next_tracing)
         elif root_tabs_index == 2:
@@ -4936,8 +5157,10 @@ class TreeModel(QAbstractItemModel):
         # Verify argument types:
         assert isinstance(index, QModelIndex)
 
+        print("=>TreeModle.fetchMore()")
         model = self
         parent_node = model.getNode(index)
+        print("1: len(parent_node.children)='{0}'".format(len(parent_node.children)))
         nodes = []
         if isinstance(parent_node, Table):
             table = parent_node
@@ -4950,18 +5173,24 @@ class TreeModel(QAbstractItemModel):
 
             for base_name in sorted(os.listdir(search_directory)):
                 if base_name.endswith(".xml"):
+                    print("base_name='{0}' len(nodes)={1}".format(base_name, len(nodes)))
                     search_file_name = os.path.join(search_directory, base_name)
                     with open(search_file_name) as search_file:
                         search_xml_text = search_file.read()
                         search_tree = etree.fromstring(search_xml_text)
-                    search = Search(search_tree=search_tree, table=table)
+                    # Search appends *search* to the children list of *table*:
+                    search = Search(search_tree=search_tree, table=table) #, tracing="fetchMore:")
+                    print("search.url='{0}'".format(search.url))
                     assert isinstance(search, Search)
+                    #nodes.append(search)
+
             # Make sure we have the `@ALL` search:
-            if len(table.searches) == 0:
+            if len(table.children) == 0:
                 comment = SearchComment(language="EN", lines=list()) 
                 comments = [ comment ]
+                # Search appends *search* to the children list of *table*:
                 all_search = Search(name="@ALL", comments=comments, table=table,
-                                    url=parent_node.url, tracing="fetchMore:")
+                                    parent_name="", url=parent_node.url, tracing="fetchMore:")
         else:
             for file_name in sorted(os.listdir(parent_node.path)):
                 file_path = os.path.join(parent_node.path, file_name)
@@ -4983,12 +5212,19 @@ class TreeModel(QAbstractItemModel):
                     if file_name[0] != '.' and \
                       slash_index >= 0 and file_path[slash_index+1:] != '.':
                         title = parent_node.file_name2title(file_name)
-                        node = Directory(file_name, file_path, title, parent=parent_node)
+                        # Note: Adding *parent_node* to Directory causes the top level of
+                        # the *Collection* object to be entered twice.  Very strange!!!
+                        node = Directory(file_name, file_path, title) #, parent=parent_node)
                 if node is not None:
                     nodes.append(node)
 
+        for node_index, node in enumerate(nodes):
+            print("Node[{0}]: name='{1}'".format(node_index, node.name))
+
+        assert isinstance(model, TreeModel)
         model.insertNodes(0, nodes, index)
         parent_node.is_traversed = True
+        print("<=TreeModle.fetchMore()")
 
     # returns True for directory nodes so that Qt knows to check if there is more to load
     # TreeModel.hasChildren():
@@ -5081,6 +5317,7 @@ class TreeModel(QAbstractItemModel):
 
     # TreeModel.insertNodes():
     def insertNodes(self, position, nodes, parent=QModelIndex()):
+        # Verify argument types:
         assert isinstance(position, int)
         assert isinstance(nodes, list)
         assert isinstance(parent, QModelIndex)
