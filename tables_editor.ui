@@ -53,7 +53,14 @@
         <item row="0" column="1">
          <widget class="QLineEdit" name="collections_new_line"/>
         </item>
-        <item row="1" column="0" colspan="2">
+        <item row="0" column="2">
+         <widget class="QPushButton" name="collections_delete_button">
+          <property name="text">
+           <string>Delete</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="3">
          <widget class="QTreeView" name="collections_tree"/>
         </item>
        </layout>

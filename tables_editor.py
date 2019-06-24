@@ -2503,6 +2503,7 @@ class TableComment(Comment):
         xml_lines.append('{0}</TableComment>'.format(indent))
 
 
+# TablesEditor:
 class TablesEditor(QMainWindow):
 
     # TablesEditor.__init__()
@@ -2732,10 +2733,12 @@ class TablesEditor(QMainWindow):
         mw.searches_table_combo.currentTextChanged.connect(tables_editor.searches_table_changed)
         mw.root_tabs.currentChanged.connect(tables_editor.tab_changed)
 
-        mw.collections_new_button.clicked.connect(tables_editor.collections_new_button_clicked)
+        mw.collections_new_button.clicked.connect(tables_editor.collections_new_clicked)
         mw.collections_new_button.setEnabled(False)
-        mw.collections_new_line.textChanged.connect(tables_editor.collections_new_line_changed)
+        mw.collections_new_line.textChanged.connect(tables_editor.collections_line_changed)
         mw.collections_tree.clicked.connect(tables_editor.collections_tree_clicked)
+        mw.collections_delete_button.clicked.connect(tables_editor.collections_delete_clicked)
+        mw.collections_delete_button.setEnabled(False)
 
         # file_names = glob.glob("../digikey_tables/**", recursive=True)
         # file_names.sort()
@@ -2885,6 +2888,186 @@ class TablesEditor(QMainWindow):
         # Wrap up any requested tracing:
         if tracing is not None:
             print("{0}<=TablesEditor.comment_text_set(...)".format(tracing))
+
+    # TablesEditor.collections_delete_changed():
+    def collections_delete_clicked(self, text):
+        # Verify argument types:
+        assert isinstance(text, str)
+
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>Tables_Editor.collections_delete_clicked()")
+
+        # Update the collections tab:
+        tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=Tables_Editor.collections_delete_clicked()\n")
+
+    # TablesEditor.collections_line_changed():
+    def collections_line_changed(self, text):
+        # Verify argument types:
+        assert isinstance(text, str)
+
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>Tables_Editor.collections_line_changed('{0}')".format(text))
+
+        # Update the collections tab:
+        tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=Tables_Editor.collections_line_changed('{0}')\n".format(text))
+
+    # TablesEditor.collections_new_clicked():
+    def collections_new_clicked(self):
+        # Perform any requested signal tracing:
+        tables_editor = self
+        trace_signals = tables_editor.trace_signals
+        next_tracing = " " if trace_signals else None
+        if trace_signals:
+            print("=>TablesEditor.collections_new_clicked()")
+
+        # Make sure *current_search* exists (this button click should be disabled if not available):
+        current_search = tables_editor.current_search
+        assert current_search is not None
+
+        # Compute the *url* from the *clip_board* and *selection*:
+        clip_board = pyperclip.paste()
+        selection = os.popen("xsel").read()
+        url = None
+        if selection.startswith("http"):
+            url= selection
+        elif clip_board.startswith("http"):
+            url= clip_board
+        if trace_signals:
+            print("clip_board='{0}' selection='{1}' url='{2}'".format(clip_board, selection, url))
+
+        if url is None:
+            print("URL: No valid URL found!")
+        else:
+            # Grab the 
+            main_window = tables_editor.main_window
+            collections_new_line = main_window.collections_new_line
+            new_search_name = collections_new_line.text()
+        
+            table = current_search.table
+            comment = SearchComment(language="EN", lines=list())
+            comments = [ comment ]
+            new_search = Search(name=new_search_name, comments=comments, table=table,
+                                parent_name=current_search.name, url=url, tracing=next_tracing)
+            new_search.save(tracing=next_tracing)
+
+            model_index = tables_editor.current_model_index
+            parent_model_index = model_index.parent()
+            model = tables_editor.model
+            model.insertNodes(0, [ new_search ], parent_model_index)
+
+            tables_editor.update(tracing=next_tracing)
+
+        # Wrap up any requested signal tracing:
+        if trace_signals:
+            print("<=TablesEditor.collections_new_clicked()\n")
+
+    # TablesEditor.collections_tree_clicked():
+    def collections_tree_clicked(self, model_index):
+        # Verify argument types:
+        assert isinstance(model_index, QModelIndex)
+
+        # Perform any requested signal tracing:
+        tables_editor = self
+        tracing = "" if tables_editor.trace_signals else None
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("=>TablesEditor.collections_tree_clicked()")
+
+        tables_editor.current_model_index = model_index
+        row = model_index.row()
+        column = model_index.column()
+        data = model_index.data()
+        #parent = model_index.parent()
+        model = model_index.model()
+        node = model.getNode(model_index)
+        node.clicked(tables_editor, tracing=next_tracing)
+
+        tables_editor.update(tracing=next_tracing)
+
+        if tracing is not None:
+            print("{0}row={1} column={2} model={3} node={4}".
+                  format(tracing, row, column, type(model), type(node)))
+
+        # Wrap up any requested signal tracing:
+        if tracing is not None:
+            print("<=TablesEditor.collections_tree_clicked()\n")
+
+    # TablesEditor.collections_update():
+    def collections_update(self, tracing=None):
+        # Perform argument testing:
+        assert isinstance(tracing, str) or tracing is None
+
+        # Perform any requested *tracing*:
+        next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
+            print("{0}=>TablesEditor.collections_update()".format(tracing))
+
+        # Grab some widgets from *tables_editor*:
+        tables_editor = self
+        main_window = tables_editor.main_window
+        collections_delete_button = main_window.collections_delete_button        
+        collections_new_button = main_window.collections_new_button        
+        collections_new_line = main_window.collections_new_line
+
+        # Grab the *current_search* object:
+        current_search = tables_editor.current_search
+        if tracing is not None:
+            print("{0}current_search='{1}'".format(tracing,
+                  "" if current_search is None else current_search.name))
+
+        # Only allow *new_search_name* that are non-empty, printable, have no spaces, and won't
+        # cause problems inside of an XML attribute string (i.e. no '<', '&', or '>'):
+        new_button_enable = True
+        why = "OK"
+        new_search_name = collections_new_line.text()
+        if new_search_name == "" or not new_search_name.isprintable():
+            new_button_enable = False
+            why = "Empty or non-printable"
+        else:
+            for character in new_search_name:
+                if character in ' <&>':
+                    new_button_enable = False
+                    why = "Bad character '{0}'".format(character)
+                    break
+
+        if current_search is None:
+            new_button_enable = False
+            why = "No current search"
+        elif new_button_enable:
+            table = current_search.parent
+            assert isinstance(table, Table)
+            search_directory = table.search_directory_get()
+            assert isinstance(table, Table)
+            new_search_file_name = os.path.join(search_directory, new_search_name + ".xml")
+            if os.path.isfile(new_search_file_name):
+                new_button_enable = False
+                why = "Already exists"
+
+        # Enable/disable the widgets:
+        collections_delete_button.setEnabled(why == "Already exists")
+        collections_new_button.setEnabled(new_button_enable)
+        collections_new_line.setEnabled(current_search is not None)
+
+        # Wrap up any requested *tracing*:
+        if tracing is not None:
+            print("{0}new_button_enable={1} why='{2}'".format(tracing, new_button_enable, why))
+            print("{0}<=TablesEditor.collections_update()".format(tracing))
 
     # TablesEditor.current_enumeration_set()
     def current_enumeration_set(self, enumeration, tracing=None):
@@ -4340,165 +4523,6 @@ class TablesEditor(QMainWindow):
         # Wrap up any requested signal tracing:
         if trace_signals:
             print("<=TablesEditor.save_button_clicked()\n")
-
-    # TablesEditor.collections_new_button_clicked():
-    def collections_new_button_clicked(self):
-        # Perform any requested signal tracing:
-        tables_editor = self
-        trace_signals = tables_editor.trace_signals
-        next_tracing = " " if trace_signals else None
-        if trace_signals:
-            print("=>TablesEditor.collections_new_button_clicked()")
-
-        # Make sure *current_search* exists (this button click should be disabled if not available):
-        current_search = tables_editor.current_search
-        assert current_search is not None
-
-        # Compute the *url* from the *clip_board* and *selection*:
-        clip_board = pyperclip.paste()
-        selection = os.popen("xsel").read()
-        url = None
-        if selection.startswith("http"):
-            url= selection
-        elif clip_board.startswith("http"):
-            url= clip_board
-        if trace_signals:
-            print("clip_board='{0}' selection='{1}' url='{2}'".format(clip_board, selection, url))
-
-        if url is None:
-            print("URL: No valid URL found!")
-        else:
-            # Grab the 
-            main_window = tables_editor.main_window
-            collections_new_line = main_window.collections_new_line
-            new_search_name = collections_new_line.text()
-        
-            table = current_search.table
-            comment = SearchComment(language="EN", lines=list())
-            comments = [ comment ]
-            new_search = Search(name=new_search_name, comments=comments, table=table,
-                                parent_name=current_search.name, url=url, tracing=next_tracing)
-            new_search.save(tracing=next_tracing)
-
-            model_index = tables_editor.current_model_index
-            parent_model_index = model_index.parent()
-            model = tables_editor.model
-            model.insertNodes(0, [ new_search ], parent_model_index)
-
-            tables_editor.update(tracing=next_tracing)
-
-        # Wrap up any requested signal tracing:
-        if trace_signals:
-            print("<=TablesEditor.collections_new_button_clicked()\n")
-
-    # TablesEditor.collections_new_line_changed():
-    def collections_new_line_changed(self, text):
-        # Verify argument types:
-        assert isinstance(text, str)
-
-        # Perform any requested signal tracing:
-        tables_editor = self
-        trace_signals = tables_editor.trace_signals
-        next_tracing = " " if trace_signals else None
-        if trace_signals:
-            print("=>Tables_Editor.collections_new_line_changed('{0}')".format(text))
-
-        # Update the collections tab:
-        tables_editor.update(tracing=next_tracing)
-
-        # Wrap up any requested signal tracing:
-        if trace_signals:
-            print("<=Tables_Editor.collections_new_line_changed('{0}')\n".format(text))
-
-    # TablesEditor.collections_tree_clicked():
-    def collections_tree_clicked(self, model_index):
-        # Verify argument types:
-        assert isinstance(model_index, QModelIndex)
-
-        # Perform any requested signal tracing:
-        tables_editor = self
-        tracing = "" if tables_editor.trace_signals else None
-        next_tracing = None if tracing is None else tracing + " "
-        if tracing is not None:
-            print("=>TablesEditor.collections_tree_clicked()")
-
-        tables_editor.current_model_index = model_index
-        row = model_index.row()
-        column = model_index.column()
-        data = model_index.data()
-        #parent = model_index.parent()
-        model = model_index.model()
-        node = model.getNode(model_index)
-        node.clicked(tables_editor, tracing=next_tracing)
-
-        tables_editor.update(tracing=next_tracing)
-
-        if tracing is not None:
-            print("{0}row={1} column={2} model={3} node={4}".
-                  format(tracing, row, column, type(model), type(node)))
-
-        # Wrap up any requested signal tracing:
-        if tracing is not None:
-            print("<=TablesEditor.collections_tree_clicked()\n")
-
-    # TablesEditor.collections_update():
-    def collections_update(self, tracing=None):
-        # Perform argument testing:
-        assert isinstance(tracing, str) or tracing is None
-
-        # Perform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if tracing is not None:
-            print("{0}=>TablesEditor.collections_update()".format(tracing))
-
-        # Grab some widgets from *tables_editor*:
-        tables_editor = self
-        main_window = tables_editor.main_window
-        collections_new_button = main_window.collections_new_button        
-        collections_new_line = main_window.collections_new_line
-
-        # Grab the *current_search* object:
-        current_search = tables_editor.current_search
-        if tracing is not None:
-            print("{0}current_search='{1}'".format(tracing,
-                  "" if current_search is None else current_search.name))
-
-        # Only allow *new_search_name* that are non-empty, printable, have no spaces, and won't
-        # cause problems inside of an XML attribute string (i.e. no '<', '&', or '>'):
-        new_button_enable = True
-        why = "OK"
-        new_search_name = collections_new_line.text()
-        if new_search_name == "" or not new_search_name.isprintable():
-            new_button_enable = False
-            why = "Empty or non-printable"
-        else:
-            for character in new_search_name:
-                if character in ' <&>':
-                    new_button_enable = False
-                    why = "Bad character '{0}'".format(character)
-                    break
-
-        if current_search is None:
-            new_button_enable = False
-            why = "No current search"
-        elif new_button_enable:
-            table = current_search.parent
-            assert isinstance(table, Table)
-            search_directory = table.search_directory_get()
-            assert isinstance(table, Table)
-            new_search_file_name = os.path.join(search_directory, new_search_name + ".xml")
-            if os.path.isfile(new_search_file_name):
-                new_button_enable = False
-                why = "Already exists"
-
-        # Enable/disable the widgets:
-        collections_new_button.setEnabled(new_button_enable)
-        collections_new_line.setEnabled(current_search is not None)
-
-        # Wrap up any requested *tracing*:
-        if tracing is not None:
-            print("{0}new_button_enable={1} why='{2}'".format(tracing, new_button_enable, why))
-            print("{0}<=TablesEditor.collections_update()".format(tracing))
 
     # TablesEditor.schema_update():
     def schema_update(self, tracing=None):
