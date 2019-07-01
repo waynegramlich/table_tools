@@ -44,17 +44,17 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_12">
         <item row="0" column="0">
-         <widget class="QPushButton" name="collections_new_button">
+         <widget class="QPushButton" name="collections_new">
           <property name="text">
            <string>New Search</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLineEdit" name="collections_new_line"/>
+         <widget class="QLineEdit" name="collections_line"/>
         </item>
         <item row="0" column="2">
-         <widget class="QPushButton" name="collections_delete_button">
+         <widget class="QPushButton" name="collections_delete">
           <property name="text">
            <string>Delete</string>
           </property>
