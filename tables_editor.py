@@ -1822,7 +1822,7 @@ class Search(Node):
                 break
 
         # Wrap up any requested *tracing*:
-        if not tracing is None:
+        if tracing is not None:
             print("{0}<=is_deletable('{1}')=>{2}".format(tracing, search_name, deletable))
         return deletable
 
@@ -1876,7 +1876,7 @@ class Search(Node):
         if number_end_index >= 0:
             try:
                 number = float(search_name[0:number_end_index])
-            except Value_Error:
+            except ValueError:
                 pass
 
         # Figure out the ISO *multiplier* and adjust *number* appropriately:
@@ -1936,7 +1936,7 @@ class Search(Node):
         # Stuff *search_parent* into *search* (i.e. *self*):
         search = self
         print("Search.search_parent_set('{0}', {1})".format(search.name,
-          "None" if search_parent is None else "'{0}'".format(search_parent.name)))
+              "None" if search_parent is None else "'{0}'".format(search_parent.name)))
         search.search_parent = search_parent
 
     # Search.table_set():
@@ -2341,7 +2341,7 @@ class Table(Node):
         next_tracing = None if tracing is None else tracing + " "
         if tracing:
             print("{0}=>Table.csv_read_process('{1}', bind={2})".
-              format(tracing, csv_directory, bind))
+                  format(tracing, csv_directory, bind))
 
         # Grab *parameters* from *table* (i.e. *self*):
         parameters = table.parameters
@@ -2353,7 +2353,7 @@ class Table(Node):
         full_csv_file_name = os.path.join(csv_directory, csv_file_name)
         if tracing is not None:
             print("{0}csv_file_name='{1}', full_csv_file_name='{2}'".
-              format(tracing, csv_file_name, full_csv_file_name))
+                  format(tracing, csv_file_name, full_csv_file_name))
 
         rows = None
         headers = None
@@ -2458,20 +2458,19 @@ class Table(Node):
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=Table.csv_read_process('{1}', bind={2})".
-              format(tracing, csv_directory, bind))
+                  format(tracing, csv_directory, bind))
 
     def fix_up(self, tracing=None):
         # Verify argument types:
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
-        if not tracing is None:
+        if tracing is not None:
             print("{0}=>Table.fix_up(*)".format(tracing))
 
         # Grab *searches* list from *table* (i.e. *self*):
         table = self
         searches = table.children
-
 
         # Grab *searches* list from *table* (i.e. *self*):
         table = self
@@ -2491,8 +2490,8 @@ class Table(Node):
             search_parent_name = search.search_parent_name
             if len(search_parent_name) >= 1:
                 assert search_parent_name in searches_table, \
-                  "'{0}' not in searches_table {1}".format(
-                  search_parent_name, list(searches_table.keys()))
+                  ("'{0}' not in searches_table {1}".format(
+                   search_parent_name, list(searches_table.keys())))
                 search_parent = searches_table[search_parent_name]
                 search.search_parent = search_parent
 
@@ -2500,7 +2499,7 @@ class Table(Node):
         searches.sort(key=Search.key)
 
         # Wrap up any requested *tracing*:
-        if not tracing is None:
+        if tracing is not None:
             print("{0}<=Table.fix_up(*)".format(tracing))
 
     # Table.hasChildren():
@@ -2554,8 +2553,8 @@ class Table(Node):
         assert isinstance(tracing, str) or tracing is None
 
         # Preform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
-        if not tracing is None:
+        # next_tracing = None if tracing is None else tracing + " "
+        if tracing is not None:
             print("{0}=>Table.search_directory_get()".format(tracing))
 
         # Verify that *search_directory* exits:
@@ -2585,7 +2584,7 @@ class Table(Node):
         directory_path = os.path.join(search_root_directory, *directories)
 
         # Wrap up any requested *tracing*:
-        if not tracing is None:
+        if tracing is not None:
             print("{0}<=Table.search_directory_get()=>'{1}'".format(tracing, directory_path))
         return directory_path
 
@@ -2956,7 +2955,7 @@ class TablesEditor(QMainWindow):
                 digikey_collection = Collection("Digi-Key",
                                                 path, "Digi-Key", digikey_collection_path)
                 digikey_collection2 = Collection("Digi-Key2",
-                                                path, "Digi-Key2", digikey_collection_path)
+                                                 path, "Digi-Key2", digikey_collection_path)
                 assert isinstance(digikey_collection, Collection)
                 assert digikey_collection.type_letter_get() == 'C'
 
@@ -3096,7 +3095,7 @@ class TablesEditor(QMainWindow):
 
         # Grab the *current_model_index* from *tables_editor* and process it if it exists:
         current_model_index = tables_editor.current_model_index
-        if current_model_index == None:
+        if current_model_index is None:
             # It should be impossible to get here, since the [Delete] button should be disabled:
             print("No node selected.")
         else:
@@ -3125,7 +3124,7 @@ class TablesEditor(QMainWindow):
                     # *search_parent_model_index*:
                     search_parent = current_search.search_parent
 
-                    search_parent_model_index = None
+                    # search_parent_model_index = None
                     current_search_index = -1
                     for search_index, search in enumerate(searches):
                         print("Sub_Search[{0}]: '{1}'".format(search_index, search.name))
@@ -3214,9 +3213,9 @@ class TablesEditor(QMainWindow):
         selection = os.popen("xsel").read()
         url = None
         if selection.startswith("http"):
-            url= selection
+            url = selection
         elif clip_board.startswith("http"):
-            url= clip_board
+            url = clip_board
         if trace_signals:
             print("clip_board='{0}' selection='{1}' url='{2}'".format(clip_board, selection, url))
 
