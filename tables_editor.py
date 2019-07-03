@@ -60,11 +60,12 @@ from PySide2.QtWidgets import (QApplication, QComboBox, QLineEdit, QMainWindow,
 # from PySide2.QtCore import (SelectionFlag, )
 from PySide2.QtCore import (QAbstractItemModel, QDir, QFile, QItemSelectionModel, QModelIndex, Qt)
 
+
 def text2safe_attribute(text):
     # Verify argument types:
     assert isinstance(text, str)
 
-    # Sweep across *text* one *character* at a time performing any neccesary conversions: 
+    # Sweep across *text* one *character* at a time performing any neccesary conversions:
     new_characters = list()
     for character in text:
         new_character = character
@@ -80,11 +81,12 @@ def text2safe_attribute(text):
     safe_attribute = "".join(new_characters)
     return safe_attribute
 
+
 def safe_attribute2text(safe_attribute):
     # Verify argument types:
     assert isinstance(safe_attribute, str)
-    
-    # Sweep across *safe_attribute* one *character* at a time performing any neccesary conversions: 
+
+    # Sweep across *safe_attribute* one *character* at a time performing any neccesary conversions:
     # print("safe_attribute='{0}'".format(safe_attribute))
     new_characters = list()
     safe_attribute_size = len(safe_attribute)
@@ -116,11 +118,13 @@ def safe_attribute2text(safe_attribute):
     text = "".join(new_characters)
     return text
 
+
 def name2file_name(name):
     # Verify argument types:
     assert isinstance(name, str)
 
     return name
+
 
 def file_name2name(file_name):
     # Verify argument types:
@@ -640,7 +644,7 @@ class ComboEdit:
         items = combo_edit.items
         items.append(new_item)
         combo_edit.current_item_set(new_item, tracing=next_tracing)
-        
+
         # Wrap up any requested *tracing*:
         if tracing is not None:
             print("{0}<=ComboEdit.item_append(*)".format(tracing))
@@ -1257,6 +1261,7 @@ class Node:
         parent = node.parent
         result = 0 if parent is None else parent.children.index(node)
         return result
+
 
 class Directory(Node):
     # Directory.__init__():
@@ -1904,7 +1909,7 @@ class Search(Node):
         # Ensure that the *directory_path* exists:
         if not os.path.isdir(search_directory):
             os.makedirs(search_directory)
-        
+
         # Compute *search_xml_file_name*:
         search_xml_base_name = search.title2file_name(search.name) + ".xml"
         search_xml_file_name = os.path.join(search_directory, search_xml_base_name)
@@ -2079,7 +2084,7 @@ class Table(Node):
                 if comment.language == "EN":
                     english_comment_found = True
             assert english_comment_found, "We must have an english comment."
-                
+
             # 2: Verify that *csv_file_name* is present and has correct type:
             assert "csv_file_name" in arguments_table
             csv_file_name = arguments_table["csv_file_name"]
@@ -2631,7 +2636,7 @@ class Table(Node):
         title_text = title_text.replace('&', '+')
         title_text = title_text.replace('<', '[')
         title_text = title_text.replace('>', ']')
-    
+
         xml_lines.append('{0}<Table name="{1}" csv_file_name="{2}" url="{3}" {4}>'.format(
                          indent, table.name, table.csv_file_name, table.url, title_text))
 
@@ -2954,9 +2959,9 @@ class TablesEditor(QMainWindow):
                                                 path, "Digi-Key2", digikey_collection_path)
                 assert isinstance(digikey_collection, Collection)
                 assert digikey_collection.type_letter_get() == 'C'
-                
+
                 # assert digikey_directory.is_dir
-                
+
                 root_node = Node("Root", "None")
                 root_node.add_child(digikey_collection)
                 root_node.add_child(digikey_collection2)
@@ -3149,7 +3154,7 @@ class TablesEditor(QMainWindow):
                         selection_model.setCurrentIndex(parent_search_model_index, flags)
                         tables_editor.current_model_index = parent_search_model_index
                         tables_editor.current_search = search_parent
-    
+
                     # Remove the associated files:
                     search_directory = table.search_directory_get(tracing=next_tracing)
                     file_name_base = search.title2file_name(current_search.name)
@@ -3219,13 +3224,11 @@ class TablesEditor(QMainWindow):
         if url is None:
             print("URL: No valid URL found!")
         else:
-            # Grab the 
+            # Grab some stuff from *tables_editor*:
             main_window = tables_editor.main_window
             collections_line = main_window.collections_line
             new_search_name = collections_line.text()
-        
             search_parent_name = current_search.name
-            
             table = current_search.table
             assert isinstance(table, Table)
             searches = table.children
@@ -3562,7 +3565,6 @@ class TablesEditor(QMainWindow):
         tables_editor.current_enumeration = current_enumeration
 
         # Make sure that *current_search* is valid (or *None*):
-        
         # tables_editor.current_search = current_search
 
         if tracing is not None:
@@ -4601,7 +4603,7 @@ class TablesEditor(QMainWindow):
             tables_editor = self
             tables_editor.current_update()
             current_table = tables_editor.current_table
-    
+
             # The [import] tab does not do anything if there is no *current_table*:
             if current_table is not None:
                 # Do some *tracing* if requested:
@@ -4638,24 +4640,24 @@ class TablesEditor(QMainWindow):
                     parameters_table.setColumnCount(6)
                     # Fill in the left size row headers for *parameters_table*:
                     parameters_table.setVerticalHeaderLabels(headers)
-    
+
                     assert len(column_triples) == len(headers)
                     for column_index, triples in enumerate(column_triples):
                         for triple_index, triple in enumerate(triples):
                             assert len(triple) == 3
                             count, name, value = triple
-    
+
                             if count >= 1:
                                 item = QTableWidgetItem("{0} x {1} '{2}'".
                                                         format(count, name, value))
                                 parameters_table.setItem(column_index, triple_index, item)
-    
+
                             # print("Column[{0}]: '{1}':{2} => {3}".
                             #  format(column_index, value, count, matches))
-    
+
                             # print("Column[{0}]: {1}".format(column_index, column_table))
                             # print("Column[{0}]: {1}".format(column_index, column_list))
-    
+
                             # assert column_index < len(parameters)
                             # parameter = parameters[column_index]
                             # type = "String"
@@ -4666,7 +4668,7 @@ class TablesEditor(QMainWindow):
                             #    elif match == "Float":
                             #        type = "Float"
                             # parameter.type = type
-    
+
             # Enable/Disable *import_read* button widget depending upon whether *csv_file_name*
             # exists:
             # import_read.setEnabled(
@@ -5550,12 +5552,12 @@ class TreeModel(QAbstractItemModel):
                     # *children* list of *table*:
                     search = Search(search_tree=search_tree, table=table) #, tracing="fetchMore:")
             # print("2:len(searches)={0}".format(len(searches)))
-     
+
             # Make sure we have the `@ALL` search in *searches*:
             if len(searches) == 0:
                 all_search_name = "@ALL"
-                comment = SearchComment(language="EN", lines=list()) 
-                comments = [ comment ]
+                comment = SearchComment(language="EN", lines=list())
+                comments = [comment]
                 # Note: The *Search* initializer appends the new *Search* object to the
                 # *children* list of *table*:
                 all_search = Search(name=all_search_name, comments=comments, table=table,
@@ -5734,6 +5736,7 @@ class TreeModel(QAbstractItemModel):
         tree_model = self
         node = tree_model.getNode(parent)
         return node.child_count()
+
 
 class Units:
     def __init__(self):
@@ -6225,12 +6228,3 @@ if __name__ == "__main__":
 
 # PySide2 TableView Video: https://www.youtube.com/watch?v=4PkPezdpO90
 # Associatied repo: https://github.com/vfxpipeline/filebrowser
-
-# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60
-# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&sf=0&FV=ffe0003c&quantity=&ColumnSort=0&page=1&stock=1&pageSize=25  # In Stock
-# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&sf=0&FV=ffe0003c&quantity=&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=25 # + ROHS
-# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&pv69=453&pv69=1146&pv69=1319&pv69=1351&sf=1&FV=ffe0003c&quantity=&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=25 # + Surface Mount
-# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?k=&pkeyword=&sv=0&pv16=5&sf=1&FV=ffe0003c%2C114047a%2C1140527%2C1140547%2C11401c5&quantity=&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=25 # + 0603
-
-# https://www.digikey.com/products/en/capacitors/ceramic-capacitors/60?FV=1f140000%2Cffe0003c%2C400005&quantity=0&ColumnSort=0&page=1&stock=1&rohs=1&pageSize=500
-
