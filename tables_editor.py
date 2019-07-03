@@ -3231,11 +3231,11 @@ class TablesEditor(QMainWindow):
             search_parent_name = current_search.name
             table = current_search.table
             assert isinstance(table, Table)
-            searches = table.children
+            # searches = table.children
             # if tracing is not None:
             #    print("{0}1:len(searches)={1}".format(tracing, len(searches)))
             comment = SearchComment(language="EN", lines=list())
-            comments = [ comment ]
+            comments = [comment]
             # Note: The *Search* initializer will append the new *Search* object to *table*:
             new_search = Search(name=new_search_name, comments=comments, table=table,
                                 parent_name=search_parent_name, url=url, tracing=next_tracing)
@@ -3276,7 +3276,7 @@ class TablesEditor(QMainWindow):
         tables_editor.current_model_index = model_index
         row = model_index.row()
         column = model_index.column()
-        data = model_index.data()
+        # data = model_index.data()
         # parent = model_index.parent()
         model = model_index.model()
         node = model.getNode(model_index)
@@ -4618,7 +4618,7 @@ class TablesEditor(QMainWindow):
                 parameters_table = main_window.parameters_table
 
                 # Update the *import_csv_file_name* widget:
-                csv_file_name = current_table.csv_file_name
+                # csv_file_name = current_table.csv_file_name
                 # if tracing is not None:
                 #    print("{0}csv_file_name='{1}'".format(tracing, csv_file_name))
                 current_table.csv_read_and_process(
@@ -4626,7 +4626,7 @@ class TablesEditor(QMainWindow):
 
                 # Load up *import_table*:
                 headers = current_table.import_headers
-                rows = current_table.import_rows
+                # rows = current_table.import_rows
                 column_triples = current_table.import_column_triples
                 # if not tracing is None:
                 #    print("{0}headers={1} rows={2} column_triples={3}".
@@ -5550,7 +5550,7 @@ class TreeModel(QAbstractItemModel):
                     search_tree = etree.fromstring(search_xml_text)
                     # Note: The *Search* initializer appends the new *Search* object to the
                     # *children* list of *table*:
-                    search = Search(search_tree=search_tree, table=table) #, tracing="fetchMore:")
+                    Search(search_tree=search_tree, table=table)
             # print("2:len(searches)={0}".format(len(searches)))
 
             # Make sure we have the `@ALL` search in *searches*:
@@ -5560,8 +5560,8 @@ class TreeModel(QAbstractItemModel):
                 comments = [comment]
                 # Note: The *Search* initializer appends the new *Search* object to the
                 # *children* list of *table*:
-                all_search = Search(name=all_search_name, comments=comments, table=table,
-                                    parent_name="", url=parent_node.url, tracing="fetchMore:")
+                Search(name=all_search_name, comments=comments, table=table,
+                       parent_name="", url=parent_node.url, tracing="fetchMore:")
 
             # Fix up and sort all of the *searches* in *table*:
             table.fix_up(tracing=" ")
@@ -5585,12 +5585,12 @@ class TreeModel(QAbstractItemModel):
                     node = table
                 elif os.path.isdir(file_path):
                     slash_index = file_path.rfind(file_path)
-                    if file_name[0] != '.' and \
-                      slash_index >= 0 and file_path[slash_index+1:] != '.':
+                    if file_name[0] != '.' and (slash_index >= 0 and
+                                                file_path[slash_index+1:] != '.'):
                         title = parent_node.file_name2title(file_name)
                         # Note: Adding *parent_node* to Directory causes the top level of
                         # the *Collection* object to be entered twice.  Very strange!!!
-                        node = Directory(file_name, file_path, title) #, parent=parent_node)
+                        node = Directory(file_name, file_path, title)
                 if node is not None:
                     nodes.append(node)
 
@@ -5603,7 +5603,7 @@ class TreeModel(QAbstractItemModel):
             for node in nodes:
                 assert isinstance(node, Search)
                 node_name = node.name
-                assert not node_name in searches_table
+                assert node_name not in searches_table
                 searches_table[node_name] = node
 
         parent_node.is_traversed = True
@@ -5671,7 +5671,7 @@ class TreeModel(QAbstractItemModel):
         assert isinstance(tracing, str) or tracing is None
 
         # Perform any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
+        # next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}=>TreeModel.children_update(*,*)".format(tracing))
 
@@ -5689,7 +5689,6 @@ class TreeModel(QAbstractItemModel):
         tree_model.endInsertRows()
 
         # Wrap up any requested *tracing*:
-        next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}<=TreeModel.children_update(*,*)".format(tracing))
 
