@@ -92,8 +92,8 @@ def safe_attribute2text(safe_attribute):
     safe_attribute_size = len(safe_attribute)
     character_index = 0
     while character_index < safe_attribute_size:
-        # character = safe_attribute[character_index]
-        print("character[{0}]='{1}'".format(character_index, character))
+        character = safe_attribute[character_index]
+        # print("character[{0}]='{1}'".format(character_index, character))
         new_character = character
         if character == '&':
             remainder = safe_attribute[character_index:]
@@ -131,6 +131,7 @@ def file_name2name(file_name):
     assert isinstance(file_name, str)
 
     return file_name
+
 
 class ComboEdit:
     """ A *ComboEdit* object repesents the GUI controls for manuipulating a combo box widget.
@@ -1622,7 +1623,7 @@ class Search(Node):
         # Perform any requested *tracing*:
         tracing = arguments_table["tracing"] if "tracing" in arguments_table else None
         assert isinstance(tracing, str) or tracing is None
-        next_tracing = None if tracing is None else tracing + " "
+        # next_tracing = None if tracing is None else tracing + " "
         if tracing is not None:
             print("{0}=>Search(*)".format(tracing))
 
@@ -1716,7 +1717,6 @@ class Search(Node):
         if tracing is not None:
             print("{0}<=Search(*):name={1}".format(tracing, name))
 
-
     # Search.clicked()
     def clicked(self, tables_editor, tracing=None):
         # Verify argument types:
@@ -1802,7 +1802,7 @@ class Search(Node):
         search_name = search.name
 
         # Perform any requested *tracing*:
-        if not tracing is None:
+        if tracing is not None:
             print("{0}=>is_deletable('{1}')".format(tracing, search_name))
 
         # Search through *sibling_searches* of *table* to ensure that *search* is not
@@ -1812,7 +1812,7 @@ class Search(Node):
         sibling_searches = table.children
         deletable = True
         for index, sibling_search in enumerate(sibling_searches):
-            parent = sibling_search.search_parent
+            # parent = sibling_search.search_parent
             # if not tracing is None:
             #    parent_name = "None" if parent is None else "'{0}'".format(parent.name)
             #    print("{0}Sibling[{1}]'{2}'.parent='{3}".format(
